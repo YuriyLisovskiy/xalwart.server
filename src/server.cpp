@@ -40,7 +40,7 @@ bool HTTPServer::bind(const char* host, uint16_t port, bool useIPv6)
 	return useIPv6 ? this->_bind6(host, port) : this->_bind(host, port);
 }
 
-bool HTTPServer::listen(const std::string& startupMessage)
+bool HTTPServer::listen(const std::string& startup_message)
 {
 	if (::listen(this->sock, SOMAXCONN) < 0)
 	{
@@ -48,16 +48,13 @@ bool HTTPServer::listen(const std::string& startupMessage)
 		return false;
 	}
 
-	if (!startupMessage.empty())
+	if (!startup_message.empty())
 	{
-		std::cout << startupMessage;
+		std::cout << startup_message;
 		std::cout.flush();
 	}
 
 	return _accept(this);
-//	std::thread t(_accept, this);
-//	t.detach();
-//	return true;
 }
 
 void HTTPServer::close()
@@ -69,7 +66,7 @@ void HTTPServer::close()
 
 core::Error HTTPServer::send(int sock, const char* data)
 {
-	if (::send(sock, data, std::strlen(data), 0) < 0)
+	if (::send(sock, data, std::strlen(data), MSG_NOSIGNAL) < 0)
 	{
 		return core::Error(
 			core::HttpError, "failed to send bytes to socket connection", _ERROR_DETAILS_
@@ -79,9 +76,9 @@ core::Error HTTPServer::send(int sock, const char* data)
 	return core::Error::none();
 }
 
-core::Error HTTPServer::write(int sock, const char* data, size_t bytes_to_write)
+core::Error HTTPServer::write(int sock, const char* data, size_t n)
 {
-	if (::write(sock, data, bytes_to_write) < 0)
+	if (::write(sock, data, n) < 0)
 	{
 		return core::Error(
 			core::HttpError, "failed to send bytes to socket connection", _ERROR_DETAILS_
@@ -154,11 +151,18 @@ bool HTTPServer::_accept(HTTPServer* s)
 		int newSock;
 		while (!s->is_closed)
 		{
-			while ((newSock = ::accept(s->sock, (sockaddr *)&newSocketInfo, &newSocketInfoLength)) < 0)
+			while ((newSock = ::accept(s->sock, (sockaddr*)&newSocketInfo, &newSocketInfoLength)) < 0)
 			{
 				if (errno == EBADF || errno == EINVAL)
 				{
 					return false;
+				}
+
+				if (errno == EMFILE)
+				{
+					std::this_thread::sleep_for(std::chrono::milliseconds(300));
+					newSock = -1;
+					break;
 				}
 
 				s->_ctx.on_error(errno, "error while accepting a new connection");
@@ -179,11 +183,18 @@ bool HTTPServer::_accept(HTTPServer* s)
 		int newSock;
 		while (!s->is_closed)
 		{
-			while ((newSock = ::accept(s->sock, nullptr, nullptr)) < 0)
+			while ((newSock = ::accept(s->sock, (sockaddr*)&newSocketInfo, &newSocketInfoLength)) < 0)
 			{
 				if (errno == EBADF || errno == EINVAL)
 				{
 					return false;
+				}
+
+				if (errno == EMFILE)
+				{
+					sleep(1);
+					newSock = -1;
+					break;
 				}
 
 				s->_ctx.on_error(errno, "error while accepting a new connection");
@@ -192,6 +203,7 @@ bool HTTPServer::_accept(HTTPServer* s)
 
 			if (!s->is_closed && newSock >= 0)
 			{
+				int set = 1;
 				s->_handleConnection(newSock);
 			}
 		}
@@ -203,6 +215,9 @@ bool HTTPServer::_accept(HTTPServer* s)
 void HTTPServer::_handleConnection(const int& sock)
 {
 	this->_threadPool->push([this, sock](){
+		try{
+		Measure measure;
+		measure.start();
 		internal::request_parser rp;
 		xw::string body_beginning;
 		auto result = _read_headers(sock, body_beginning);
@@ -217,7 +232,7 @@ void HTTPServer::_handleConnection(const int& sock)
 			{
 				size_t body_length = std::strtol(rp.headers["Content-Length"].c_str(), nullptr, 10);
 				xw::string body;
-				if (body_length == body_beginning.size())
+				if (body_length == std::strlen(body_beginning.c_str()))
 				{
 					body = body_beginning;
 				}
@@ -239,6 +254,15 @@ void HTTPServer::_handleConnection(const int& sock)
 			}
 
 			this->_handler(sock, &rp, nullptr);
+		}
+
+		::close(sock);
+		measure.end();
+		this->_ctx.logger->debug("Time elapsed: " + std::to_string(measure.elapsed()) + " milliseconds");
+		}
+		catch (const core::ParseError& exc)
+		{
+			this->_ctx.logger->error(exc);
 		}
 	});
 }
@@ -276,13 +300,13 @@ int HTTPServer::_error()
 }
 
 core::Result<xw::string> HTTPServer::_read_headers(
-	const int& sock, xw::string& body_beginning
+	size_t sock, xw::string& body_beginning
 )
 {
-	unsigned long size = 0;
+	size_t size = 0;
 	xw::string data;
-	size_t headers_delimiter_pos = std::string::npos;
-	std::string delimiter = "\r\n\r\n";
+	size_t headers_delimiter_pos = xw::string::npos;
+	xw::string delimiter = "\r\n\r\n";
 
 	char buffer[MAX_BUFF_SIZE];
 	long long message_len;
@@ -324,9 +348,9 @@ core::Result<xw::string> HTTPServer::_read_headers(
 
 		headers_delimiter_pos = data.find(delimiter);
 	}
-	while (headers_delimiter_pos == std::string::npos);
+	while (headers_delimiter_pos == xw::string::npos);
 
-	if (headers_delimiter_pos == std::string::npos)
+	if (headers_delimiter_pos == xw::string::npos)
 	{
 		return core::raise<core::HttpError, xw::string>(
 			"invalid http request has been received", _ERROR_DETAILS_
@@ -339,7 +363,7 @@ core::Result<xw::string> HTTPServer::_read_headers(
 }
 
 core::Result<xw::string> HTTPServer::_read_body(
-	const int& sock, const xw::string& body_beginning, size_t body_length
+	size_t sock, const xw::string& body_beginning, size_t body_length
 )
 {
 	xw::string data;
@@ -348,18 +372,18 @@ core::Result<xw::string> HTTPServer::_read_body(
 		return core::Result(data);
 	}
 
-	size_t size = body_beginning.size();
+	size_t size = std::strlen(body_beginning.c_str());
 	if (size == body_length)
 	{
 		return core::Result(body_beginning);
 	}
 
 	long long message_len;
-	const size_t buff_size = MAX_BUFF_SIZE < body_length ? MAX_BUFF_SIZE : body_length;
+//	const size_t buff_size = MAX_BUFF_SIZE < body_length ? MAX_BUFF_SIZE : body_length;
 	char buffer[MAX_BUFF_SIZE];
 	while (size < body_length)
 	{
-		message_len = recv(sock, buffer, buff_size, 0);
+		message_len = recv(sock, buffer, MAX_BUFF_SIZE, 0);
 		buffer[message_len] = '\0';
 		if (message_len > 0)
 		{
@@ -395,8 +419,9 @@ core::Result<xw::string> HTTPServer::_read_body(
 	}
 
 	data = body_beginning + data;
-	if (data.size() != body_length)
+	if (std::strlen(data.c_str()) != body_length)
 	{
+		std::cerr << data << ": " << std::strlen(data.c_str()) << " != " << body_length << '\n';
 		return core::raise<core::HttpError, xw::string>(
 			"actual body size is not equal to header's value", _ERROR_DETAILS_
 		);

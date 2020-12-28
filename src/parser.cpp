@@ -374,7 +374,7 @@ void request_parser::parse_headers(const xw::string& data)
 // Parses http request body from given stream.
 void request_parser::parse_body(const xw::string& data, const xw::string& media_root)
 {
-	if (!data.empty())
+	if (strlen(data.c_str()))
 	{
 		if (this->state == request_parser::state_enum::s_request_body)
 		{
