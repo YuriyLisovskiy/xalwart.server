@@ -17,7 +17,7 @@
 // Core libraries.
 #include <xalwart.core/thread_pool.h>
 #include <xalwart.core/result.h>
-#include <xalwart.core/intefaces.h>
+#include <xalwart.core/interfaces/server.h>
 
 // Module definitions.
 #include "./_def_.h"
