@@ -1,5 +1,5 @@
 /**
- * socket/base.h
+ * socket.h
  *
  * Copyright (c) 2020 Yuriy Lisovskiy
  *
@@ -10,27 +10,26 @@
 
 // C++ libraries.
 #if defined(__linux__) || defined(__APPLE__)
-
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
 #include <netdb.h>
-
 #elif _WIN32
 #include <winsock32.h>
 #endif
-
 #include <string>
 #include <functional>
 
 // Module definitions.
-#include "../_def_.h"
+#include "./_def_.h"
 
-typedef std::function<void(int, const std::string&)> OnErrorFunc;
+#define MAX_BUFF_SIZE 8192 * 8 - 1  // 65535 bytes.
 
-#define FDR_UNUSED(expr){ (void)(expr); }
-#define FDR_ON_ERROR const OnErrorFunc& onError = [](int errorCode, const std::string& errorMessage){FDR_UNUSED(errorCode); FDR_UNUSED(errorMessage)}
+// 4K per header value.
+// 35 main headers and 3 additional.
+// 403 bytes is a length of all headers names.
+#define MAX_HEADERS_SIZE 4096 * 38 + 403    // 156051 bytes.
 
 
 __SERVER_BEGIN__
@@ -38,11 +37,11 @@ __SERVER_BEGIN__
 class BaseSocket
 {
 protected:
-	bool useIPv6;
+	bool use_ipv6;
 	int sock = 0;
 	sockaddr_in addr{};
 	sockaddr_in6 addr6{};
-	bool isClosed = false;
+	bool is_closed = false;
 
 public:
 	const uint16_t BUFFER_SIZE = 0xFFFF;
@@ -53,22 +52,22 @@ public:
 	};
 
 	explicit BaseSocket(
-		FDR_ON_ERROR, SocketType sockType = TCP, int socketId = -1, bool useIPv6 = false
+		const OnErrorFunc& on_error, SocketType sock_type = TCP, int socket_id = -1, bool use_ipv6 = false
 	);
 
-	virtual void Close();
+	virtual void close();
 
 	[[nodiscard]]
-	std::string RemoteAddress() const;
+	std::string remote_address() const;
 
 	[[nodiscard]]
-	int RemotePort() const;
+	int remote_port() const;
 
 	[[nodiscard]]
-	int FileDescriptor() const;
+	int file_descriptor() const;
 
 	[[nodiscard]]
-	bool IsIPv6() const;
+	bool is_ipv6() const;
 };
 
 __SERVER_END__
