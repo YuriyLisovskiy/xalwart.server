@@ -14,13 +14,13 @@ __SERVER_BEGIN__
 
 HTTPServer::HTTPServer(
 	const Context& ctx, HandlerFunc handler
-) : BaseSocket(ctx.on_error, TCP, -1), _ctx(ctx), _handler(std::move(handler))
+) : BaseSocket(ctx.on_error, TCP, -1), ctx(ctx), _handler(std::move(handler))
 {
 	int opt = 1;
 	setsockopt(this->sock, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(int));
 	setsockopt(this->sock, SOL_SOCKET, SO_REUSEPORT, &opt, sizeof(int));
-	this->_ctx.normalize();
-	this->_threadPool = std::make_shared<core::internal::ThreadPool>(this->_ctx.threads_count);
+	this->ctx.normalize();
+	this->_threadPool = std::make_shared<core::internal::ThreadPool>(this->ctx.threads_count);
 	if (!this->_handler)
 	{
 		this->_handler = [](const int, internal::request_parser*, core::Error*)
@@ -44,7 +44,7 @@ bool HTTPServer::listen(const std::string& startup_message)
 {
 	if (::listen(this->sock, SOMAXCONN) < 0)
 	{
-		this->_ctx.on_error(errno, "server can't listen the socket");
+		this->ctx.on_error(errno, "server can't listen the socket");
 		return false;
 	}
 
@@ -98,7 +98,7 @@ bool HTTPServer::_bind(const char* address, uint16_t port)
 	this->use_ipv6 = false;
 	if (inet_pton(AF_INET, address, &this->addr.sin_addr) <= 0)
 	{
-		this->_ctx.on_error(errno, "invalid address, address type is not supported");
+		this->ctx.on_error(errno, "invalid address, address type is not supported");
 		return false;
 	}
 
@@ -107,7 +107,7 @@ bool HTTPServer::_bind(const char* address, uint16_t port)
 
 	if (::bind(this->sock, (const sockaddr *)&this->addr, sizeof(this->addr)) < 0)
 	{
-		this->_ctx.on_error(errno, "cannot bind the socket");
+		this->ctx.on_error(errno, "cannot bind the socket");
 		return false;
 	}
 
@@ -125,7 +125,7 @@ bool HTTPServer::_bind6(const char* address, uint16_t port)
 	this->use_ipv6 = true;
 	if (inet_pton(AF_INET6, address, &this->addr6.sin6_addr) <= 0)
 	{
-		this->_ctx.on_error(errno, "invalid address, address type not supported");
+		this->ctx.on_error(errno, "invalid address, address type not supported");
 		return false;
 	}
 
@@ -134,7 +134,7 @@ bool HTTPServer::_bind6(const char* address, uint16_t port)
 
 	if (::bind(this->sock, (const sockaddr *)&this->addr6, sizeof(this->addr6)) < 0)
 	{
-		this->_ctx.on_error(errno, "cannot bind the socket");
+		this->ctx.on_error(errno, "cannot bind the socket");
 		return false;
 	}
 
@@ -165,7 +165,7 @@ bool HTTPServer::_accept(HTTPServer* s)
 					break;
 				}
 
-				s->_ctx.on_error(errno, "error while accepting a new connection");
+				s->ctx.on_error(errno, "error while accepting a new connection");
 				return false;
 			}
 
@@ -197,7 +197,7 @@ bool HTTPServer::_accept(HTTPServer* s)
 					break;
 				}
 
-				s->_ctx.on_error(errno, "error while accepting a new connection");
+				s->ctx.on_error(errno, "error while accepting a new connection");
 				return false;
 			}
 
@@ -250,7 +250,7 @@ void HTTPServer::_handleConnection(const int& sock)
 					}
 				}
 
-				rp.parse_body(body, this->_ctx.media_root);
+				rp.parse_body(body, this->ctx.media_root);
 			}
 
 			this->_handler(sock, &rp, nullptr);
@@ -258,11 +258,11 @@ void HTTPServer::_handleConnection(const int& sock)
 
 		::close(sock);
 		measure.end();
-		this->_ctx.logger->debug("Time elapsed: " + std::to_string(measure.elapsed()) + " milliseconds");
+		this->ctx.logger->debug("Time elapsed: " + std::to_string(measure.elapsed()) + " milliseconds");
 		}
 		catch (const core::ParseError& exc)
 		{
-			this->_ctx.logger->error(exc);
+			this->ctx.logger->error(exc);
 		}
 	});
 }

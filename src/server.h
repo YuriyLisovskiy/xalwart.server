@@ -36,8 +36,10 @@ class HTTPServer : public BaseSocket, core::IServer
 {
 private:
 	std::shared_ptr<core::internal::ThreadPool> _threadPool;
-	Context _ctx;
 	HandlerFunc _handler;
+
+protected:
+	Context ctx;
 
 public:
 	explicit HTTPServer(const Context& ctx, HandlerFunc handler);
