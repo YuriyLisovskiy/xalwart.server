@@ -215,50 +215,51 @@ bool HTTPServer::_accept(HTTPServer* s)
 void HTTPServer::_handleConnection(const int& sock)
 {
 	this->_threadPool->push([this, sock](){
-		try{
-		Measure measure;
-		measure.start();
-		internal::request_parser rp;
-		xw::string body_beginning;
-		auto result = _read_headers(sock, body_beginning);
-		if (result.err)
+		try
 		{
-			this->_handler(sock, &rp, &result.err);
-		}
-		else
-		{
-			rp.parse_headers(result.value);
-			if (rp.headers.find("Content-Length") != rp.headers.end())
+			Measure measure;
+			measure.start();
+			internal::request_parser rp;
+			xw::string body_beginning;
+			auto result = _read_headers(sock, body_beginning);
+			if (result.err)
 			{
-				size_t body_length = std::strtol(rp.headers["Content-Length"].c_str(), nullptr, 10);
-				xw::string body;
-				if (body_length == std::strlen(body_beginning.c_str()))
+				this->_handler(sock, &rp, &result.err);
+			}
+			else
+			{
+				rp.parse_headers(result.value);
+				if (rp.headers.find("Content-Length") != rp.headers.end())
 				{
-					body = body_beginning;
-				}
-				else
-				{
-					result = _read_body(sock, body_beginning, body_length);
-					if (result.err)
+					size_t body_length = std::strtol(rp.headers["Content-Length"].c_str(), nullptr, 10);
+					xw::string body;
+					if (body_length == std::strlen(body_beginning.c_str()))
 					{
-						this->_handler(sock, &rp, &result.err);
-//						return result.forward<std::shared_ptr<http::HttpRequest>>();
+						body = body_beginning;
 					}
 					else
 					{
-						body = result.value;
+						result = _read_body(sock, body_beginning, body_length);
+						if (result.err)
+						{
+							this->_handler(sock, &rp, &result.err);
+	//						return result.forward<std::shared_ptr<http::HttpRequest>>();
+						}
+						else
+						{
+							body = result.value;
+						}
 					}
+
+					rp.parse_body(body, this->ctx.media_root);
 				}
 
-				rp.parse_body(body, this->ctx.media_root);
+				this->_handler(sock, &rp, nullptr);
 			}
 
-			this->_handler(sock, &rp, nullptr);
-		}
-
-		::close(sock);
-		measure.end();
-		this->ctx.logger->debug("Time elapsed: " + std::to_string(measure.elapsed()) + " milliseconds");
+			::close(sock);
+			measure.end();
+			this->ctx.logger->debug("Time elapsed: " + std::to_string(measure.elapsed()) + " milliseconds");
 		}
 		catch (const core::ParseError& exc)
 		{

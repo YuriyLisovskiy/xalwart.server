@@ -32,7 +32,7 @@ __SERVER_BEGIN__
 
 typedef std::function<void(const int, internal::request_parser*, core::Error*)> HandlerFunc;
 
-class HTTPServer : public BaseSocket, core::IServer
+class HTTPServer : public BaseSocket, public core::IServer
 {
 private:
 	std::shared_ptr<core::internal::ThreadPool> _threadPool;
