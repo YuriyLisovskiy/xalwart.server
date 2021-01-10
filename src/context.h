@@ -1,7 +1,7 @@
 /**
  * context.h
  *
- * Copyright (c) 2020 Yuriy Lisovskiy
+ * Copyright (c) 2020-2021 Yuriy Lisovskiy
  *
  * Purpose: TODO
  */
@@ -22,14 +22,12 @@ __SERVER_BEGIN__
 
 struct Context
 {
-	OnErrorFunc on_error;
 	std::shared_ptr<core::ILogger> logger;
 	size_t max_body_size = 0;
 	std::string media_root;
-	size_t threads_count = 0;
-	bool verbose = false;
-	size_t timeout_sec = 2;
-	size_t timeout_us = 0;
+	size_t workers = 0;
+	time_t timeout_sec = 0;
+	time_t timeout_usec = 0;
 
 	void normalize();
 };

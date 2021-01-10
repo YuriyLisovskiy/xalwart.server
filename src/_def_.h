@@ -1,7 +1,7 @@
 /**
  * _def_.h
  *
- * Copyright (c) 2020 Yuriy Lisovskiy
+ * Copyright (c) 2020-2021 Yuriy Lisovskiy
  *
  * Purpose: main module's definitions.
  */
@@ -17,16 +17,14 @@
 #define __SERVER_BEGIN__ __MAIN_NAMESPACE_BEGIN__ namespace server {
 #define __SERVER_END__ } __MAIN_NAMESPACE_END__
 
-// xw::server::internal
-#define __SERVER_INTERNAL_BEGIN__ __SERVER_BEGIN__ namespace internal {
-#define __SERVER_INTERNAL_END__ } __SERVER_END__
+// xw::server::util
+#define __SERVER_UTIL_BEGIN__ __SERVER_BEGIN__ namespace util {
+#define __SERVER_UTIL_END__ } __SERVER_END__
 
+// xw::server::parser
+#define __PARSER_BEGIN__ __SERVER_BEGIN__ namespace parser {
+#define __PARSER_END__ } __SERVER_END__
 
-__SERVER_BEGIN__
-
-typedef std::function<void(int, const std::string&)> OnErrorFunc;
-
-__SERVER_END__
 
 template <typename TimeT = std::chrono::milliseconds>
 class Measure

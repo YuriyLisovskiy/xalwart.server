@@ -1,434 +1,291 @@
 /**
- * tcp_server.cpp
+ * server.cpp
  *
- * Copyright (c) 2020 Yuriy Lisovskiy
+ * Copyright (c) 2020-2021 Yuriy Lisovskiy
  */
 
 #include "./server.h"
 
-// C++ libraries.
-#include <iostream>
+// Core libraries.
+#include <xalwart.core/datetime.h>
+#include <xalwart.core/string_utils.h>
+
+// Framework libraries.
+#include "../../http/meta.h"
+#include "../parsers/query_parser.h"
+#include "../parsers/multipart_parser.h"
 
 
 __SERVER_BEGIN__
 
-HTTPServer::HTTPServer(
-	const Context& ctx, HandlerFunc handler
-) : BaseSocket(ctx.on_error, TCP, -1), ctx(ctx), _handler(std::move(handler))
+DefaultServer::DefaultServer(
+	const Context& ctx, HttpHandlerFunc handler, const conf::Settings* settings
+) : HTTPServer(ctx, this->_make_handler()), _http_handler(std::move(handler)), settings(settings)
 {
-	int opt = 1;
-	setsockopt(this->sock, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(int));
-	setsockopt(this->sock, SOL_SOCKET, SO_REUSEPORT, &opt, sizeof(int));
-	this->ctx.normalize();
-	this->_threadPool = std::make_shared<core::internal::ThreadPool>(this->ctx.threads_count);
-	if (!this->_handler)
+}
+
+void DefaultServer::init_environ()
+{
+	HTTPServer::init_environ();
+	this->base_environ[http::meta::SERVER_NAME] = this->server_name;
+	this->base_environ[http::meta::SERVER_PORT] = std::to_string(this->server_port);
+}
+
+HandlerFunc DefaultServer::_make_handler()
+{
+	return [&](int sock, parsers::request_parser* parser, core::Error* err)
 	{
-		this->_handler = [](const int, internal::request_parser*, core::Error*)
+		if (err)
 		{
-			std::cerr << "request handler is not specified";
-		};
-	}
-}
+			xw::core::Error fail;
+			auto err_resp = _from_error(err);
 
-bool HTTPServer::bind(uint16_t port, bool useIPv6)
-{
-	return useIPv6 ? this->_bind6(port) : this->_bind(port);
-}
+			this->ctx.logger->trace(err->msg, _ERROR_DETAILS_);
 
-bool HTTPServer::bind(const char* host, uint16_t port, bool useIPv6)
-{
-	return useIPv6 ? this->_bind6(host, port) : this->_bind(host, port);
-}
-
-bool HTTPServer::listen(const std::string& startup_message)
-{
-	if (::listen(this->sock, SOMAXCONN) < 0)
-	{
-		this->ctx.on_error(errno, "server can't listen the socket");
-		return false;
-	}
-
-	if (!startup_message.empty())
-	{
-		std::cout << startup_message;
-		std::cout.flush();
-	}
-
-	return _accept(this);
-}
-
-void HTTPServer::close()
-{
-	this->_threadPool->wait();
-	::shutdown(this->sock, SHUT_RDWR);
-	BaseSocket::close();
-}
-
-core::Error HTTPServer::send(int sock, const char* data)
-{
-	if (::send(sock, data, std::strlen(data), MSG_NOSIGNAL) < 0)
-	{
-		return core::Error(
-			core::HttpError, "failed to send bytes to socket connection", _ERROR_DETAILS_
-		);
-	}
-
-	return core::Error::none();
-}
-
-core::Error HTTPServer::write(int sock, const char* data, size_t n)
-{
-	if (::write(sock, data, n) < 0)
-	{
-		return core::Error(
-			core::HttpError, "failed to send bytes to socket connection", _ERROR_DETAILS_
-		);
-	}
-
-	return core::Error::none();
-}
-
-bool HTTPServer::_bind(uint16_t port)
-{
-	return this->_bind("0.0.0.0", port);
-}
-
-bool HTTPServer::_bind(const char* address, uint16_t port)
-{
-	this->use_ipv6 = false;
-	if (inet_pton(AF_INET, address, &this->addr.sin_addr) <= 0)
-	{
-		this->ctx.on_error(errno, "invalid address, address type is not supported");
-		return false;
-	}
-
-	this->addr.sin_family = AF_INET;
-	this->addr.sin_port = htons(port);
-
-	if (::bind(this->sock, (const sockaddr *)&this->addr, sizeof(this->addr)) < 0)
-	{
-		this->ctx.on_error(errno, "cannot bind the socket");
-		return false;
-	}
-
-	return true;
-}
-
-bool HTTPServer::_bind6(uint16_t port)
-{
-	this->use_ipv6 = true;
-	return this->_bind6("::1", port);
-}
-
-bool HTTPServer::_bind6(const char* address, uint16_t port)
-{
-	this->use_ipv6 = true;
-	if (inet_pton(AF_INET6, address, &this->addr6.sin6_addr) <= 0)
-	{
-		this->ctx.on_error(errno, "invalid address, address type not supported");
-		return false;
-	}
-
-	this->addr6.sin6_family = AF_INET6;
-	this->addr6.sin6_port = htons(port);
-
-	if (::bind(this->sock, (const sockaddr *)&this->addr6, sizeof(this->addr6)) < 0)
-	{
-		this->ctx.on_error(errno, "cannot bind the socket");
-		return false;
-	}
-
-	return true;
-}
-
-bool HTTPServer::_accept(HTTPServer* s)
-{
-	if (s->use_ipv6)
-	{
-		sockaddr_in6 newSocketInfo{};
-		socklen_t newSocketInfoLength = sizeof(newSocketInfo);
-
-		int newSock;
-		while (!s->is_closed)
+			if ((fail = this->send(sock, err_resp->serialize().c_str())))
+			{
+				this->ctx.logger->error(fail.msg);
+			}
+		}
+		else
 		{
-			while ((newSock = ::accept(s->sock, (sockaddr*)&newSocketInfo, &newSocketInfoLength)) < 0)
-			{
-				if (errno == EBADF || errno == EINVAL)
-				{
-					return false;
+			auto request = this->_request(parser);
+			this->_http_handler(
+				request.get(),
+				[this, sock](const http::HttpRequest* req, const core::Result<std::shared_ptr<http::IHttpResponse>>& res) {
+					this->_start_response(sock, req, res);
 				}
+			);
+		}
+	};
+}
 
-				if (errno == EMFILE)
-				{
-					std::this_thread::sleep_for(std::chrono::milliseconds(300));
-					newSock = -1;
-					break;
-				}
+std::shared_ptr<http::IHttpResponse> DefaultServer::_from_error(const core::Error* err)
+{
+	unsigned short code;
+	switch (err->type)
+	{
+		case core::EntityTooLargeError:
+			code = 413;
+			break;
+		case core::PermissionDenied:
+			code = 403;
+			break;
+		case core::NotFound:
+		case core::FileDoesNotExistError:
+			code = 404;
+			break;
+		case core::RequestTimeout:
+			code = 408;
+			break;
+		case core::InternalServerError:
+			code = 500;
+			break;
+		case core::SuspiciousOperation:
+		case core::DisallowedHost:
+		case core::DisallowedRedirect:
+			code = 400;
+			break;
+		case core::HttpError:
+		default:
+			code = 500;
+			break;
+	}
 
-				s->ctx.on_error(errno, "error while accepting a new connection");
-				return false;
-			}
+	return std::make_shared<http::HttpResponse>(code, err->msg);
+}
 
-			if (!s->is_closed && newSock >= 0)
-			{
-				s->_handleConnection(newSock);
-			}
+std::shared_ptr<http::HttpRequest> DefaultServer::_request(parsers::request_parser* parser)
+{
+	parsers::query_parser qp;
+	http::HttpRequest::Parameters<std::string, xw::string> get_params, post_params;
+	http::HttpRequest::Parameters<std::string, files::UploadedFile> files_params;
+	if (parser->content.empty())
+	{
+		qp.parse(parser->query);
+		if (parser->method == "GET")
+		{
+			get_params = http::HttpRequest::Parameters(qp.dict, qp.multi_dict);
+		}
+		else if (parser->method == "POST")
+		{
+			post_params = http::HttpRequest::Parameters(qp.dict, qp.multi_dict);
 		}
 	}
 	else
 	{
-		sockaddr_in newSocketInfo{};
-		socklen_t newSocketInfoLength = sizeof(newSocketInfo);
-
-		int newSock;
-		while (!s->is_closed)
+		parsers::multipart_parser mp(this->ctx.media_root);
+		switch (parser->content_type)
 		{
-			while ((newSock = ::accept(s->sock, (sockaddr*)&newSocketInfo, &newSocketInfoLength)) < 0)
-			{
-				if (errno == EBADF || errno == EINVAL)
+			case parsers::request_parser::content_type_enum::ct_application_x_www_form_url_encoded:
+				qp.parse(parser->content);
+				if (parser->method == "GET")
 				{
-					return false;
+					get_params = http::HttpRequest::Parameters(qp.dict, qp.multi_dict);
 				}
-
-				if (errno == EMFILE)
+				else if (parser->method == "POST")
 				{
-					sleep(1);
-					newSock = -1;
-					break;
+					post_params = http::HttpRequest::Parameters(qp.dict, qp.multi_dict);
 				}
-
-				s->ctx.on_error(errno, "error while accepting a new connection");
-				return false;
-			}
-
-			if (!s->is_closed && newSock >= 0)
-			{
-				int set = 1;
-				s->_handleConnection(newSock);
-			}
+				break;
+			case parsers::request_parser::content_type_enum::ct_application_json:
+				break;
+			case parsers::request_parser::content_type_enum::ct_multipart_form_data:
+				mp.parse(parser->headers["Content-Type"], parser->content);
+				post_params = http::HttpRequest::Parameters(
+					mp.post_values, mp.multi_post_value
+				);
+				files_params = http::HttpRequest::Parameters(
+					mp.file_values, mp.multi_file_value
+				);
+				break;
+			case parsers::request_parser::content_type_enum::ct_other:
+				break;
+			default:
+				throw core::ParseError("Unknown content type", _ERROR_DETAILS_);
 		}
 	}
 
-	return true;
-}
-
-void HTTPServer::_handleConnection(const int& sock)
-{
-	this->_threadPool->push([this, sock](){
-		try
-		{
-			Measure measure;
-			measure.start();
-			internal::request_parser rp;
-			xw::string body_beginning;
-			auto result = _read_headers(sock, body_beginning);
-			if (result.err)
-			{
-				this->_handler(sock, &rp, &result.err);
-			}
-			else
-			{
-				rp.parse_headers(result.value);
-				if (rp.headers.find("Content-Length") != rp.headers.end())
-				{
-					size_t body_length = std::strtol(rp.headers["Content-Length"].c_str(), nullptr, 10);
-					xw::string body;
-					if (body_length == std::strlen(body_beginning.c_str()))
-					{
-						body = body_beginning;
-					}
-					else
-					{
-						result = _read_body(sock, body_beginning, body_length);
-						if (result.err)
-						{
-							this->_handler(sock, &rp, &result.err);
-	//						return result.forward<std::shared_ptr<http::HttpRequest>>();
-						}
-						else
-						{
-							body = result.value;
-						}
-					}
-
-					rp.parse_body(body, this->ctx.media_root);
-				}
-
-				this->_handler(sock, &rp, nullptr);
-			}
-
-			::close(sock);
-			measure.end();
-			this->ctx.logger->debug("Time elapsed: " + std::to_string(measure.elapsed()) + " milliseconds");
-		}
-		catch (const core::ParseError& exc)
-		{
-			this->ctx.logger->error(exc);
-		}
-	});
-}
-
-int HTTPServer::_error()
-{
-	switch (errno)
+	auto env_copy = this->base_environ;
+	for (const auto& header : parser->headers)
 	{
-		case EBADF:
-		case EFAULT:
-		case EINVAL:
-		case ENXIO:
-			// Fatal error.
-			return errno - 100;
-		case EIO:
-		case ENOBUFS:
-		case ENOMEM:
-			// Resource acquisition failure or device error.
-			return errno - 101;
-		case EINTR:
-			// TODO: Check for user interrupt flags.
-		case ETIMEDOUT:
-		case EAGAIN:
-			// Temporary error.
-			return read_result_enum::rr_continue;
-		case ECONNRESET:
-		case ENOTCONN:
-			// Connection broken.
-			// Return the data we have available and exit
-			// as if the connection was closed correctly.
-			return read_result_enum::rr_break;
-		default:
-			return errno;
+		auto key = str::replace(header.first, "-", "_");
+		env_copy["HTTP_" + str::upper(key)] = header.second;
 	}
+
+	return std::make_shared<http::HttpRequest>(
+		this->settings,
+		parser->method,
+		parser->path,
+		parser->major_v,
+		parser->minor_v,
+		parser->query,
+		parser->keep_alive,
+		parser->content,
+		parser->headers,
+		get_params,
+		post_params,
+		files_params,
+		env_copy
+	);
 }
 
-core::Result<xw::string> HTTPServer::_read_headers(
-	size_t sock, xw::string& body_beginning
+core::Error DefaultServer::_send(http::IHttpResponse* response, const int& client)
+{
+	return this->send(client, response->serialize().c_str());
+}
+
+core::Error DefaultServer::_send(http::StreamingHttpResponse* response, const int& client)
+{
+	std::string chunk;
+	while (!(chunk = response->get_chunk()).empty())
+	{
+		auto err = this->write(client, chunk.c_str(), chunk.size());
+		if (err)
+		{
+			this->ctx.logger->trace("Method 'write' returned an error", _ERROR_DETAILS_);
+			return err;
+		}
+	}
+
+	response->close();
+	return core::Error::none();
+}
+
+void DefaultServer::_start_response(
+	const int& client,
+	const http::HttpRequest* request,
+	const core::Result<std::shared_ptr<http::IHttpResponse>>& result
 )
 {
-	size_t size = 0;
-	xw::string data;
-	size_t headers_delimiter_pos = xw::string::npos;
-	xw::string delimiter = "\r\n\r\n";
-
-	char buffer[MAX_BUFF_SIZE];
-	long long message_len;
-	do
+	std::shared_ptr<http::IHttpResponse> response;
+	if (result.catch_(core::HttpError))
 	{
-		message_len = recv(sock, buffer, MAX_BUFF_SIZE, 0);
-		buffer[message_len] = '\0';
-		if (message_len > 0)
-		{
-			data.append(buffer);
-			size += message_len;
-
-			// Maybe it is better to check each header value's size.
-			if (size > MAX_HEADERS_SIZE)
-			{
-				return core::raise<core::EntityTooLargeError, xw::string>(
-					"Request data is too big", _ERROR_DETAILS_
-				);
-			}
-		}
-		else if (message_len == -1)
-		{
-			auto status = _error();
-			if (status == read_result_enum::rr_continue)
-			{
-				continue;
-			}
-			else if (status == read_result_enum::rr_break)
-			{
-				break;
-			}
-			else
-			{
-				return core::raise<core::HttpError, xw::string>(
-					"request finished with error code " + std::to_string(status), _ERROR_DETAILS_
-				);
-			}
-		}
-
-		headers_delimiter_pos = data.find(delimiter);
+		this->ctx.logger->trace(result.err.msg, _ERROR_DETAILS_);
+		response = _from_error(&result.err);
 	}
-	while (headers_delimiter_pos == xw::string::npos);
-
-	if (headers_delimiter_pos == xw::string::npos)
+	else if (!result.value)
 	{
-		return core::raise<core::HttpError, xw::string>(
-			"invalid http request has been received", _ERROR_DETAILS_
+		// Response was not instantiated, so return 204 - No Content.
+		response = std::make_shared<http::HttpResponse>(204);
+		this->ctx.logger->warning(
+			"Response was not instantiated, returned 204",
+			_ERROR_DETAILS_
 		);
 	}
+	else
+	{
+		auto error = result.value->err();
+		if (error)
+		{
+			this->ctx.logger->trace(error.msg, _ERROR_DETAILS_);
+			response = _from_error(&error);
+		}
+		else
+		{
+			response = result.value;
+		}
+	}
 
-	headers_delimiter_pos += delimiter.size();
-	body_beginning = data.substr(headers_delimiter_pos);
-	return core::Result(data.substr(0, headers_delimiter_pos));
+	this->_send_response(request, response.get(), client, this->ctx.logger.get());
 }
 
-core::Result<xw::string> HTTPServer::_read_body(
-	size_t sock, const xw::string& body_beginning, size_t body_length
+core::Error DefaultServer::_send_response(
+	const http::HttpRequest* request, http::IHttpResponse* response, const int& client, core::ILogger* logger
 )
 {
-	xw::string data;
-	if (body_length <= 0)
+	if (response->is_streaming())
 	{
-		return core::Result(data);
-	}
-
-	size_t size = std::strlen(body_beginning.c_str());
-	if (size == body_length)
-	{
-		return core::Result(body_beginning);
-	}
-
-	long long message_len;
-//	const size_t buff_size = MAX_BUFF_SIZE < body_length ? MAX_BUFF_SIZE : body_length;
-	char buffer[MAX_BUFF_SIZE];
-	while (size < body_length)
-	{
-		message_len = recv(sock, buffer, MAX_BUFF_SIZE, 0);
-		buffer[message_len] = '\0';
-		if (message_len > 0)
+		auto* streaming_response = dynamic_cast<http::StreamingHttpResponse*>(response);
+		auto err = this->_send(streaming_response, client);
+		if (err)
 		{
-			data.append(buffer);
-			size += message_len;
-
-			// Maybe it is better to check each header value's size.
-			if (size > MAX_HEADERS_SIZE)
-			{
-				return core::raise<core::EntityTooLargeError, xw::string>(
-					"Request data is too big", _ERROR_DETAILS_
-				);
-			}
+			this->ctx.logger->trace("Method '_send' returned an error", _ERROR_DETAILS_);
+			return err;
 		}
-		else if (message_len == -1)
+	}
+	else
+	{
+		auto err = this->_send(response, client);
+		if (err)
 		{
-			auto status = _error();
-			if (status == read_result_enum::rr_continue)
-			{
-				continue;
-			}
-			else if (status == read_result_enum::rr_break)
-			{
-				break;
-			}
-			else
-			{
-				return core::raise<core::HttpError, xw::string>(
-					"request finished with error code " + std::to_string(status), _ERROR_DETAILS_
-				);
-			}
+			this->ctx.logger->trace("Method '_send' returned an error", _ERROR_DETAILS_);
+			return err;
 		}
 	}
 
-	data = body_beginning + data;
-	if (std::strlen(data.c_str()) != body_length)
+	_log_request(
+		request->method() + " " +
+		request->path() + " HTTP/" +
+		request->version(),
+		response->status(),
+		logger
+	);
+	return core::Error::none();
+}
+
+void DefaultServer::_log_request(
+	const std::string& info, unsigned short status_code, core::ILogger* logger
+)
+{
+	if (logger)
 	{
-		std::cerr << data << ": " << std::strlen(data.c_str()) << " != " << body_length << '\n';
-		return core::raise<core::HttpError, xw::string>(
-			"actual body size is not equal to header's value", _ERROR_DETAILS_
+		core::Logger::Color color = core::Logger::Color::GREEN;
+		if (status_code >= 400)
+		{
+			color = core::Logger::Color::YELLOW;
+		}
+		else if (status_code >= 500)
+		{
+			color = core::Logger::Color::RED;
+		}
+
+		logger->print(
+			"[" + dt::Datetime::now().strftime("%d/%b/%Y %T") + "] \"" +
+			info + "\" " + std::to_string(status_code),
+			color
 		);
 	}
-
-	return core::Result(data);
 }
 
 __SERVER_END__

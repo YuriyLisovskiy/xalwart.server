@@ -1,5 +1,5 @@
 /**
- * core/parsers/request_parser.cpp
+ * parser.cpp
  *
  * Copyright (c) 2019-2020 Yuriy Lisovskiy
  */
@@ -18,7 +18,7 @@
 #endif
 
 
-__SERVER_INTERNAL_BEGIN__
+__PARSER_BEGIN__
 
 // Parses http request headers from given stream.
 void request_parser::parse_headers(const xw::string& data)
@@ -38,7 +38,7 @@ void request_parser::parse_headers(const xw::string& data)
 				else
 				{
 					this->state = request_parser::state_enum::s_method;
-					this->method.push_back(input);
+					this->r_ctx.method.push_back(input);
 				}
 				break;
 			case request_parser::state_enum::s_method:
@@ -52,7 +52,7 @@ void request_parser::parse_headers(const xw::string& data)
 				}
 				else
 				{
-					this->method.push_back(input);
+					this->r_ctx.method.push_back(input);
 				}
 				break;
 			case request_parser::state_enum::s_path_begin:
@@ -63,7 +63,7 @@ void request_parser::parse_headers(const xw::string& data)
 				else
 				{
 					this->state = request_parser::state_enum::s_path;
-					this->path.push_back(input);
+					this->r_ctx.path.push_back(input);
 				}
 				break;
 			case request_parser::state_enum::s_path:
@@ -77,8 +77,8 @@ void request_parser::parse_headers(const xw::string& data)
 				}
 				else if (input == '\r')
 				{
-					this->major_v = 0;
-					this->minor_v = 9;
+					this->r_ctx.major_v = 0;
+					this->r_ctx.minor_v = 9;
 					return;
 				}
 				else if (request_parser::is_control(input))
@@ -87,7 +87,7 @@ void request_parser::parse_headers(const xw::string& data)
 				}
 				else
 				{
-					this->path.push_back(input);
+					this->r_ctx.path.push_back(input);
 				}
 				break;
 			case request_parser::state_enum::s_query:
@@ -101,8 +101,8 @@ void request_parser::parse_headers(const xw::string& data)
 				}
 				else if (input == '\r')
 				{
-					this->major_v = 0;
-					this->minor_v = 9;
+					this->r_ctx.major_v = 0;
+					this->r_ctx.minor_v = 9;
 
 					return;
 				}
@@ -112,7 +112,7 @@ void request_parser::parse_headers(const xw::string& data)
 				}
 				else
 				{
-					this->query.push_back(input);
+					this->r_ctx.query.push_back(input);
 				}
 				break;
 			case request_parser::state_enum::s_fragment:
@@ -137,8 +137,8 @@ void request_parser::parse_headers(const xw::string& data)
 			case request_parser::state_enum::s_http_version_slash:
 				if (input == '/')
 				{
-					this->major_v = 0;
-					this->minor_v = 0;
+					this->r_ctx.major_v = 0;
+					this->r_ctx.minor_v = 0;
 					this->state = request_parser::state_enum::s_http_version_major_begin;
 				}
 				else
@@ -149,7 +149,7 @@ void request_parser::parse_headers(const xw::string& data)
 			case request_parser::state_enum::s_http_version_major_begin:
 				if (request_parser::is_digit(input))
 				{
-					this->major_v = input - '0';
+					this->r_ctx.major_v = input - '0';
 					this->state = request_parser::state_enum::s_http_version_major;
 				}
 				else
@@ -164,7 +164,7 @@ void request_parser::parse_headers(const xw::string& data)
 				}
 				else if (request_parser::is_digit(input))
 				{
-					this->major_v = this->major_v * 10 + input - '0';
+					this->r_ctx.major_v = this->r_ctx.major_v * 10 + input - '0';
 				}
 				else
 				{
@@ -174,7 +174,7 @@ void request_parser::parse_headers(const xw::string& data)
 			case request_parser::state_enum::s_http_version_minor_begin:
 				if (request_parser::is_digit(input))
 				{
-					this->minor_v = input - '0';
+					this->r_ctx.minor_v = input - '0';
 					this->state = request_parser::state_enum::s_http_version_minor;
 				}
 				else
@@ -189,7 +189,7 @@ void request_parser::parse_headers(const xw::string& data)
 				}
 				else if(request_parser::is_digit(input))
 				{
-					this->minor_v = this->minor_v * 10 + input - '0';
+					this->r_ctx.minor_v = this->r_ctx.minor_v * 10 + input - '0';
 				}
 				else
 				{
@@ -211,7 +211,7 @@ void request_parser::parse_headers(const xw::string& data)
 				{
 					this->state = request_parser::state_enum::s_expecting_new_line_3;
 				}
-				else if (!this->headers.empty() && (input == ' ' || input == '\t'))
+				else if (!this->r_ctx.headers.empty() && (input == ' ' || input == '\t'))
 				{
 					this->state = request_parser::state_enum::s_header_lws;
 				}
@@ -274,18 +274,18 @@ void request_parser::parse_headers(const xw::string& data)
 				{
 					if (strcasecmp(new_header_name.c_str(), "Content-Length") == 0)
 					{
-						this->content_size = strtol(new_header_value.c_str(), nullptr, 0);
+						this->r_ctx.content_size = strtol(new_header_value.c_str(), nullptr, 0);
 //						this->content.reserve(this->content_size);
 					}
 					else if (strcasecmp(new_header_name.c_str(), "Transfer-Encoding") == 0)
 					{
 						if (strcasecmp(new_header_value.c_str(), "chunked") == 0)
 						{
-							this->chunked = true;
+							this->r_ctx.chunked = true;
 						}
 					}
 
-					this->headers[new_header_name] = new_header_value;
+					this->r_ctx.headers[new_header_name] = new_header_value;
 					new_header_name.clear();
 					new_header_value.clear();
 					this->state = request_parser::state_enum::s_expecting_new_line_2;
@@ -311,30 +311,30 @@ void request_parser::parse_headers(const xw::string& data)
 				break;
 			case request_parser::state_enum::s_expecting_new_line_3:
 				connection_it = std::find_if(
-					this->headers.begin(),
-					this->headers.end(),
-					[](const std::pair<std::string, std::string>& item) -> bool
-					{
-						return strcasecmp(item.first.c_str(), "Connection") == 0;
-					}
+						this->r_ctx.headers.begin(),
+						this->r_ctx.headers.end(),
+						[](const std::pair<std::string, std::string>& item) -> bool
+						{
+							return strcasecmp(item.first.c_str(), "Connection") == 0;
+						}
 				);
-				if (connection_it != this->headers.end())
+				if (connection_it != this->r_ctx.headers.end())
 				{
-					this->keep_alive = strcasecmp((*connection_it).second.c_str(), "Keep-Alive") == 0;
+					this->r_ctx.keep_alive = strcasecmp((*connection_it).second.c_str(), "Keep-Alive") == 0;
 				}
 				else
 				{
-					if (this->major_v > 1 || (this->major_v == 1 && this->minor_v == 1))
+					if (this->r_ctx.major_v > 1 || (this->r_ctx.major_v == 1 && this->r_ctx.minor_v == 1))
 					{
-						this->keep_alive = true;
+						this->r_ctx.keep_alive = true;
 					}
 				}
 
-				if (this->chunked)
+				if (this->r_ctx.chunked)
 				{
 					this->state = request_parser::state_enum::s_chunk_size;
 				}
-				else if (this->content_size == 0)
+				else if (this->r_ctx.content_size == 0)
 				{
 					if (input != '\n')
 					{
@@ -343,23 +343,24 @@ void request_parser::parse_headers(const xw::string& data)
 				}
 				else
 				{
-					auto contentType = this->headers["Content-Type"];
+					auto contentType = this->r_ctx.headers["Content-Type"];
 					if (contentType.find("multipart/form-data") != std::string::npos)
 					{
-						this->content_type = request_parser::content_type_enum::ct_multipart_form_data;
+						this->r_ctx.content_type = RequestContext::ct_multipart_form_data;
 					}
 					else if (contentType.find("application/json") != std::string::npos)
 					{
-						this->content_type = request_parser::content_type_enum::ct_application_json;
+						this->r_ctx.content_type = RequestContext::ct_application_json;
 					}
 					else if (contentType.find("application/x-www-form-urlencoded") != std::string::npos)
 					{
-						this->content_type = request_parser::content_type_enum::ct_application_x_www_form_url_encoded;
+						this->r_ctx.content_type = RequestContext::ct_application_x_www_form_url_encoded;
 					}
 					else
 					{
-						this->content_type = request_parser::content_type_enum::ct_other;
+						this->r_ctx.content_type = RequestContext::ct_other;
 					}
+
 					this->state = request_parser::state_enum::s_request_body;
 				}
 				return;
@@ -378,7 +379,7 @@ void request_parser::parse_body(const xw::string& data, const xw::string& media_
 	{
 		if (this->state == request_parser::state_enum::s_request_body)
 		{
-			this->content = data;
+			this->r_ctx.content = data;
 		}
 		else
 		{
@@ -411,7 +412,7 @@ void request_parser::parse_chunks(const xw::string& data)
 			case request_parser::state_enum::s_chunk_size:
 				if (isalnum(input))
 				{
-					this->chunk_size_str.push_back(input);
+					this->r_ctx.chunk_size_str.push_back(input);
 				}
 				else if (input == ';')
 				{
@@ -461,11 +462,11 @@ void request_parser::parse_chunks(const xw::string& data)
 			case request_parser::state_enum::s_chunk_size_new_line:
 				if (input == '\n')
 				{
-					this->chunk_size = strtol(this->chunk_size_str.c_str(), nullptr, 16);
-					this->chunk_size_str.clear();
+					this->r_ctx.chunk_size = strtol(this->r_ctx.chunk_size_str.c_str(), nullptr, 16);
+					this->r_ctx.chunk_size_str.clear();
 //					this->content.reserve(this->content.size() + this->chunk_size);
 
-					if (this->chunk_size == 0)
+					if (this->r_ctx.chunk_size == 0)
 					{
 						this->state = request_parser::state_enum::s_chunk_size_new_line_2;
 					}
@@ -531,8 +532,8 @@ void request_parser::parse_chunks(const xw::string& data)
 				}
 				break;
 			case request_parser::state_enum::s_chunk_data:
-				this->content.push_back(input);
-				if (--this->chunk_size == 0)
+				this->r_ctx.content.push_back(input);
+				if (--this->r_ctx.chunk_size == 0)
 				{
 					this->state = request_parser::state_enum::s_chunk_data_new_line_1;
 				}
@@ -613,4 +614,4 @@ bool request_parser::is_digit(uint c)
 	return c >= '0' && c <= '9';
 }
 
-__SERVER_INTERNAL_END__
+__PARSER_END__

@@ -1,76 +1,70 @@
 /**
- * tcp_server.h
+ * server.h
  *
- * Copyright (c) 2020 Yuriy Lisovskiy
+ * Copyright (c) 2020-2021 Yuriy Lisovskiy
  *
  * Purpose: TODO
  */
 
 #pragma once
 
-// C++ libraries.
-#include <string>
-#include <functional>
-#include <thread>
-#include <memory>
-
 // Core libraries.
-#include <xalwart.core/thread_pool.h>
-#include <xalwart.core/result.h>
-#include <xalwart.core/interfaces/server.h>
+#include <xalwart.core/collections/dict.h>
 
 // Module definitions.
 #include "./_def_.h"
 
-// Server libraries.
-#include "./socket.h"
-#include "./parser.h"
-#include "./context.h"
+// Framework libraries.
+#include "./base.h"
+#include "./func.h"
+#include "../../http/request.h"
+#include "../../http/response.h"
+#include "../../conf/settings.h"
 
 
 __SERVER_BEGIN__
 
-typedef std::function<void(const int, internal::request_parser*, core::Error*)> HandlerFunc;
-
-class HTTPServer : public BaseSocket, public core::IServer
+class DefaultServer : public HTTPServer
 {
-private:
-	std::shared_ptr<core::internal::ThreadPool> _threadPool;
-	HandlerFunc _handler;
+public:
+	explicit DefaultServer(
+		const Context& ctx,
+		HttpHandlerFunc handler,
+		const conf::Settings* settings
+	);
+
+	void init_environ() override;
 
 protected:
-	Context ctx;
-
-public:
-	explicit HTTPServer(const Context& ctx, HandlerFunc handler);
-
-	bool bind(uint16_t port, bool use_ipv6) override;
-	bool bind(const char* host, uint16_t port, bool use_ipv6) override;
-
-	bool listen(const std::string& startup_message) override;
-
-	void close() override;
-
-	core::Error send(int sock, const char* data) override;
-	core::Error write(int sock, const char* data, size_t n) override;
+	const conf::Settings* settings;
 
 private:
-	bool _bind(uint16_t port);
-	bool _bind(const char* host, uint16_t port);
-	bool _bind6(uint16_t port);
-	bool _bind6(const char* host, uint16_t port);
-	static bool _accept(HTTPServer* s);
+	HttpHandlerFunc _http_handler;
 
-	enum read_result_enum
-	{
-		rr_continue = -1, rr_break = -2, rr_none = -3
-	};
-	void _handleConnection(const int& sock);
+private:
+	HandlerFunc _make_handler();
 
-	static int _error();
-	static core::Result<xw::string> _read_headers(size_t sock, xw::string& body_beginning);
-	static core::Result<xw::string> _read_body(
-		size_t sock, const xw::string& body_beginning, size_t body_length
+	static std::shared_ptr<http::IHttpResponse> _from_error(const core::Error* err);
+
+	std::shared_ptr<http::HttpRequest> _request(parsers::request_parser* parser);
+
+	core::Error _send(http::IHttpResponse* response, const int& client);
+	core::Error _send(http::StreamingHttpResponse* response, const int& client);
+
+	void _start_response(
+		const int& client,
+		const http::HttpRequest* request,
+		const core::Result<std::shared_ptr<http::IHttpResponse>>& response
+	);
+
+	core::Error _send_response(
+		const http::HttpRequest* request,
+		http::IHttpResponse* response,
+		const int& client,
+		core::ILogger* logger
+	);
+	static void _log_request(
+		const std::string& info, unsigned short status_code, core::ILogger* logger
 	);
 };
 

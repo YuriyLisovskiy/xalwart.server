@@ -1,5 +1,5 @@
 /**
- * core/parsers/request_parser.h
+ * parser.h
  *
  * Copyright (c) 2019-2020 Yuriy Lisovskiy
  *
@@ -13,67 +13,72 @@
 #include <map>
 
 // Core libraries.
-#include <xalwart.core/string.h>
+#include <xalwart.core/str.h>
 
 // Module definitions.
 #include "./_def_.h"
 
+// Server libraries.
+#include "./request_context.h"
 
-__SERVER_INTERNAL_BEGIN__
+
+__PARSER_BEGIN__
 
 /// Http request parser structure.
 struct request_parser final
 {
-	/// Major part of http protocol version.
-	size_t major_v{};
+	RequestContext r_ctx;
 
-	/// Minor part of http protocol version.
-	size_t minor_v{};
+//	/// Major part of http protocol version.
+//	size_t major_v{};
+//
+//	/// Minor part of http protocol version.
+//	size_t minor_v{};
+//
+//	/// Request's path.
+//	std::string path;
+//
+//	/// Contains request's query.
+//	/// If field is empty-string, request has not query.
+//	std::string query;
+//
+//	/// Hold http request's method type.
+//	std::string method;
+//
+//	/// Indicates whether request's connection is keep alive or not.
+//	bool keep_alive{};
+//
+//	/// Contains body of http request.
+//	xw::string content;
+//
+//	/// Accumulates request's headers.
+//	std::map<std::string, std::string> headers;
+//
+//	/// Contains the size of request's content.
+//	unsigned long long content_size{};
+//
+//	/// Contains the size of request's chunk as std::string.
+//	/// Used only for chunked requests.
+//	std::string chunk_size_str;
+//
+//	/// Contains the size of request's chunk.
+//	/// Used only for chunked requests.
+//	unsigned long long chunk_size{};
+//
+//	/// Indicates whether request is chunked or not.
+//	bool chunked{};
 
-	/// Request's path.
-	std::string path;
-
-	/// Contains request's query.
-	/// If field is empty-string, request has not query.
-	std::string query;
-
-	/// Hold http request's method type.
-	std::string method;
-
-	/// Indicates whether request's connection is keep alive or not.
-	bool keep_alive{};
-
-	/// Contains body of http request.
-	xw::string content;
-
-	/// Accumulates request's headers.
-	std::map<std::string, std::string> headers;
-
-	/// Contains the size of request's content.
-	unsigned long long content_size{};
-
-	/// Contains the size of request's chunk as std::string.
-	/// Used only for chunked requests.
-	std::string chunk_size_str;
-
-	/// Contains the size of request's chunk.
-	/// Used only for chunked requests.
-	unsigned long long chunk_size{};
-
-	/// Indicates whether request is chunked or not.
-	bool chunked{};
-
-	/// Available content types.
-	/// Used only for POST, PUT or PATCH methods type.
-	enum content_type_enum
-	{
-		ct_application_x_www_form_url_encoded,
-		ct_application_json,
-		ct_multipart_form_data,
-		ct_other
-
-	/// Request's content type.
-	} content_type{};
+//	/// Available content types.
+//	/// Used only for POST, PUT or PATCH methods type.
+//	enum content_type_enum
+//	{
+//		ct_application_x_www_form_url_encoded,
+//		ct_application_json,
+//		ct_multipart_form_data,
+//		ct_other
+//
+//		/// Request's content type.
+//	} content_type{};
 
 	/// Available parser states.
 	enum state_enum
@@ -119,7 +124,7 @@ struct request_parser final
 		s_chunk_data_new_line_2,
 		s_chunk_data
 
-	/// Current parser state.
+		/// Current parser state.
 	} state{};
 
 	/// Parses 'HTTP' word from http request's head line.
@@ -174,4 +179,4 @@ struct request_parser final
 	void parse_headers(const xw::string& data);
 };
 
-__SERVER_INTERNAL_END__
+__PARSER_END__
