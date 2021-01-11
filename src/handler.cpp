@@ -14,6 +14,7 @@
 #include <xalwart.core/utility.h>
 #include <xalwart.core/encoding.h>
 #include <xalwart.core/string_utils.h>
+#include <xalwart.core/html.h>
 
 
 __SERVER_BEGIN__
@@ -50,6 +51,24 @@ void HTTPRequestHandler::log_socket_error(SocketIO::state st) const
 			this->logger->debug("Connection was broken", _ERROR_DETAILS_);
 			break;
 		case SocketIO::s_failed:
+			this->logger->debug("Connection failed", _ERROR_DETAILS_);
+			break;
+		default:
+			break;
+	}
+}
+
+void HTTPRequestHandler::log_parse_headers_error(parser::parse_headers_status st) const
+{
+	switch (st)
+	{
+		case parser::ph_timed_out:
+			this->logger->debug("Request timed out", _ERROR_DETAILS_);
+			break;
+		case parser::ph_conn_broken:
+			this->logger->debug("Connection was broken", _ERROR_DETAILS_);
+			break;
+		case parser::ph_failed:
 			this->logger->debug("Connection failed", _ERROR_DETAILS_);
 			break;
 		default:
@@ -185,7 +204,33 @@ bool HTTPRequestHandler::parse_request()
 	this->request_version = version;
 
 	// Examine the headers and look for a Connection directive.
-	// TODO: parse headers
+	auto p_status = parser::parse_headers(this->r_ctx.headers, this->socket_io.get());
+	if (p_status != parser::ph_done)
+	{
+		switch (p_status)
+		{
+			case parser::ph_line_too_long:
+				// Request Header Fields Too Large.
+				this->send_error(
+					431, "Line too long",
+					"The server is unwilling to process the request because its header fields are too large"
+				);
+				return false;
+			case parser::ph_max_headers_reached:
+				this->send_error(
+					431, "Too many headers",
+					"The server is unwilling to process the request because its header fields are too large");
+				return false;
+			case parser::ph_timed_out:
+			case parser::ph_conn_broken:
+			case parser::ph_failed:
+				this->log_parse_headers_error(p_status);
+				this->close_connection = true;
+				return false;
+			default:
+				break;
+		}
+	}
 
 	auto conn_type = str::lower(this->r_ctx.headers.get("Connection", ""));
 	if (conn_type == "close")
@@ -195,6 +240,7 @@ bool HTTPRequestHandler::parse_request()
 	else if (conn_type == "keep-alive" && this->protocol_version >= "HTTP/1.1")
 	{
 		this->close_connection = false;
+		this->r_ctx.keep_alive = true;
 	}
 
 	// Examine the headers and look for an Expect directive.

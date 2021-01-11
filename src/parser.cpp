@@ -8,9 +8,12 @@
 
 // C++ libraries.
 #include <cstring>
+#include <iostream>
 
 // Core libraries.
 #include <xalwart.core/exceptions.h>
+#include <xalwart.core/string_utils.h>
+#include <xalwart.core/encoding.h>
 
 #ifdef _MSC_VER
 #define strncasecmp _strnicmp
@@ -20,7 +23,58 @@
 
 __PARSER_BEGIN__
 
-// Parses http request headers from given stream.
+const int _MAX_LINE = 65536;
+const int _MAX_HEADERS = 100;
+
+parse_headers_status parse_headers(
+	collections::Dict<std::string, std::string>& result, server::SocketIO* r_file
+)
+{
+	while (true)
+	{
+		xw::string line;
+		auto r_status = r_file->read_line(line, _MAX_LINE + 1);
+		if (r_status != SocketIO::s_done)
+		{
+			switch (r_status)
+			{
+				case SocketIO::s_timed_out:
+					return ph_timed_out;
+				case SocketIO::s_conn_broken:
+					return ph_conn_broken;
+				case SocketIO::s_failed:
+					return ph_failed;
+				default:
+					break;
+			}
+		}
+
+		if (line.size() > _MAX_LINE)
+		{
+			return ph_line_too_long;
+		}
+
+		str::rtrim(line, "\r\n");
+		auto pair = str::lsplit_one(
+			encoding::encode_iso_8859_1(line, encoding::STRICT), ':'
+		);
+		result[pair.first] = pair.second;
+		if (result.size() > _MAX_HEADERS)
+		{
+			return ph_max_headers_reached;
+		}
+
+		if (line == "\r\n" || line == "\n" || line.empty())
+		{
+			break;
+		}
+	}
+
+	return ph_done;
+}
+
+/*
+ Parses http request headers from given stream.
 void request_parser::parse_headers(const xw::string& data)
 {
 	std::string new_header_name;
@@ -371,7 +425,9 @@ void request_parser::parse_headers(const xw::string& data)
 
 	throw core::ParseError("unable to parse http request", _ERROR_DETAILS_);
 }
+*/
 
+/*
 // Parses http request body from given stream.
 void request_parser::parse_body(const xw::string& data, const xw::string& media_root)
 {
@@ -613,5 +669,6 @@ bool request_parser::is_digit(uint c)
 {
 	return c >= '0' && c <= '9';
 }
+*/
 
 __PARSER_END__

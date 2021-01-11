@@ -21,6 +21,7 @@
 // Server libraries.
 #include "./socket/io.h"
 #include "./request_context.h"
+#include "./parser.h"
 
 
 __SERVER_BEGIN__
@@ -74,6 +75,8 @@ protected:
 	) const;
 
 	void log_socket_error(SocketIO::state st) const;
+
+	void log_parse_headers_error(parser::parse_headers_status st) const;
 
 	void log_request(int code, const std::string& info="") const;
 
