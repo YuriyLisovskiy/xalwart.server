@@ -43,6 +43,7 @@ public:
 	SocketIO& operator= (SocketIO&& other) noexcept;
 
 	state read_line(xw::string& line, int max_n=MAX_BUFF_SIZE);
+	state read_all(xw::string& content);
 	state write(const char* data, size_t n) const;
 
 	[[nodiscard]]
@@ -55,7 +56,7 @@ private:
 	int _fd;
 	timeval _timeout;
 	char _buffer[MAX_BUFF_SIZE]{};
-	size_t _buffer_size;
+	long _buffer_size;
 	std::shared_ptr<ISelector> _selector;
 };
 

@@ -126,7 +126,7 @@ void HTTPServer::_handle(const int& sock)
 				this->ctx.timeout_sec,
 				this->ctx.timeout_usec
 			};
-			BaseHTTPRequestHandler(
+			HTTPRequestHandler(
 				sock, "0.1", timeout, this->ctx.logger.get(), this->base_environ
 			).handle(this->_handler);
 

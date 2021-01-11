@@ -65,18 +65,6 @@ struct RequestContext
 	// Indicates whether request is chunked or not.
 	bool chunked{};
 
-	// Available content types.
-	// Used only for POST, PUT or PATCH methods type.
-	enum content_type_enum
-	{
-		ct_application_x_www_form_url_encoded,
-		ct_application_json,
-		ct_multipart_form_data,
-		ct_other
-
-	// Request's content type.
-	} content_type{};
-
 	std::function<bool(const char* data, size_t n)> write;
 };
 

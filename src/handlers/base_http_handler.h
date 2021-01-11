@@ -43,8 +43,8 @@ protected:
 
 	std::string sys_version = sys::compiler + "/" + sys::compiler_version;
 
-	// The server software version.
-	std::string server_version;
+	// The server software number version.
+	std::string server_num_version;
 
 	// The default request version. This only affects responses up until
 	// the point where the request line is parsed, so it mainly decides what
@@ -112,7 +112,7 @@ protected:
 	// output has been generated), logs the error, and finally sends
 	// a piece of HTML explaining the error to the user.
 	void send_error(
-			int code, const std::string& message="", const std::string& explain=""
+		int code, const std::string& message="", const std::string& explain=""
 	);
 
 	// Add the response header to the headers buffer and log the
@@ -141,9 +141,14 @@ protected:
 	[[nodiscard]]
 	std::string datetime_string() const;
 
+	// The server software version.
+	[[nodiscard]]
+	virtual std::string server_version() const;
+
 public:
 	BaseHTTPRequestHandler(
-		int sock, const std::string& server_version, timeval timeout, core::ILogger* logger,
+		int sock, std::string server_version,
+		timeval timeout, core::ILogger* logger,
 		collections::Dict<std::string, std::string> env
 	);
 

@@ -14,7 +14,7 @@ __SERVER_BEGIN__
 
 SocketIO::SocketIO(
 	int fd, timeval timeout, std::shared_ptr<ISelector> selector
-) : _fd(fd), _timeout(timeout), _selector(std::move(selector)), _buffer_size(0)
+) : _fd(fd), _timeout(timeout), _selector(std::move(selector)), _buffer_size(-1)
 {
 	this->_buffer[0] = '\0';
 	this->_selector->register_(fd, EVENT_READ);
@@ -57,6 +57,31 @@ SocketIO::state SocketIO::read_line(xw::string& line, int max_n)
 			this->_buffer_size -= pos;
 			memmove(this->_buffer, &(this->_buffer[pos]), this->_buffer_size);
 			this->_buffer[this->_buffer_size] = '\0';
+		}
+	}
+
+	return s_done;
+}
+
+SocketIO::state SocketIO::read_all(xw::string& content)
+{
+	while (this->_buffer_size)
+	{
+		auto ret = this->_recv(MAX_BUFF_SIZE);
+		if (ret != s_done)
+		{
+			return ret;
+		}
+
+		if (this->_buffer[0] != '\0')
+		{
+			content += std::string(this->_buffer, this->_buffer_size);
+			this->_buffer[0] = '\0';
+		}
+
+		if (this->_buffer_size < MAX_BUFF_SIZE)
+		{
+			break;
 		}
 	}
 

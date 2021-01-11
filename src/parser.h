@@ -15,6 +15,7 @@
 // Core libraries.
 #include <xalwart.core/str.h>
 #include <xalwart.core/collections/dict.h>
+#include <xalwart.core/collections/multi_dict.h>
 
 // Module definitions.
 #include "./_def_.h"

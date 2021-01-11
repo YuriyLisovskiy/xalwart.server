@@ -13,6 +13,8 @@
 #include <xalwart.core/string_utils.h>
 #include <xalwart.core/html.h>
 
+#include <utility>
+
 
 __SERVER_BEGIN__
 
@@ -103,10 +105,11 @@ void BaseHTTPRequestHandler::log_request(int code, const std::string& info) cons
 }
 
 BaseHTTPRequestHandler::BaseHTTPRequestHandler(
-	int sock, const std::string& server_version, timeval timeout, core::ILogger* logger,
+	int sock, std::string server_version,
+	timeval timeout, core::ILogger* logger,
 	collections::Dict<std::string, std::string> env
 ) : logger(logger),
-    server_version("BaseHTTP/" + server_version),
+    server_num_version(std::move(server_version)),
     close_connection(false),
     parsed(false),
     env(std::move(env))
@@ -437,12 +440,17 @@ void BaseHTTPRequestHandler::flush_headers()
 
 std::string BaseHTTPRequestHandler::version_string() const
 {
-	return this->server_version + " " + this->sys_version;
+	return this->server_version() + " " + this->sys_version;
 }
 
 std::string BaseHTTPRequestHandler::datetime_string() const
 {
 	return utility::format_date(dt::Datetime::utc_now().timestamp(), false, true);
+}
+
+std::string BaseHTTPRequestHandler::server_version() const
+{
+	return "BaseHTTP/" + this->server_num_version;
 }
 
 __SERVER_END__
