@@ -1,10 +1,10 @@
 /**
- * context.cpp
+ * server_context.cpp
  *
  * Copyright (c) 2020-2021 Yuriy Lisovskiy
  */
 
-#include "./context.h"
+#include "./server_context.h"
 
 
 __SERVER_BEGIN__
@@ -13,7 +13,7 @@ void Context::normalize()
 {
 	if (!this->logger)
 	{
-		this->logger = core::Logger::get_instance({});
+		throw core::NullPointerException("logger must be instantiated");
 	}
 
 	if (!this->timeout_sec)

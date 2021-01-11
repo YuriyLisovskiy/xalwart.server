@@ -12,21 +12,19 @@
 #include <memory>
 #include <string>
 
-// Module definitions.
-#include "./_def_.h"
-
 // Core libraries.
 #include <xalwart.core/logger.h>
 
-// Framework libraries.
-#include "./sock.h"
+// Module definitions.
+#include "./_def_.h"
+
+// Server libraries.
+#include "./socket/base.h"
 
 
 __SERVER_UTIL_BEGIN__
 
 extern std::string join_addr(const std::string& addr, uint16_t port);
-
-extern std::string join_addr(const std::pair<std::string, uint16_t>& addr);
 
 extern bool is_ipv6(const std::string& addr);
 

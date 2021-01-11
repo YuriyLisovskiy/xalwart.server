@@ -13,8 +13,8 @@
 // TODO
 
 
-__CORE_BEGIN__
+__SERVER_BEGIN__
 
 
 
-__CORE_END__
+__SERVER_END__

@@ -1,5 +1,5 @@
 /**
- * handler.h
+ * handlers/base.h
  *
  * Copyright (c) 2021 Yuriy Lisovskiy
  *
@@ -16,24 +16,28 @@
 #include <xalwart.core/str.h>
 
 // Module definitions.
-#include "./_def_.h"
+#include "../_def_.h"
 
 // Server libraries.
-#include "./socket/io.h"
-#include "./request_context.h"
-#include "./parser.h"
+#include "../socket/io.h"
+#include "../request_context.h"
+#include "../parser.h"
 
 
 __SERVER_BEGIN__
 
-typedef std::function<void(const int, RequestContext*)> HandlerFunc;
+typedef std::function<uint(
+	const int, RequestContext*, collections::Dict<std::string, std::string>
+)> HandlerFunc;
 
-class HTTPRequestHandler
+class BaseHTTPRequestHandler
 {
 protected:
 	HandlerFunc handler_func;
 
 	RequestContext r_ctx;
+
+	std::shared_ptr<SocketIO> socket_io;
 
 	core::ILogger* logger;
 
@@ -52,10 +56,6 @@ protected:
 
 	const std::string protocol_version = "HTTP/1.1";
 
-	timeval timeout;
-
-	std::shared_ptr<SocketIO> socket_io;
-
 	bool close_connection;
 
 	std::string raw_request_line;
@@ -68,6 +68,8 @@ protected:
 
 	bool parsed;
 
+	collections::Dict<std::string, std::string> env;
+
 protected:
 	[[nodiscard]]
 	virtual std::string default_error_message(
@@ -79,11 +81,6 @@ protected:
 	void log_parse_headers_error(parser::parse_headers_status st) const;
 
 	void log_request(int code, const std::string& info="") const;
-
-public:
-	HTTPRequestHandler(
-		int sock, const std::string& server_version, timeval timeout, core::ILogger* logger
-	);
 
 	// Parse a request.
 	//
@@ -111,14 +108,11 @@ public:
 	// Handle a single HTTP request.
 	void handle_one_request();
 
-	// Handle multiple requests if necessary.
-	void handle();
-
 	// This sends an error response (so it must be called before any
 	// output has been generated), logs the error, and finally sends
 	// a piece of HTML explaining the error to the user.
 	void send_error(
-		int code, const std::string& message="", const std::string& explain=""
+			int code, const std::string& message="", const std::string& explain=""
 	);
 
 	// Add the response header to the headers buffer and log the
@@ -146,6 +140,15 @@ public:
 	// Return the current date and time formatted for a message header.
 	[[nodiscard]]
 	std::string datetime_string() const;
+
+public:
+	BaseHTTPRequestHandler(
+		int sock, const std::string& server_version, timeval timeout, core::ILogger* logger,
+		collections::Dict<std::string, std::string> env
+	);
+
+	// Handle multiple requests if necessary.
+	void handle(HandlerFunc func);
 };
 
 __SERVER_END__

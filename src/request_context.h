@@ -18,8 +18,8 @@
 // Module definitions.
 #include "./_def_.h"
 
-// Framework libraries.
-// TODO
+// Server libraries.
+#include "./socket/io.h"
 
 
 __SERVER_BEGIN__
@@ -76,6 +76,8 @@ struct RequestContext
 
 	// Request's content type.
 	} content_type{};
+
+	std::function<bool(const char* data, size_t n)> write;
 };
 
 __SERVER_END__

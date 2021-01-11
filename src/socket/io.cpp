@@ -30,7 +30,7 @@ SocketIO& SocketIO::operator= (SocketIO&& other) noexcept
 	return *this;
 }
 
-SocketIO::state SocketIO::read_line(std::string& line, int max_n)
+SocketIO::state SocketIO::read_line(xw::string& line, int max_n)
 {
 	auto ret = this->_recv(std::min(max_n, MAX_BUFF_SIZE));
 	if (ret != s_done)
@@ -53,7 +53,7 @@ SocketIO::state SocketIO::read_line(std::string& line, int max_n)
 		else
 		{
 			size_t pos = ptr - this->_buffer + 2;       // 2 is the size of "\r\n" string
-			strncpy(line.data(), this->_buffer, pos);
+			line = std::string(this->_buffer, pos);
 			this->_buffer_size -= pos;
 			strncpy(this->_buffer, &(this->_buffer[pos]), this->_buffer_size);
 			this->_buffer[this->_buffer_size] = '\0';
@@ -69,7 +69,7 @@ SocketIO::state SocketIO::write(const char* data, size_t n) const
 	do
 	{
 		try_again = false;
-		if (::write(this->_fd, data, n) < 0)
+		if (::send(this->_fd, data, n, MSG_NOSIGNAL) < 0)
 		{
 			switch (errno)
 			{

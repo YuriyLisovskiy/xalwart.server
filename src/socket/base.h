@@ -1,5 +1,5 @@
 /**
- * sock.h
+ * socket/base.h
  *
  * Copyright (c) 2021 Yuriy Lisovskiy
  *
@@ -21,7 +21,7 @@
 #include <string>
 
 // Module definitions.
-#include "./_def_.h"
+#include "../_def_.h"
 
 
 __SERVER_BEGIN__
@@ -60,35 +60,6 @@ public:
 
 	[[nodiscard]]
 	int fd() const;
-};
-
-class TCPSocket : public BaseSocket
-{
-protected:
-	void bind() override;
-
-public:
-	explicit TCPSocket(const char* address, uint16_t port);
-	void set_options() override;
-};
-
-class TCP6Socket : public BaseSocket
-{
-protected:
-	void bind() override;
-
-public:
-	explicit TCP6Socket(const char* address, uint16_t port);
-	void set_options() override;
-};
-
-class UnixSocket : public BaseSocket
-{
-protected:
-	void bind() override;
-
-public:
-	explicit UnixSocket(const char* address);
 };
 
 __SERVER_END__

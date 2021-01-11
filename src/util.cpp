@@ -13,6 +13,10 @@
 #include <xalwart.core/exceptions.h>
 #include <xalwart.core/string_utils.h>
 
+// Server libraries.
+#include "./socket/tcp.h"
+#include "./socket/tcp6.h"
+#include "./socket/unix.h"
 
 __SERVER_UTIL_BEGIN__
 
@@ -25,11 +29,6 @@ std::string join_addr(const std::string& addr, uint16_t port)
 	}
 
 	return result;
-}
-
-std::string join_addr(const std::pair<std::string, uint16_t>& addr)
-{
-	return join_addr(addr.first, addr.second);
 }
 
 bool is_ipv6(const std::string& addr)

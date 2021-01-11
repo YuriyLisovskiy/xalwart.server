@@ -11,6 +11,9 @@
 // C++ libraries.
 #include <string>
 
+// Core libraries.
+#include <xalwart.core/str.h>
+
 // Module definitions.
 #include "../_def_.h"
 
@@ -39,7 +42,7 @@ public:
 
 	SocketIO& operator= (SocketIO&& other) noexcept;
 
-	state read_line(std::string& line, int max_n=MAX_BUFF_SIZE);
+	state read_line(xw::string& line, int max_n=MAX_BUFF_SIZE);
 	state write(const char* data, size_t n) const;
 
 	[[nodiscard]]

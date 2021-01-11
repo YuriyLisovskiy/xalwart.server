@@ -1,10 +1,10 @@
 /**
- * handler.cpp
+ * handlers/base.cpp
  *
  * Copyright (c) 2021 Yuriy Lisovskiy
  */
 
-#include "./handler.h"
+#include "./base.h"
 
 // C++ libraries.
 // TODO
@@ -19,8 +19,8 @@
 
 __SERVER_BEGIN__
 
-std::string HTTPRequestHandler::default_error_message(
-		int code, const std::string& message, const std::string& explain
+std::string BaseHTTPRequestHandler::default_error_message(
+	int code, const std::string& message, const std::string& explain
 ) const
 {
 	auto str_code = std::to_string(code);
@@ -40,7 +40,7 @@ std::string HTTPRequestHandler::default_error_message(
 		"</html>";
 }
 
-void HTTPRequestHandler::log_socket_error(SocketIO::state st) const
+void BaseHTTPRequestHandler::log_socket_error(SocketIO::state st) const
 {
 	switch (st)
 	{
@@ -58,7 +58,7 @@ void HTTPRequestHandler::log_socket_error(SocketIO::state st) const
 	}
 }
 
-void HTTPRequestHandler::log_parse_headers_error(parser::parse_headers_status st) const
+void BaseHTTPRequestHandler::log_parse_headers_error(parser::parse_headers_status st) const
 {
 	switch (st)
 	{
@@ -76,7 +76,7 @@ void HTTPRequestHandler::log_parse_headers_error(parser::parse_headers_status st
 	}
 }
 
-void HTTPRequestHandler::log_request(int code, const std::string& info) const
+void BaseHTTPRequestHandler::log_request(int code, const std::string& info) const
 {
 	core::Logger::Color color = core::Logger::Color::GREEN;
 	if (code >= 400)
@@ -105,20 +105,21 @@ void HTTPRequestHandler::log_request(int code, const std::string& info) const
 	);
 }
 
-HTTPRequestHandler::HTTPRequestHandler(
-	int sock, const std::string& server_version, timeval timeout, core::ILogger* logger
+BaseHTTPRequestHandler::BaseHTTPRequestHandler(
+	int sock, const std::string& server_version, timeval timeout, core::ILogger* logger,
+	collections::Dict<std::string, std::string> env
 ) : logger(logger),
-	server_version("SimpleHTTP/" + server_version),
-	timeout(timeout),
-	close_connection(false),
-	parsed(false)
+    server_version("BaseHTTP/" + server_version),
+    close_connection(false),
+    parsed(false),
+    env(std::move(env))
 {
 	this->socket_io = std::make_shared<SocketIO>(
 		sock, timeout, std::make_shared<SelectSelector>(logger)
 	);
 }
 
-bool HTTPRequestHandler::parse_request()
+bool BaseHTTPRequestHandler::parse_request()
 {
 	this->request_version = this->default_request_version;
 	auto version = this->default_request_version;
@@ -167,7 +168,11 @@ bool HTTPRequestHandler::parse_request()
 			return false;
 		}
 
-		if (this->r_ctx.major_v >= 1 && this->r_ctx.minor_v >= 1 && this->protocol_version >= "HTTP/1.1")
+		if (
+			this->r_ctx.major_v >= 1 &&
+			this->r_ctx.minor_v >= 1 &&
+			this->protocol_version >= "HTTP/1.1"
+		)
 		{
 			this->close_connection = false;
 		}
@@ -204,7 +209,9 @@ bool HTTPRequestHandler::parse_request()
 	this->request_version = version;
 
 	// Examine the headers and look for a Connection directive.
-	auto p_status = parser::parse_headers(this->r_ctx.headers, this->socket_io.get());
+	auto p_status = parser::parse_headers(
+		this->r_ctx.headers, this->socket_io.get()
+	);
 	if (p_status != parser::ph_done)
 	{
 		switch (p_status)
@@ -260,15 +267,17 @@ bool HTTPRequestHandler::parse_request()
 	return true;
 }
 
-bool HTTPRequestHandler::handle_expect_100()
+bool BaseHTTPRequestHandler::handle_expect_100()
 {
 	// Request received, please continue.
-	this->send_response_only(100);
+	int code = 100;
+	this->send_response_only(code);
 	this->end_headers();
+	this->log_request(code);
 	return true;
 }
 
-void HTTPRequestHandler::handle_one_request()
+void BaseHTTPRequestHandler::handle_one_request()
 {
 	auto state = this->socket_io->read_line(this->raw_request_line, 65537);
 	if (state != SocketIO::s_done)
@@ -297,11 +306,24 @@ void HTTPRequestHandler::handle_one_request()
 		return;
 	}
 
-	this->handler_func(this->socket_io->fd(), &this->r_ctx);
+	this->r_ctx.write = [this](const char* data, size_t n) -> bool {
+		auto status = this->socket_io->write(data, n);
+		bool success = status == SocketIO::s_done;
+		if (!success)
+		{
+			this->log_socket_error(status);
+		}
+
+		return success;
+	};
+	this->log_request(
+		this->handler_func(this->socket_io->fd(), &this->r_ctx, this->env)
+	);
 }
 
-void HTTPRequestHandler::handle()
+void BaseHTTPRequestHandler::handle(HandlerFunc func)
 {
+	this->handler_func = std::move(func);
 	this->close_connection = true;
 	this->handle_one_request();
 	while (!this->close_connection)
@@ -310,11 +332,13 @@ void HTTPRequestHandler::handle()
 	}
 }
 
-void HTTPRequestHandler::send_error(
+void BaseHTTPRequestHandler::send_error(
 	int code, const std::string& message, const std::string& explain
 )
 {
-	auto msg = net::HTTP_STATUS.get(code, std::pair<std::string, std::string>("???", "???"));
+	auto msg = net::HTTP_STATUS.get(
+		code, std::pair<std::string, std::string>("???", "???")
+	);
 	if (!message.empty())
 	{
 		msg.first = message;
@@ -348,17 +372,18 @@ void HTTPRequestHandler::send_error(
 			this->log_socket_error(status);
 		}
 	}
+
+	this->log_request(code, message);
 }
 
-void HTTPRequestHandler::send_response(int code, const std::string& message)
+void BaseHTTPRequestHandler::send_response(int code, const std::string& message)
 {
-	this->log_request(code, message);
 	this->send_response_only(code, message);
 	this->send_header("Server", this->version_string());
 	this->send_header("Date", this->datetime_string());
 }
 
-void HTTPRequestHandler::send_response_only(int code, const std::string& message)
+void BaseHTTPRequestHandler::send_response_only(int code, const std::string& message)
 {
 	auto msg = message;
 	if (this->request_version != "HTTP/0.9")
@@ -375,7 +400,7 @@ void HTTPRequestHandler::send_response_only(int code, const std::string& message
 	}
 }
 
-void HTTPRequestHandler::send_header(const std::string& keyword, const std::string& value)
+void BaseHTTPRequestHandler::send_header(const std::string& keyword, const std::string& value)
 {
 	if (this->request_version != "HTTP/0.9")
 	{
@@ -398,7 +423,7 @@ void HTTPRequestHandler::send_header(const std::string& keyword, const std::stri
 	}
 }
 
-void HTTPRequestHandler::end_headers()
+void BaseHTTPRequestHandler::end_headers()
 {
 	if (this->request_version != "HTTP/0.9")
 	{
@@ -407,18 +432,18 @@ void HTTPRequestHandler::end_headers()
 	}
 }
 
-void HTTPRequestHandler::flush_headers()
+void BaseHTTPRequestHandler::flush_headers()
 {
 	this->socket_io->write(this->headers_buffer.c_str(), this->headers_buffer.size());
 	this->headers_buffer = "";
 }
 
-std::string HTTPRequestHandler::version_string() const
+std::string BaseHTTPRequestHandler::version_string() const
 {
 	return this->server_version + " " + this->sys_version;
 }
 
-std::string HTTPRequestHandler::datetime_string() const
+std::string BaseHTTPRequestHandler::datetime_string() const
 {
 	return utility::format_date(dt::Datetime::utc_now().timestamp(), false, true);
 }
