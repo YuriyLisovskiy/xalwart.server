@@ -3,7 +3,7 @@
  *
  * Copyright (c) 2019-2020 Yuriy Lisovskiy
  *
- * Purpose: parses an http request from given stream.
+ * Purpose: includes header parser, TODO:
  */
 
 #pragma once

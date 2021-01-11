@@ -1,13 +1,10 @@
 /**
- * handlers/base.cpp
+ * handlers/base_http_handler.cpp
  *
  * Copyright (c) 2021 Yuriy Lisovskiy
  */
 
-#include "./base.h"
-
-// C++ libraries.
-// TODO
+#include "./base_http_handler.h"
 
 // Core libraries.
 #include <xalwart.core/net/status.h>

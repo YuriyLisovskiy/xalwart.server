@@ -6,9 +6,6 @@
 
 #include "./http_server.h"
 
-// C++ libraries.
-#include <cstring>
-
 // Core libraries.
 #include <xalwart.core/net/meta.h>
 

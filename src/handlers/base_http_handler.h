@@ -1,5 +1,5 @@
 /**
- * handlers/base.h
+ * handlers/base_http_handler.h
  *
  * Copyright (c) 2021 Yuriy Lisovskiy
  *

@@ -24,7 +24,7 @@
 // Server libraries.
 #include "./server_context.h"
 #include "./socket/base.h"
-#include "./handlers/base.h"
+#include "./handlers/base_http_handler.h"
 
 
 __SERVER_BEGIN__
