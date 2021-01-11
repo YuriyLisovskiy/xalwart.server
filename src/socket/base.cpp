@@ -36,7 +36,7 @@ bool BaseSocket::_set_blocking(bool blocking)
 }
 
 BaseSocket::BaseSocket(
-		const char *address, uint16_t port, int family
+	const char* address, uint16_t port, int family
 ) : address(address), port(port), family(family), _closed(false)
 {
 	if ((this->sock = socket(this->family, SOCK_STREAM, 0)) < 0)

@@ -55,7 +55,7 @@ SocketIO::state SocketIO::read_line(xw::string& line, int max_n)
 			size_t pos = ptr - this->_buffer + 2;       // 2 is the size of "\r\n" string
 			line = std::string(this->_buffer, pos);
 			this->_buffer_size -= pos;
-			strncpy(this->_buffer, &(this->_buffer[pos]), this->_buffer_size);
+			memmove(this->_buffer, &(this->_buffer[pos]), this->_buffer_size);
 			this->_buffer[this->_buffer_size] = '\0';
 		}
 	}
