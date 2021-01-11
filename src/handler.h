@@ -25,12 +25,14 @@
 
 __SERVER_BEGIN__
 
-typedef std::function<void(const int, RequestContext*, core::Error*)> HandlerFunc;
+typedef std::function<void(const int, RequestContext*)> HandlerFunc;
 
 class HTTPRequestHandler
 {
 protected:
 	HandlerFunc handler_func;
+
+	RequestContext r_ctx;
 
 	core::ILogger* logger;
 
@@ -47,22 +49,61 @@ protected:
 
 	const std::string error_content_type = "text/html;charset=utf-8";
 
+	const std::string protocol_version = "HTTP/1.1";
+
 	timeval timeout;
 
 	std::shared_ptr<SocketIO> socket_io;
 
 	bool close_connection;
 
+	std::string raw_request_line;
 	std::string request_line;
 	std::string request_version;
 	std::string command;
+	std::string full_path;
 
 	xw::string headers_buffer;
+
+	bool parsed;
+
+protected:
+	[[nodiscard]]
+	virtual std::string default_error_message(
+		int code, const std::string& message, const std::string& explain
+	) const;
+
+	void log_socket_error(SocketIO::state st) const;
+
+	void log_request(int code, const std::string& info="") const;
 
 public:
 	HTTPRequestHandler(
 		int sock, const std::string& server_version, timeval timeout, core::ILogger* logger
 	);
+
+	// Parse a request.
+	//
+	// The request should be stored in this->request_line; the results
+	// are in this->command, this->path, this->request_version and
+	// this->headers.
+	//
+	// Return true for success, false for failure; on failure, an
+	// error is sent back.
+	virtual bool parse_request();
+
+	// Decide what to do with an "Expect: 100-continue" header.
+	//
+	// If the client is expecting a 100 Continue response, we must
+	// respond with either a 100 Continue or a final response before
+	// waiting for the request body. The default is to always respond
+	// with a 100 Continue. You can behave differently (for example,
+	// reject unauthorized requests) by overriding this method.
+	//
+	// This method should either return true (possibly after sending
+	// a 100 Continue response) or send an error response and return
+	// false.
+	virtual bool handle_expect_100();
 
 	// Handle a single HTTP request.
 	void handle_one_request();
@@ -77,11 +118,31 @@ public:
 		int code, const std::string& message="", const std::string& explain=""
 	);
 
+	// Add the response header to the headers buffer and log the
+	// response code.
+	//
+	// Also send two standard headers with the server software
+	// version and the current date.
 	void send_response(int code, const std::string& message="");
+
+	// Send the response header only.
 	void send_response_only(int code, const std::string& message="");
+
+	// Send a MIME header to the headers buffer.
 	void send_header(const std::string& keyword, const std::string& value);
+
+	// Send the blank line ending the MIME headers.
 	void end_headers();
+
 	void flush_headers();
+
+	// Return the server software version string.
+	[[nodiscard]]
+	std::string version_string() const;
+
+	// Return the current date and time formatted for a message header.
+	[[nodiscard]]
+	std::string datetime_string() const;
 };
 
 __SERVER_END__

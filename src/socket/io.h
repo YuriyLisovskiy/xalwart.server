@@ -40,6 +40,7 @@ public:
 	SocketIO& operator= (SocketIO&& other) noexcept;
 
 	state read_line(std::string& line, int max_n=MAX_BUFF_SIZE);
+	state write(const char* data, size_t n) const;
 
 	[[nodiscard]]
 	int fd() const;

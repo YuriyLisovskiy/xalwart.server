@@ -63,6 +63,32 @@ SocketIO::state SocketIO::read_line(std::string& line, int max_n)
 	return s_done;
 }
 
+SocketIO::state SocketIO::write(const char* data, size_t n) const
+{
+	bool try_again;
+	do
+	{
+		try_again = false;
+		if (::write(this->_fd, data, n) < 0)
+		{
+			switch (errno)
+			{
+				case ETIMEDOUT:
+				case EAGAIN:
+					try_again = true;
+					break;
+				case ECONNRESET:
+				case ENOTCONN:
+					return s_conn_broken;
+				default:
+					return s_failed;
+			}
+		}
+	}
+	while (try_again);
+	return s_done;
+}
+
 int SocketIO::fd() const
 {
 	return this->_fd;

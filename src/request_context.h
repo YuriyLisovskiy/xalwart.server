@@ -13,6 +13,7 @@
 
 // Core libraries.
 #include <xalwart.core/str.h>
+#include <xalwart.core/collections/dict.h>
 
 // Module definitions.
 #include "./_def_.h"
@@ -48,7 +49,7 @@ struct RequestContext
 	xw::string content;
 
 	// Accumulates request's headers.
-	std::map<std::string, std::string> headers;
+	collections::Dict<std::string, std::string> headers;
 
 	// Contains the size of request's content.
 	unsigned long long content_size{};
