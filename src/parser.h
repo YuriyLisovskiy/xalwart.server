@@ -21,7 +21,6 @@
 #include "./_def_.h"
 
 // Server libraries.
-#include "./request_context.h"
 #include "./socket/io.h"
 
 

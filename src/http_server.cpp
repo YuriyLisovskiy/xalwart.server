@@ -15,24 +15,35 @@
 
 __SERVER_BEGIN__
 
-HTTPServer::HTTPServer(Context ctx, HandlerFunc handler)
-	: ctx(std::move(ctx)), _handler(std::move(handler))
+std::shared_ptr<net::IServer> HTTPServer::initialize(
+	core::ILogger* logger,
+	const collections::Dict<std::string, std::string>& kwargs
+)
 {
-	this->ctx.normalize();
-	this->_thread_pool = std::make_shared<core::ThreadPool>(
-		"server", this->ctx.workers
-	);
+	Context ctx{};
+	ctx.logger = logger;
+	ctx.workers = stoi(kwargs.get("xw.workers"));
+	ctx.max_body_size = strtol(kwargs.get("xw.max_body_size").c_str(), nullptr, 10);
+	ctx.timeout_sec = stoi(kwargs.get("xw.timeout_sec"));
+	ctx.timeout_usec = strtol(kwargs.get("xw.timeout_usec").c_str(), nullptr, 10);
+	return std::shared_ptr<net::IServer>(new HTTPServer(ctx));
+}
+
+void HTTPServer::setup_handler(net::HandlerFunc handler)
+{
+	this->_handler = std::move(handler);
+}
+
+void HTTPServer::bind(const std::string& address, uint16_t port)
+{
 	if (!this->_handler)
 	{
 		throw core::NullPointerException(
 			"request handler is not specified", _ERROR_DETAILS_
 		);
 	}
-}
 
-void HTTPServer::bind(const std::string& address, uint16_t port)
-{
-	this->_socket = util::create_socket(address, port, 5, this->ctx.logger.get());
+	this->_socket = util::create_socket(address, port, 5, this->ctx.logger);
 	this->_socket->set_options();
 	this->host = address;
 	this->server_port = port;
@@ -48,7 +59,7 @@ void HTTPServer::listen(const std::string& message)
 		this->ctx.logger->print(message);
 	}
 
-	SelectSelector selector(this->ctx.logger.get());
+	SelectSelector selector(this->ctx.logger);
 	selector.register_(this->_socket->fd(), EVENT_READ);
 	while (!this->_socket->is_closed())
 	{
@@ -67,7 +78,7 @@ void HTTPServer::listen(const std::string& message)
 void HTTPServer::close()
 {
 	this->_thread_pool->close();
-	util::close_socket(this->_socket, this->ctx.logger.get());
+	util::close_socket(this->_socket, this->ctx.logger);
 }
 
 void HTTPServer::init_environ()
@@ -79,6 +90,14 @@ void HTTPServer::init_environ()
 collections::Dict<std::string, std::string> HTTPServer::environ() const
 {
 	return this->base_environ;
+}
+
+HTTPServer::HTTPServer(Context ctx) : ctx(std::move(ctx))
+{
+	this->ctx.normalize();
+	this->_thread_pool = std::make_shared<core::ThreadPool>(
+		"server", this->ctx.workers
+	);
 }
 
 int HTTPServer::_get_request()
@@ -127,7 +146,7 @@ void HTTPServer::_handle(const int& sock)
 				this->ctx.timeout_usec
 			};
 			HTTPRequestHandler(
-				sock, "0.1", timeout, this->ctx.logger.get(), this->base_environ
+				sock, "0.1", timeout, this->ctx.logger, this->base_environ
 			).handle(this->_handler);
 
 			this->_shutdown_request(sock);

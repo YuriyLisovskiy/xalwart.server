@@ -22,7 +22,7 @@ __SERVER_BEGIN__
 
 struct Context
 {
-	std::shared_ptr<core::ILogger> logger;
+	core::ILogger* logger;
 	size_t max_body_size = 0;
 	std::string media_root;
 	size_t workers = 0;

@@ -285,7 +285,7 @@ bool BaseHTTPRequestHandler::handle_expect_100()
 	int code = 100;
 	this->send_response_only(code);
 	this->end_headers();
-	this->log_request(code);
+	this->log_request(code, "");
 	return true;
 }
 
@@ -331,11 +331,11 @@ void BaseHTTPRequestHandler::handle_one_request()
 		return success;
 	};
 	this->log_request(
-		this->handler_func(&this->request_ctx, this->env)
+		this->handler_func(&this->request_ctx, this->env), ""
 	);
 }
 
-void BaseHTTPRequestHandler::handle(HandlerFunc func)
+void BaseHTTPRequestHandler::handle(net::HandlerFunc func)
 {
 	this->handler_func = std::move(func);
 	this->close_connection = true;

@@ -32,7 +32,12 @@ __SERVER_BEGIN__
 class HTTPServer : public net::IServer
 {
 public:
-	explicit HTTPServer(Context ctx, HandlerFunc handler);
+	static std::shared_ptr<net::IServer> initialize(
+		core::ILogger* logger,
+		const collections::Dict<std::string, std::string>& kwargs
+	);
+
+	void setup_handler(net::HandlerFunc handler) override;
 
 	void bind(const std::string& address, uint16_t port) override;
 
@@ -40,10 +45,11 @@ public:
 
 	void close() override;
 
-	void init_environ() override;
-
 	[[nodiscard]]
 	collections::Dict<std::string, std::string> environ() const override;
+
+protected:
+	void init_environ() override;
 
 protected:
 	std::string host;
@@ -54,10 +60,12 @@ protected:
 
 private:
 	std::shared_ptr<core::ThreadPool> _thread_pool;
-	HandlerFunc _handler;
+	net::HandlerFunc _handler;
 	std::shared_ptr<BaseSocket> _socket;
 
 private:
+	explicit HTTPServer(Context ctx);
+
 	int _get_request();
 
 	void _handle(const int& sock);

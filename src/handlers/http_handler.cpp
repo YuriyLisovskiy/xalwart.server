@@ -103,7 +103,7 @@ HTTPRequestHandler::HTTPRequestHandler(
 {
 }
 
-void HTTPRequestHandler::handle(HandlerFunc func)
+void HTTPRequestHandler::handle(net::HandlerFunc func)
 {
 	this->handler_func = std::move(func);
 	this->close_connection = true;

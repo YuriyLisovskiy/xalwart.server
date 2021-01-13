@@ -35,7 +35,7 @@ public:
 		const collections::Dict<std::string, std::string>& env
 	);
 
-	void handle(HandlerFunc func);
+	void handle(net::HandlerFunc func);
 };
 
 __SERVER_END__

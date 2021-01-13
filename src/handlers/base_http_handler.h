@@ -18,28 +18,24 @@
 // Core libraries.
 #include <xalwart.core/sys.h>
 #include <xalwart.core/str.h>
+#include <xalwart.core/net/request_context.h>
 
 // Module definitions.
 #include "../_def_.h"
 
 // Server libraries.
 #include "../socket/io.h"
-#include "../request_context.h"
 #include "../parser.h"
 
 
 __SERVER_BEGIN__
 
-typedef std::function<uint(
-	RequestContext*, collections::Dict<std::string, std::string>
-)> HandlerFunc;
-
 class BaseHTTPRequestHandler
 {
 protected:
-	HandlerFunc handler_func;
+	net::HandlerFunc handler_func;
 
-	RequestContext request_ctx;
+	net::RequestContext request_ctx;
 
 	std::shared_ptr<SocketIO> socket_io;
 
@@ -84,7 +80,7 @@ protected:
 
 	void log_parse_headers_error(parser::parse_headers_status st) const;
 
-	virtual void log_request(int code, const std::string& info="") const;
+	virtual void log_request(int code, const std::string& info) const;
 
 	virtual void cleanup_headers();
 
@@ -159,7 +155,7 @@ public:
 	);
 
 	// Handle multiple requests if necessary.
-	virtual void handle(HandlerFunc func);
+	virtual void handle(net::HandlerFunc func);
 };
 
 __SERVER_END__
