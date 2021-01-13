@@ -82,6 +82,8 @@ protected:
 
 	void log_request(int code, const std::string& info="") const;
 
+	virtual void cleanup_headers();
+
 	// Parse a request.
 	//
 	// The request should be stored in this->request_line; the results

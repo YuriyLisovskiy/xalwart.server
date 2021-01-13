@@ -65,17 +65,14 @@ bool HTTPRequestHandler::parse_request()
 			return false;
 		}
 
-//		if (this->r_ctx.content_size != this->r_ctx.content.size())
-//		{
-//			this->send_error(400, "Bad request content");
-//			return false;
-//		}
+		if (this->r_ctx.content_size != this->r_ctx.content.size())
+		{
+			this->send_error(400, "Bad request content");
+			return false;
+		}
 	}
 
 	// TODO: parse chunks if request is chunked!
-
-	// TODO: consider if it is necessary to close the connection here.
-	this->close_connection = true;
 
 	return true;
 }

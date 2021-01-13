@@ -104,6 +104,24 @@ void BaseHTTPRequestHandler::log_request(int code, const std::string& info) cons
 	);
 }
 
+void BaseHTTPRequestHandler::cleanup_headers()
+{
+	// HTTP/1.1 requires support for persistent connections. Send 'close' if
+	// the content length is unknown to prevent clients from reusing the
+	// connection.
+	if (!this->r_ctx.headers.contains("Content-Length"))
+	{
+		this->r_ctx.headers.set("Connection", "close");
+	}
+
+	// Mark the connection for closing if it's set as such above or if the
+	// application sent the header.
+	if (str::lower(this->r_ctx.headers.get("Connection")) == "close")
+	{
+		this->close_connection = true;
+	}
+}
+
 BaseHTTPRequestHandler::BaseHTTPRequestHandler(
 	int sock, std::string server_version,
 	timeval timeout, core::ILogger* logger,
@@ -305,6 +323,8 @@ void BaseHTTPRequestHandler::handle_one_request()
 		// An error code has been sent, just exit.
 		return;
 	}
+
+	this->cleanup_headers();
 
 	this->r_ctx.write = [this](const char* data, size_t n) -> bool {
 		auto status = this->socket_io->write(data, n);
