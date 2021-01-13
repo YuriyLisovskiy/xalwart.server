@@ -141,6 +141,11 @@ void HTTPServer::_handle(const int& sock)
 			this->_shutdown_request(sock);
 			this->ctx.logger->error(exc);
 		}
+		catch (const std::exception& exc)
+		{
+			this->_shutdown_request(sock);
+			this->ctx.logger->fatal(exc.what(), _ERROR_DETAILS_);
+		}
 	});
 }
 

@@ -114,11 +114,6 @@ SocketIO::state SocketIO::write(const char* data, size_t n) const
 	return s_done;
 }
 
-int SocketIO::fd() const
-{
-	return this->_fd;
-}
-
 SocketIO::state SocketIO::_recv(int n)
 {
 	if (this->_buffer[0] != '\0')
@@ -160,6 +155,11 @@ SocketIO::state SocketIO::_recv(int n)
 	}
 	while (try_again);
 	return s_done;
+}
+
+int SocketIO::shutdown(int how) const
+{
+	return ::shutdown(this->_fd, how);
 }
 
 __SERVER_END__

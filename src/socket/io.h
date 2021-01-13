@@ -47,7 +47,7 @@ public:
 	state write(const char* data, size_t n) const;
 
 	[[nodiscard]]
-	int fd() const;
+	int shutdown(int how) const;
 
 private:
 	state _recv(int n);

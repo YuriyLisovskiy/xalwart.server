@@ -13,8 +13,6 @@
 #include <xalwart.core/string_utils.h>
 #include <xalwart.core/html.h>
 
-#include <utility>
-
 
 __SERVER_BEGIN__
 
@@ -90,7 +88,7 @@ void BaseHTTPRequestHandler::log_request(int code, const std::string& info) cons
 	std::string msg;
 	if (this->parsed)
 	{
-		msg = this->r_ctx.method + " " + this->full_path + " " + this->request_version;
+		msg = this->request_ctx.method + " " + this->full_path + " " + this->request_version;
 	}
 	else
 	{
@@ -109,14 +107,14 @@ void BaseHTTPRequestHandler::cleanup_headers()
 	// HTTP/1.1 requires support for persistent connections. Send 'close' if
 	// the content length is unknown to prevent clients from reusing the
 	// connection.
-	if (!this->r_ctx.headers.contains("Content-Length"))
+	if (!this->request_ctx.headers.contains("Content-Length"))
 	{
-		this->r_ctx.headers.set("Connection", "close");
+		this->request_ctx.headers.set("Connection", "close");
 	}
 
 	// Mark the connection for closing if it's set as such above or if the
 	// application sent the header.
-	if (str::lower(this->r_ctx.headers.get("Connection")) == "close")
+	if (str::lower(this->request_ctx.headers.get("Connection")) == "close")
 	{
 		this->close_connection = true;
 	}
@@ -152,7 +150,7 @@ bool BaseHTTPRequestHandler::parse_request()
 	auto words = str::split(req_line);
 	if (words.size() == 3)
 	{
-		this->r_ctx.method = words[0];
+		this->request_ctx.method = words[0];
 		path = words[1];
 		version = words[2];
 		if (!str::starts_with(version, "HTTP/"))
@@ -178,24 +176,20 @@ bool BaseHTTPRequestHandler::parse_request()
 
 		const char* s_v_major = version_number[0].c_str();
 		const char* s_v_minor = version_number[1].c_str();
-		this->r_ctx.major_v = std::stoi(s_v_major, nullptr, 10);
-		this->r_ctx.minor_v = std::stoi(s_v_minor, nullptr, 10);
+		this->request_ctx.major_v = std::stoi(s_v_major, nullptr, 10);
+		this->request_ctx.minor_v = std::stoi(s_v_minor, nullptr, 10);
 		if (!s_v_major || !s_v_minor)
 		{
 			this->send_error(400, "Bad request version (" + version + ")");
 			return false;
 		}
 
-		if (
-			this->r_ctx.major_v >= 1 &&
-			this->r_ctx.minor_v >= 1 &&
-			this->protocol_version >= "HTTP/1.1"
-		)
+		if (this->request_ctx.proto_v_gte(1, 1) && this->protocol_version >= "HTTP/1.1")
 		{
 			this->close_connection = false;
 		}
 
-		if (this->r_ctx.major_v >= 2 && this->r_ctx.minor_v >= 0)
+		if (this->request_ctx.proto_v_gte(2, 0))
 		{
 			// HTTP Version Not Supported.
 			this->send_error(505, "Invalid HTTP version (" + base_version_number + ")");
@@ -204,12 +198,12 @@ bool BaseHTTPRequestHandler::parse_request()
 	}
 	else if (words.size() == 2)
 	{
-		this->r_ctx.method = words[0];
+		this->request_ctx.method = words[0];
 		path = words[1];
 		this->close_connection = true;
-		if (this->r_ctx.method != "GET")
+		if (this->request_ctx.method != "GET")
 		{
-			this->send_error(400, "Bad HTTP/0.9 request type (" + this->r_ctx.method + ")");
+			this->send_error(400, "Bad HTTP/0.9 request type (" + this->request_ctx.method + ")");
 			return false;
 		}
 	}
@@ -228,7 +222,7 @@ bool BaseHTTPRequestHandler::parse_request()
 
 	// Examine the headers and look for a Connection directive.
 	auto p_status = parser::parse_headers(
-		this->r_ctx.headers, this->socket_io.get()
+		this->request_ctx.headers, this->socket_io.get()
 	);
 	if (p_status != parser::ph_done)
 	{
@@ -257,7 +251,7 @@ bool BaseHTTPRequestHandler::parse_request()
 		}
 	}
 
-	auto conn_type = str::lower(this->r_ctx.headers.get("Connection", ""));
+	auto conn_type = str::lower(this->request_ctx.headers.get("Connection", ""));
 	if (conn_type == "close")
 	{
 		this->close_connection = true;
@@ -265,11 +259,11 @@ bool BaseHTTPRequestHandler::parse_request()
 	else if (conn_type == "keep-alive" && this->protocol_version >= "HTTP/1.1")
 	{
 		this->close_connection = false;
-		this->r_ctx.keep_alive = true;
+		this->request_ctx.keep_alive = true;
 	}
 
 	// Examine the headers and look for an Expect directive.
-	auto expect = str::lower(this->r_ctx.headers.get("Expect", ""));
+	auto expect = str::lower(this->request_ctx.headers.get("Expect", ""));
 	if (
 		expect == "100-continue" &&
 		this->protocol_version >= "HTTP/1.1" &&
@@ -326,7 +320,7 @@ void BaseHTTPRequestHandler::handle_one_request()
 
 	this->cleanup_headers();
 
-	this->r_ctx.write = [this](const char* data, size_t n) -> bool {
+	this->request_ctx.write = [this](const char* data, size_t n) -> bool {
 		auto status = this->socket_io->write(data, n);
 		bool success = status == SocketIO::s_done;
 		if (!success)
@@ -337,7 +331,7 @@ void BaseHTTPRequestHandler::handle_one_request()
 		return success;
 	};
 	this->log_request(
-		this->handler_func(this->socket_io->fd(), &this->r_ctx, this->env)
+		this->handler_func(&this->request_ctx, this->env)
 	);
 }
 
@@ -349,6 +343,13 @@ void BaseHTTPRequestHandler::handle(HandlerFunc func)
 	while (!this->close_connection)
 	{
 		this->handle_one_request();
+	}
+
+	if (this->socket_io->shutdown(SHUT_WR))
+	{
+		this->logger->error(
+			"'shutdown(SHUT_WR)' call failed: " + std::to_string(errno), _ERROR_DETAILS_
+		);
 	}
 }
 

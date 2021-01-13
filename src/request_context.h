@@ -56,7 +56,7 @@ struct RequestContext
 
 	// Contains the size of request's chunk as std::string.
 	// Used only for chunked requests.
-	std::string chunk_size_str;
+	std::string chunk_str;
 
 	// Contains the size of request's chunk.
 	// Used only for chunked requests.
@@ -66,6 +66,21 @@ struct RequestContext
 	bool chunked{};
 
 	std::function<bool(const char* data, size_t n)> write;
+
+	[[nodiscard]]
+	bool proto_v_eq(short major, short minor) const;
+
+	[[nodiscard]]
+	bool proto_v_gte(short major, short minor) const;
+
+	[[nodiscard]]
+	bool proto_v_lte(short major, short minor) const;
+
+	[[nodiscard]]
+	bool proto_v_gt(short major, short minor) const;
+
+	[[nodiscard]]
+	bool proto_v_lt(short major, short minor) const;
 };
 
 __SERVER_END__

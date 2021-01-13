@@ -34,6 +34,8 @@ public:
 		timeval timeout, core::ILogger* logger,
 		const collections::Dict<std::string, std::string>& env
 	);
+
+	void handle(HandlerFunc func);
 };
 
 __SERVER_END__

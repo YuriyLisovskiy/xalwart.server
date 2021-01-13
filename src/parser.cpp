@@ -54,6 +54,7 @@ parse_headers_status parse_headers(
 		auto pair = str::lsplit_one(
 			encoding::encode_iso_8859_1(line, encoding::STRICT), ':'
 		);
+		str::ltrim(pair.second);
 		result[pair.first] = pair.second;
 		if (result.size() > _MAX_HEADERS)
 		{

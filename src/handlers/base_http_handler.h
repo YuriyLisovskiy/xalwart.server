@@ -3,7 +3,11 @@
  *
  * Copyright (c) 2021 Yuriy Lisovskiy
  *
- * Purpose: TODO
+ * Purpose: reads and parses only HTTP headers,
+ * 	performs basic checks of an incoming request,
+ * 	returns error in case of invalid data and calls
+ * 	provided handler of HandlerFunc type with parsed
+ * 	context and local server's environment.
  */
 
 #pragma once
@@ -27,7 +31,7 @@
 __SERVER_BEGIN__
 
 typedef std::function<uint(
-	const int, RequestContext*, collections::Dict<std::string, std::string>
+	RequestContext*, collections::Dict<std::string, std::string>
 )> HandlerFunc;
 
 class BaseHTTPRequestHandler
@@ -35,7 +39,7 @@ class BaseHTTPRequestHandler
 protected:
 	HandlerFunc handler_func;
 
-	RequestContext r_ctx;
+	RequestContext request_ctx;
 
 	std::shared_ptr<SocketIO> socket_io;
 
@@ -80,7 +84,7 @@ protected:
 
 	void log_parse_headers_error(parser::parse_headers_status st) const;
 
-	void log_request(int code, const std::string& info="") const;
+	virtual void log_request(int code, const std::string& info="") const;
 
 	virtual void cleanup_headers();
 
@@ -141,7 +145,7 @@ protected:
 
 	// Return the current date and time formatted for a message header.
 	[[nodiscard]]
-	std::string datetime_string() const;
+	virtual std::string datetime_string() const;
 
 	// The server software version.
 	[[nodiscard]]
@@ -155,7 +159,7 @@ public:
 	);
 
 	// Handle multiple requests if necessary.
-	void handle(HandlerFunc func);
+	virtual void handle(HandlerFunc func);
 };
 
 __SERVER_END__
