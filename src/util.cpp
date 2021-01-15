@@ -161,7 +161,7 @@ std::string fqdn(const std::string& name)
 		}
 
 		bool is_broke = false;
-		for (int i = 0; i < ht->h_length; i++)
+		for (int i = 0; ht->h_aliases[i]; i++)
 		{
 			if (ht->h_aliases[i] && str::contains(ht->h_aliases[i], '.'))
 			{

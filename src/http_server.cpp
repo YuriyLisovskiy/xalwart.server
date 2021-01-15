@@ -22,10 +22,10 @@ std::shared_ptr<net::IServer> HTTPServer::initialize(
 {
 	Context ctx{};
 	ctx.logger = logger;
-	ctx.workers = stoi(kwargs.get("xw.workers"));
-	ctx.max_body_size = strtol(kwargs.get("xw.max_body_size").c_str(), nullptr, 10);
-	ctx.timeout_sec = stoi(kwargs.get("xw.timeout_sec"));
-	ctx.timeout_usec = strtol(kwargs.get("xw.timeout_usec").c_str(), nullptr, 10);
+	ctx.workers = stoi(kwargs.get("xw.workers", "3"));
+	ctx.max_body_size = strtol(kwargs.get("xw.max_body_size", "2621440").c_str(), nullptr, 10);
+	ctx.timeout_sec = stoi(kwargs.get("xw.timeout_sec", "5"));
+	ctx.timeout_usec = strtol(kwargs.get("xw.timeout_usec", "0").c_str(), nullptr, 10);
 	return std::shared_ptr<net::IServer>(new HTTPServer(ctx));
 }
 

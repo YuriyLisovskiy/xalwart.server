@@ -54,17 +54,18 @@ parse_headers_status parse_headers(
 		auto pair = str::lsplit_one(
 			encoding::encode_iso_8859_1(line, encoding::STRICT), ':'
 		);
-		str::ltrim(pair.second);
-		result[pair.first] = pair.second;
 		if (result.size() > _MAX_HEADERS)
 		{
 			return ph_max_headers_reached;
 		}
 
-		if (line == "\r\n" || line == "\n" || line.empty())
+		if (line.empty() || line == "\r\n" || line == "\n")
 		{
 			break;
 		}
+
+		str::ltrim(pair.second);
+		result[pair.first] = pair.second;
 	}
 
 	return ph_done;

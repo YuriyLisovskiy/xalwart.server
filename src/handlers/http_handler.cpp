@@ -96,9 +96,9 @@ std::string HTTPRequestHandler::server_version() const
 }
 
 HTTPRequestHandler::HTTPRequestHandler(
-		int sock, const std::string& server_version,
-		timeval timeout, core::ILogger* logger,
-		const collections::Dict<std::string, std::string>& env
+	int sock, const std::string& server_version,
+	timeval timeout, core::ILogger* logger,
+	const collections::Dict<std::string, std::string>& env
 ) : BaseHTTPRequestHandler(sock, server_version, timeout, logger, env)
 {
 }
