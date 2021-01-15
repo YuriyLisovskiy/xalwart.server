@@ -345,7 +345,7 @@ void BaseHTTPRequestHandler::handle(net::HandlerFunc func)
 		this->handle_one_request();
 	}
 
-	if (this->socket_io->shutdown(SHUT_WR))
+	if (this->socket_io->shutdown(SHUT_RDWR))
 	{
 		this->logger->error(
 			"'shutdown(SHUT_WR)' call failed: " + std::to_string(errno), _ERROR_DETAILS_

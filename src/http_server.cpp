@@ -149,7 +149,7 @@ void HTTPServer::_handle(const int& sock)
 				sock, "0.1", timeout, this->ctx.logger, this->base_environ
 			).handle(this->_handler);
 
-			this->_shutdown_request(sock);
+//			this->_shutdown_request(sock);
 			measure.end();
 			this->ctx.logger->debug(
 				"Time elapsed: " + std::to_string(measure.elapsed()) + " milliseconds"
