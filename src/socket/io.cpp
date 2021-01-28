@@ -30,7 +30,7 @@ SocketIO& SocketIO::operator= (SocketIO&& other) noexcept
 	return *this;
 }
 
-SocketIO::state SocketIO::read_line(xw::string& line, int max_n)
+SocketIO::state SocketIO::read_line(std::string& line, int max_n)
 {
 	auto ret = this->_recv(std::min(max_n, MAX_BUFF_SIZE));
 	if (ret != s_done)
@@ -63,7 +63,7 @@ SocketIO::state SocketIO::read_line(xw::string& line, int max_n)
 	return s_done;
 }
 
-SocketIO::state SocketIO::read_all(xw::string& content)
+SocketIO::state SocketIO::read_all(std::string& content)
 {
 	while (this->_buffer_size)
 	{

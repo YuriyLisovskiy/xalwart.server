@@ -17,7 +17,6 @@
 
 // Core libraries.
 #include <xalwart.core/sys.h>
-#include <xalwart.core/str.h>
 #include <xalwart.core/net/request_context.h>
 
 // Module definitions.
@@ -64,7 +63,7 @@ protected:
 	std::string command;
 	std::string full_path;
 
-	xw::string headers_buffer;
+	std::string headers_buffer;
 
 	bool parsed;
 

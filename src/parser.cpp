@@ -28,7 +28,7 @@ parse_headers_status parse_headers(
 {
 	while (true)
 	{
-		xw::string line;
+		std::string line;
 		auto r_status = r_file->read_line(line, _MAX_LINE + 1);
 		if (r_status != SocketIO::s_done)
 		{

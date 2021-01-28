@@ -372,11 +372,11 @@ void BaseHTTPRequestHandler::send_error(
 
 	this->send_response(code, msg.first);
 	this->send_header("Connection", "close");
-	xw::string body;
+	std::string body;
 	if (code >= 200 && code != 204 && code != 205 && code != 304)
 	{
 		// HTML encode to prevent Cross Site Scripting attacks.
-		xw::string content = this->default_error_message(
+		std::string content = this->default_error_message(
 			code, html::escape(msg.first, false), html::escape(msg.second, false)
 		);
 		body = encoding::encode_utf_8(content, encoding::REPLACE);

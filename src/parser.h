@@ -13,7 +13,6 @@
 #include <map>
 
 // Core libraries.
-#include <xalwart.core/str.h>
 #include <xalwart.core/collections/dict.h>
 #include <xalwart.core/collections/multi_dict.h>
 
