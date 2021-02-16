@@ -153,7 +153,7 @@ bool BaseHTTPRequestHandler::parse_request()
 		this->request_ctx.method = words[0];
 		path = words[1];
 		version = words[2];
-		if (!str::starts_with(version, "HTTP/"))
+		if (!version.starts_with("HTTP/"))
 		{
 			this->send_error(400, "Bad request version (" + version + ")");
 			return false;
