@@ -37,8 +37,8 @@ class TestServer
 public:
 	explicit TestServer(long port)
 	{
-		auto logger = xw::core::Logger::get_instance({}).get();
-		auto server = xw::server::HTTPServer::initialize(logger, {});
+		auto logger = xw::log::Logger({});
+		auto server = xw::server::HTTPServer::initialize(&logger, {});
 		server->setup_handler([](
 			xw::net::RequestContext* ctx,
 			const xw::collections::Dict<std::string, std::string>& env
@@ -65,7 +65,7 @@ public:
 		}
 		catch (const xw::core::SocketError& exc)
 		{
-			logger->error(exc);
+			logger.error(exc);
 		}
 	}
 };

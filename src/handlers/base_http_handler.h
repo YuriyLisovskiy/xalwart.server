@@ -38,7 +38,7 @@ protected:
 
 	std::shared_ptr<SocketIO> socket_io;
 
-	core::ILogger* logger;
+	log::ILogger* logger;
 
 	std::string sys_version = sys::compiler + "/" + sys::compiler_version;
 
@@ -149,7 +149,7 @@ protected:
 public:
 	BaseHTTPRequestHandler(
 		int sock, std::string server_version,
-		timeval timeout, core::ILogger* logger,
+		timeval timeout, log::ILogger* logger,
 		collections::Dict<std::string, std::string> env
 	);
 

@@ -37,14 +37,14 @@ public:
 class SelectSelector : public ISelector
 {
 protected:
-	core::ILogger* logger;
+	log::ILogger* logger;
 	fd_set readers{};
 	fd_set writers{};
 	int fd;
 	int events;
 
 public:
-	explicit SelectSelector(core::ILogger* logger);
+	explicit SelectSelector(log::ILogger* logger);
 	void register_(uint fd, int events) override;
 	bool select(uint timeout_sec, uint timeout_usec) override;
 };

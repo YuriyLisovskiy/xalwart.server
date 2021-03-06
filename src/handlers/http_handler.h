@@ -31,11 +31,11 @@ protected:
 public:
 	explicit HTTPRequestHandler(
 		int sock, const std::string& server_version,
-		timeval timeout, core::ILogger* logger,
+		timeval timeout, log::ILogger* logger,
 		const collections::Dict<std::string, std::string>& env
 	);
 
-	void handle(net::HandlerFunc func);
+	void handle(net::HandlerFunc func) override;
 };
 
 __SERVER_END__

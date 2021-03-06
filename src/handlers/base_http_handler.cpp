@@ -75,14 +75,14 @@ void BaseHTTPRequestHandler::log_parse_headers_error(parser::parse_headers_statu
 
 void BaseHTTPRequestHandler::log_request(int code, const std::string& info) const
 {
-	core::Logger::Color color = core::Logger::Color::GREEN;
+	log::Logger::Color color = log::Logger::Color::GREEN;
 	if (code >= 400)
 	{
-		color = core::Logger::Color::YELLOW;
+		color = log::Logger::Color::YELLOW;
 	}
 	else if (code >= 500)
 	{
-		color = core::Logger::Color::RED;
+		color = log::Logger::Color::RED;
 	}
 
 	std::string msg;
@@ -122,7 +122,7 @@ void BaseHTTPRequestHandler::cleanup_headers()
 
 BaseHTTPRequestHandler::BaseHTTPRequestHandler(
 	int sock, std::string server_version,
-	timeval timeout, core::ILogger* logger,
+	timeval timeout, log::ILogger* logger,
 	collections::Dict<std::string, std::string> env
 ) : logger(logger),
     server_num_version(std::move(server_version)),

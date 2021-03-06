@@ -33,7 +33,7 @@ class HTTPServer : public net::IServer
 {
 public:
 	static std::shared_ptr<net::IServer> initialize(
-		core::ILogger* logger,
+		log::ILogger* logger,
 		const collections::Dict<std::string, std::string>& kwargs
 	);
 

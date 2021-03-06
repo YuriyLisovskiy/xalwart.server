@@ -43,7 +43,7 @@ bool HTTPRequestHandler::parse_request()
 			if (this->protocol_version < "HTTP/1.1")
 			{
 				this->send_error(
-						501, "Chunked Transfer-Encoding is not supported by " + this->protocol_version + " protocol"
+					501, "Chunked Transfer-Encoding is not supported by " + this->protocol_version + " protocol"
 				);
 				this->close_connection = true;
 				return false;
@@ -97,7 +97,7 @@ std::string HTTPRequestHandler::server_version() const
 
 HTTPRequestHandler::HTTPRequestHandler(
 	int sock, const std::string& server_version,
-	timeval timeout, core::ILogger* logger,
+	timeval timeout, log::ILogger* logger,
 	const collections::Dict<std::string, std::string>& env
 ) : BaseHTTPRequestHandler(sock, server_version, timeout, logger, env)
 {

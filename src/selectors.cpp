@@ -14,17 +14,16 @@
 
 __SERVER_BEGIN__
 
-SelectSelector::SelectSelector(core::ILogger* logger) : logger(logger)
+SelectSelector::SelectSelector(log::ILogger* logger) : logger(logger)
 {
 	this->fd = -1;
 	this->events = -1;
 }
 
-void SelectSelector::register_(uint fd, int events)
+void SelectSelector::register_(uint file_descriptor, int events_)
 {
-	this->fd = fd;
-	this->events = events;
-
+	this->fd = file_descriptor;
+	this->events = events_;
 	if (this->events & EVENT_READ)
 	{
 		FD_ZERO(&this->readers);

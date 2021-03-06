@@ -37,7 +37,7 @@ bool is_ipv6(const std::string& addr)
 }
 
 std::shared_ptr<BaseSocket> create_socket(
-	const std::string& address, uint16_t port, size_t retries_count, core::ILogger* logger
+	const std::string& address, uint16_t port, size_t retries_count, log::ILogger* logger
 )
 {
 	std::function<std::shared_ptr<BaseSocket>()> make_socket;
@@ -97,7 +97,7 @@ std::shared_ptr<BaseSocket> create_socket(
 }
 
 void close_socket(
-	std::shared_ptr<BaseSocket>& socket, core::ILogger* logger
+	std::shared_ptr<BaseSocket>& socket, log::ILogger* logger
 )
 {
 	try

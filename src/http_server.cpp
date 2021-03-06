@@ -16,7 +16,7 @@
 __SERVER_BEGIN__
 
 std::shared_ptr<net::IServer> HTTPServer::initialize(
-	core::ILogger* logger,
+	log::ILogger* logger,
 	const collections::Dict<std::string, std::string>& kwargs
 )
 {

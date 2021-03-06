@@ -29,11 +29,11 @@ extern std::string join_addr(const std::string& addr, uint16_t port);
 extern bool is_ipv6(const std::string& addr);
 
 extern std::shared_ptr<BaseSocket> create_socket(
-	const std::string& address, uint16_t port, size_t retries_count, core::ILogger* logger
+	const std::string& address, uint16_t port, size_t retries_count, log::ILogger* logger
 );
 
 extern void close_socket(
-	std::shared_ptr<BaseSocket>& socket, core::ILogger* logger
+	std::shared_ptr<BaseSocket>& socket, log::ILogger* logger
 );
 
 // Wrapper for standard gethostname(char *__name, size_t __len) function.
