@@ -44,3 +44,6 @@ build/
 # External libraries
 lib/
 include/
+
+# Other stuff
+tests/tests.cpp
