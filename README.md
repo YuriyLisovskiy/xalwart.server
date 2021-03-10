@@ -10,7 +10,7 @@
     - `clang`: v10 or later.
 - CMake: `3.12` or later.
 - Additional libraries:
-    - [xalwart.core](https://github.com/YuriyLisovskiy/xalwart.core)
+    - [xalwart.core](https://github.com/YuriyLisovskiy/xalwart.core) (required)
 
 ### Build and Install
 ```bash
