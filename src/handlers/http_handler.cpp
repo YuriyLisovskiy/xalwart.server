@@ -20,9 +20,12 @@ bool HTTPRequestHandler::parse_request()
 		return false;
 	}
 
-	auto full_p = str::lsplit_one(this->full_path, '?');
-	this->request_ctx.path = full_p.first;
-	this->request_ctx.query = full_p.second;
+	auto full_p = str::split(this->full_path, '?', 1);
+	this->request_ctx.path = full_p[0];
+	if (full_p.size() == 2)
+	{
+		this->request_ctx.query = full_p[1];
+	}
 
 	auto content_len = this->request_ctx.headers.get("Content-Length", "");
 	if (!content_len.empty())

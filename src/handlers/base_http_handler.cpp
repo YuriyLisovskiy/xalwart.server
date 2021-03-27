@@ -140,8 +140,10 @@ bool BaseHTTPRequestHandler::parse_request()
 	this->request_version = this->default_request_version;
 	auto version = this->default_request_version;
 	this->close_connection = true;
-	auto req_line = encoding::encode_iso_8859_1(this->raw_request_line, encoding::STRICT);
-	str::rtrim(req_line, "\r\n");
+	auto req_line = str::rtrim(
+		encoding::encode_iso_8859_1(this->raw_request_line, encoding::STRICT),
+		"\r\n"
+	);
 	this->request_line = req_line;
 
 	std::string path;

@@ -50,9 +50,9 @@ parse_headers_status parse_headers(
 			return ph_line_too_long;
 		}
 
-		str::rtrim(line, "\r\n");
-		auto pair = str::lsplit_one(
-			encoding::encode_iso_8859_1(line, encoding::STRICT), ':'
+		line = str::rtrim(line, "\r\n");
+		auto pair = str::split(
+			encoding::encode_iso_8859_1(line, encoding::STRICT), ':', 1
 		);
 		if (result.size() > _MAX_HEADERS)
 		{
@@ -64,8 +64,13 @@ parse_headers_status parse_headers(
 			break;
 		}
 
-		str::ltrim(pair.second);
-		result[pair.first] = pair.second;
+		if (pair.size() == 1)
+		{
+			pair.emplace_back("");
+		}
+
+		pair[1] = str::ltrim(pair[1]);
+		result[pair[0]] = pair[1];
 	}
 
 	return ph_done;
