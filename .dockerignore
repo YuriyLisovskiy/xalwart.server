@@ -1,0 +1,15 @@
+Dockerfile*
+
+# Git/Github stuff
+.git/
+.github/
+
+# Project stuff
+.idea/
+cmake-build-*
+build/
+README.md
+Makefile
+docker/
+
+tests/tests.cpp
