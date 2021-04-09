@@ -3,11 +3,10 @@
  *
  * Copyright (c) 2021 Yuriy Lisovskiy
  *
- * Purpose: reads and parses only HTTP headers,
- * 	performs basic checks of an incoming request,
- * 	returns error in case of invalid data and calls
- * 	provided handler of HandlerFunc type with parsed
- * 	context and local server's environment.
+ * Reads and parses only HTTP headers, performs basic checks
+ * of an incoming request, returns error in case of invalid
+ * data and calls provided handler of HandlerFunc type with
+ * parsed context and local server's environment.
  */
 
 #pragma once

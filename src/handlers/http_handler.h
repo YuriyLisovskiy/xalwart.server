@@ -3,7 +3,7 @@
  *
  * Copyright (c) 2021 Yuriy Lisovskiy
  *
- * Purpose: TODO
+ * Simple handler implementation.
  */
 
 #pragma once
