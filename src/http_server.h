@@ -29,10 +29,10 @@
 
 __SERVER_BEGIN__
 
-class HTTPServer : public net::IServer
+class HTTPServer : public net::abc::IServer
 {
 public:
-	static std::shared_ptr<net::IServer> initialize(
+	static std::shared_ptr<net::abc::IServer> initialize(
 		log::ILogger* logger,
 		const collections::Dict<std::string, std::string>& kwargs
 	);
@@ -59,7 +59,7 @@ protected:
 	collections::Dict<std::string, std::string> base_environ;
 
 private:
-	std::shared_ptr<core::ThreadPool> _thread_pool;
+	std::shared_ptr<ThreadPool> _thread_pool;
 	net::HandlerFunc _handler;
 	std::shared_ptr<BaseSocket> _socket;
 

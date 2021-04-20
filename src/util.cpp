@@ -72,7 +72,7 @@ std::shared_ptr<BaseSocket> create_socket(
 			socket = make_socket();
 			break;
 		}
-		catch (const core::SocketError& exc)
+		catch (const SocketError& exc)
 		{
 			switch (exc.err_no())
 			{
@@ -104,7 +104,7 @@ void close_socket(
 	{
 		socket->close();
 	}
-	catch (const core::SocketError& exc)
+	catch (const SocketError& exc)
 	{
 		logger->error("Error while closing socket: " + std::string(exc.what()));
 	}
@@ -115,7 +115,7 @@ std::string get_host_name()
 	char host_buffer[256];
 	if (gethostname(host_buffer, sizeof(host_buffer)))
 	{
-		throw core::SocketError(
+		throw SocketError(
 			errno, "'gethostname' call failed: " + std::to_string(errno), _ERROR_DETAILS_
 		);
 	}
@@ -129,14 +129,14 @@ struct hostent* get_host_by_addr(const std::string& address)
 	struct hostent* hp;
 	if (!inet_aton(address.c_str(), &ip))
 	{
-		throw core::SocketError(
+		throw SocketError(
 			1, "can't parse IP address " + address, _ERROR_DETAILS_
 		);
 	}
 
 	if ((hp = gethostbyaddr((const char *) &ip, sizeof(ip), INADDR_ANY)) == nullptr)
 	{
-		throw core::SocketError(
+		throw SocketError(
 			1, "no name associated with " + address, _ERROR_DETAILS_
 		);
 	}
@@ -175,7 +175,7 @@ std::string fqdn(const std::string& name)
 			nm = ht->h_name;
 		}
 	}
-	catch (const core::SocketError&)
+	catch (const SocketError&)
 	{
 	}
 

@@ -13,7 +13,7 @@ void Context::normalize()
 {
 	if (!this->logger)
 	{
-		throw core::NullPointerException("logger must be instantiated");
+		throw NullPointerException("logger must be instantiated");
 	}
 
 	if (!this->timeout_sec)

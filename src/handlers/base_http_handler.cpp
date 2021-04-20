@@ -468,7 +468,7 @@ std::string BaseHTTPRequestHandler::version_string() const
 
 std::string BaseHTTPRequestHandler::datetime_string() const
 {
-	return utility::format_date(dt::Datetime::utc_now().timestamp(), false, true);
+	return util::format_date(dt::Datetime::utc_now().timestamp(), false, true);
 }
 
 std::string BaseHTTPRequestHandler::server_version() const

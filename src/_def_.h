@@ -12,7 +12,6 @@
 
 #include <xalwart.core/_def_.h>
 
-
 // xw::server
 #define __SERVER_BEGIN__ __MAIN_NAMESPACE_BEGIN__ namespace server {
 #define __SERVER_END__ } __MAIN_NAMESPACE_END__
@@ -22,8 +21,8 @@
 #define __SERVER_UTIL_END__ } __SERVER_END__
 
 // xw::server::parser
-#define __PARSER_BEGIN__ __SERVER_BEGIN__ namespace parser {
-#define __PARSER_END__ } __SERVER_END__
+#define __SERVER_PARSER_BEGIN__ __SERVER_BEGIN__ namespace parser {
+#define __SERVER_PARSER_END__ } __SERVER_END__
 
 
 template <typename TimeT = std::chrono::milliseconds>

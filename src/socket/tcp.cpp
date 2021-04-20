@@ -18,7 +18,7 @@ void TCPSocket::bind()
 	if (inet_pton(this->family, this->address, &addr.sin_addr) <= 0)
 	{
 		auto err = errno;
-		throw core::SocketError(
+		throw SocketError(
 			err, "'inet_pton' call failed: " + std::to_string(err), _ERROR_DETAILS_
 		);
 	}
@@ -29,7 +29,7 @@ void TCPSocket::bind()
 	if (::bind(this->sock, (const sockaddr *)&addr, sizeof(addr)))
 	{
 		auto err = errno;
-		throw core::SocketError(
+		throw SocketError(
 			err, "'bind' call failed: " + std::to_string(err), _ERROR_DETAILS_
 		);
 	}

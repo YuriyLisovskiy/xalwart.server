@@ -23,7 +23,7 @@
 #include "./socket/io.h"
 
 
-__PARSER_BEGIN__
+__SERVER_PARSER_BEGIN__
 
 enum parse_headers_status
 {
@@ -219,4 +219,4 @@ extern parse_headers_status parse_headers(
 //	void parse_headers(const xw::string& data);
 //};
 
-__PARSER_END__
+__SERVER_PARSER_END__

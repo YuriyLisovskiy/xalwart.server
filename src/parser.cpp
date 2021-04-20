@@ -17,7 +17,7 @@
 #endif
 
 
-__PARSER_BEGIN__
+__SERVER_PARSER_BEGIN__
 
 const int _MAX_LINE = 65536;
 const int _MAX_HEADERS = 100;
@@ -674,4 +674,4 @@ bool request_parser::is_digit(uint c)
 }
 */
 
-__PARSER_END__
+__SERVER_PARSER_END__

@@ -41,7 +41,7 @@ BaseSocket::BaseSocket(
 {
 	if ((this->sock = socket(this->family, SOCK_STREAM, 0)) < 0)
 	{
-		throw core::SocketError(
+		throw SocketError(
 			errno, "'socket' call failed: " + std::to_string(errno), _ERROR_DETAILS_
 		);
 	}
@@ -60,7 +60,7 @@ void BaseSocket::set_options()
 			case EINVAL:
 				break;
 			default:
-				throw core::SocketError(
+				throw SocketError(
 					err, "'setsockopt' call failed: " + std::to_string(err), _ERROR_DETAILS_
 				);
 		}
@@ -74,7 +74,7 @@ void BaseSocket::listen()
 {
 	if (::listen(this->sock, SOMAXCONN))
 	{
-		throw core::SocketError(
+		throw SocketError(
 			errno, "'listen' call failed: " + std::to_string(errno), _ERROR_DETAILS_
 		);
 	}
@@ -90,7 +90,7 @@ void BaseSocket::close()
 	this->_closed = true;
 	if (shutdown(this->sock, SHUT_RDWR))
 	{
-		throw core::SocketError(
+		throw SocketError(
 			errno, "'shutdown' call failed: " + std::to_string(errno), _ERROR_DETAILS_
 		);
 	}

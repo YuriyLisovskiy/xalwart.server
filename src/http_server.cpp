@@ -15,7 +15,7 @@
 
 __SERVER_BEGIN__
 
-std::shared_ptr<net::IServer> HTTPServer::initialize(
+std::shared_ptr<net::abc::IServer> HTTPServer::initialize(
 	log::ILogger* logger,
 	const collections::Dict<std::string, std::string>& kwargs
 )
@@ -26,7 +26,7 @@ std::shared_ptr<net::IServer> HTTPServer::initialize(
 	ctx.max_body_size = strtol(kwargs.get("xw.max_body_size", "2621440").c_str(), nullptr, 10);
 	ctx.timeout_sec = stoi(kwargs.get("xw.timeout_sec", "5"));
 	ctx.timeout_usec = strtol(kwargs.get("xw.timeout_usec", "0").c_str(), nullptr, 10);
-	return std::shared_ptr<net::IServer>(new HTTPServer(ctx));
+	return std::shared_ptr<net::abc::IServer>(new HTTPServer(ctx));
 }
 
 void HTTPServer::setup_handler(net::HandlerFunc handler)
@@ -38,7 +38,7 @@ void HTTPServer::bind(const std::string& address, uint16_t port)
 {
 	if (!this->_handler)
 	{
-		throw core::NullPointerException(
+		throw NullPointerException(
 			"request handler is not specified", _ERROR_DETAILS_
 		);
 	}
@@ -95,7 +95,7 @@ collections::Dict<std::string, std::string> HTTPServer::environ() const
 HTTPServer::HTTPServer(Context ctx) : ctx(std::move(ctx))
 {
 	this->ctx.normalize();
-	this->_thread_pool = std::make_shared<core::ThreadPool>(
+	this->_thread_pool = std::make_shared<ThreadPool>(
 		"server", this->ctx.workers
 	);
 }
@@ -107,7 +107,7 @@ int HTTPServer::_get_request()
 	{
 		if (errno == EBADF || errno == EINVAL)
 		{
-			throw core::SocketError(
+			throw SocketError(
 				errno, "'accept' call failed: " + std::to_string(errno), _ERROR_DETAILS_
 			);
 		}
@@ -118,7 +118,7 @@ int HTTPServer::_get_request()
 			return -1;
 		}
 
-		throw core::SocketError(
+		throw SocketError(
 			errno,
 			"'accept' call failed while accepting a new connection: " + std::to_string(errno),
 			_ERROR_DETAILS_
@@ -155,7 +155,7 @@ void HTTPServer::_handle(const int& sock)
 				"Time elapsed: " + std::to_string(measure.elapsed()) + " milliseconds"
 			);
 		}
-		catch (const core::ParseError& exc)
+		catch (const ParseError& exc)
 		{
 			this->_shutdown_request(sock);
 			this->ctx.logger->error(exc);
