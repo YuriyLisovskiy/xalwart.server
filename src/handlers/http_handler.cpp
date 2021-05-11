@@ -83,6 +83,9 @@ bool HTTPRequestHandler::parse_request()
 			}
 		}
 
+		// TODO: remove!
+		std::cerr << "CS: " << this->request_ctx.content_size << " | S: " << this->request_ctx.content.size() << '\n';
+
 		if (this->request_ctx.content_size != this->request_ctx.content.size())
 		{
 			this->send_error(400, "Bad request content");

@@ -65,13 +65,20 @@ SocketIO::state SocketIO::read_line(std::string& line, int max_n)
 
 SocketIO::state SocketIO::read_all(std::string& content)
 {
-	while (this->_buffer_size)
+	std::cerr << "Buff size 1: " << this->_buffer_size << '\n';
+
+	if (this->_buffer[0] != '\0')
 	{
-		auto ret = this->_recv(MAX_BUFF_SIZE);
-		if (ret != s_done)
-		{
-			return ret;
-		}
+		content += std::string(this->_buffer, this->_buffer_size);
+		this->_buffer[0] = '\0';
+	}
+
+	std::cerr << "Buff size 2: " << this->_buffer_size << '\n';
+
+	SocketIO::state ret;
+	while ((ret = this->_recv(MAX_BUFF_SIZE)) == s_done)
+	{
+		std::cerr << "Buff size 3: " << this->_buffer_size << '\n';
 
 		if (this->_buffer[0] != '\0')
 		{
@@ -85,7 +92,7 @@ SocketIO::state SocketIO::read_all(std::string& content)
 		}
 	}
 
-	return s_done;
+	return ret;
 }
 
 SocketIO::state SocketIO::write(const char* data, size_t n) const
