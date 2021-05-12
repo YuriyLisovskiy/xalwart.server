@@ -63,30 +63,24 @@ SocketIO::state SocketIO::read_line(std::string& line, int max_n)
 	return s_done;
 }
 
-SocketIO::state SocketIO::read_all(std::string& content)
+SocketIO::state SocketIO::read_bytes(std::string& content, unsigned long long n_bytes)
 {
-	std::cerr << "Buff size 1: " << this->_buffer_size << '\n';
-
 	if (this->_buffer[0] != '\0')
 	{
 		content += std::string(this->_buffer, this->_buffer_size);
 		this->_buffer[0] = '\0';
 	}
 
-	std::cerr << "Buff size 2: " << this->_buffer_size << '\n';
-
 	SocketIO::state ret;
-	while ((ret = this->_recv(MAX_BUFF_SIZE)) == s_done)
+	while ((ret = this->_recv(std::min<unsigned long long>(n_bytes, MAX_BUFF_SIZE))) == s_done)
 	{
-		std::cerr << "Buff size 3: " << this->_buffer_size << '\n';
-
 		if (this->_buffer[0] != '\0')
 		{
 			content += std::string(this->_buffer, this->_buffer_size);
 			this->_buffer[0] = '\0';
 		}
 
-		if (this->_buffer_size < MAX_BUFF_SIZE)
+		if (content.size() >= n_bytes)
 		{
 			break;
 		}

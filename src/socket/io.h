@@ -31,6 +31,7 @@ public:
 		s_timed_out,
 		s_conn_broken,
 		s_failed
+//		s_eof
 	};
 
 	explicit SocketIO(
@@ -40,7 +41,7 @@ public:
 	SocketIO& operator= (SocketIO&& other) noexcept;
 
 	state read_line(std::string& line, int max_n=MAX_BUFF_SIZE);
-	state read_all(std::string& content);
+	state read_bytes(std::string& content, unsigned long long n);
 	state write(const char* data, size_t n) const;
 
 	[[nodiscard]]
@@ -56,5 +57,32 @@ private:
 	long _buffer_size;
 	std::shared_ptr<ISelector> _selector;
 };
+
+inline std::ostream& operator<< (std::ostream& os, SocketIO::state st)
+{
+	switch (st)
+	{
+		case SocketIO::s_done:
+			os << "s_done";
+			break;
+		case SocketIO::s_timed_out:
+			os << "s_timed_out";
+			break;
+		case SocketIO::s_conn_broken:
+			os << "s_conn_broken";
+			break;
+		case SocketIO::s_failed:
+			os << "s_failed";
+			break;
+//		case SocketIO::s_eof:
+//			os << "s_eof";
+//			break;
+		default:
+			os << "s_unknown";
+			break;
+	}
+
+	return os;
+}
 
 __SERVER_END__

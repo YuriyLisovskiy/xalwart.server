@@ -65,7 +65,9 @@ bool HTTPRequestHandler::parse_request()
 		}
 		else
 		{
-			auto s_status = this->socket_io->read_all(this->request_ctx.content);
+			auto s_status = this->socket_io->read_bytes(
+				this->request_ctx.content, this->request_ctx.content_size
+			);
 			if (s_status != SocketIO::s_done)
 			{
 				switch (s_status)
@@ -82,9 +84,6 @@ bool HTTPRequestHandler::parse_request()
 				return false;
 			}
 		}
-
-		// TODO: remove!
-		std::cerr << "CS: " << this->request_ctx.content_size << " | S: " << this->request_ctx.content.size() << '\n';
 
 		if (this->request_ctx.content_size != this->request_ctx.content.size())
 		{
