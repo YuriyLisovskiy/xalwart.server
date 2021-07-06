@@ -19,5 +19,5 @@ inline const std::string CONTENT = "HTTP/1.1 200 OK\r\n"
 class HelloWorldServer
 {
 public:
-	explicit HelloWorldServer(long port);
+	explicit HelloWorldServer(const char* address);
 };

@@ -14,7 +14,7 @@
 #include <memory>
 
 // Core libraries.
-#include <xalwart.core/thread_pool.h>
+#include <xalwart.core/event_loop.h>
 #include <xalwart.core/result.h>
 #include <xalwart.core/net/abc.h>
 
@@ -31,12 +31,19 @@ __SERVER_BEGIN__
 
 class HTTPServer : public net::abc::IServer
 {
+protected:
+	struct RequestEvent : public Event
+	{
+		int fd;
+		explicit RequestEvent(int fd) : fd(fd) {}
+	};
+
 public:
 
 	// Accepts parameters in kwargs:
 	//
 	// - workers: threads count;
-	// - max_body_size: maximum size of request body;
+	// - max_body_size: maximum size of request body (in bytes);
 	// - timeout_sec: timeout seconds;
 	// - timeout_usec: timeout microseconds.
 	static std::shared_ptr<net::abc::IServer> initialize(
@@ -72,7 +79,7 @@ protected:
 	collections::Dict<std::string, std::string> base_environ;
 
 private:
-	std::shared_ptr<ThreadPool> _thread_pool;
+	std::shared_ptr<EventLoop> _event_loop;
 	net::HandlerFunc _handler;
 	std::shared_ptr<BaseSocket> _socket;
 
@@ -81,7 +88,10 @@ private:
 
 	int _get_request();
 
-	void _handle(const int& sock);
+	inline void _handle(const int& sock)
+	{
+		this->_event_loop->inject_event<RequestEvent>(sock);
+	}
 
 	void _shutdown_request(int sock) const;
 };

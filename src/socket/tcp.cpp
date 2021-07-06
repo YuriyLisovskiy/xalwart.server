@@ -15,7 +15,7 @@ __SERVER_BEGIN__
 void TCPSocket::bind()
 {
 	sockaddr_in addr{};
-	if (inet_pton(this->family, this->address, &addr.sin_addr) <= 0)
+	if (inet_pton(this->family, this->address.c_str(), &addr.sin_addr) <= 0)
 	{
 		auto err = errno;
 		throw SocketError(

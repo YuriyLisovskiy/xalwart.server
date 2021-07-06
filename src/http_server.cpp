@@ -100,7 +100,7 @@ void HTTPServer::listen(const std::string& message)
 
 void HTTPServer::close()
 {
-	this->_thread_pool->close();
+	this->_event_loop->wait_for_threads();
 	util::close_socket(this->_socket, this->ctx.logger);
 }
 
@@ -110,14 +110,40 @@ void HTTPServer::init_environ()
 	this->base_environ[net::meta::SERVER_PORT] = std::to_string(this->server_port);
 }
 
-HTTPServer::HTTPServer(Context ctx) : ctx(std::move(ctx))
+HTTPServer::HTTPServer(Context ctx) : ctx(ctx)
 {
 	this->ctx.normalize();
+	this->_event_loop = std::make_shared<EventLoop>(this->ctx.workers);
+	this->_event_loop->add_event_listener<RequestEvent>([this](auto&, auto& event) {
+		try
+		{
+			Measure measure;
+			measure.start();
 
-	// TODO: replace ThreadPool with EventLoop.
-	this->_thread_pool = std::make_shared<ThreadPool>(
-		"server", this->ctx.workers
-	);
+			timeval timeout{
+				this->ctx.timeout_sec,
+				this->ctx.timeout_usec
+			};
+			HTTPRequestHandler(
+				event.fd, XW_SERVER_VERSION, timeout, this->ctx.max_body_size, this->ctx.logger, this->base_environ
+			).handle(this->_handler);
+
+			measure.end();
+			this->ctx.logger->debug(
+				"Time elapsed: " + std::to_string(measure.elapsed()) + " milliseconds"
+			);
+		}
+		catch (const ParseError& exc)
+		{
+			this->_shutdown_request(event.fd);
+			this->ctx.logger->error(exc);
+		}
+		catch (const std::exception& exc)
+		{
+			this->_shutdown_request(event.fd);
+			this->ctx.logger->fatal(exc.what(), _ERROR_DETAILS_);
+		}
+	});
 }
 
 int HTTPServer::_get_request()
@@ -151,40 +177,6 @@ int HTTPServer::_get_request()
 	}
 
 	return -1;
-}
-
-void HTTPServer::_handle(const int& sock)
-{
-	this->_thread_pool->push([this, sock](){
-		try
-		{
-			Measure measure;
-			measure.start();
-
-			timeval timeout{
-				this->ctx.timeout_sec,
-				this->ctx.timeout_usec
-			};
-			HTTPRequestHandler(
-				sock, XW_SERVER_VERSION, timeout, this->ctx.max_body_size, this->ctx.logger, this->base_environ
-			).handle(this->_handler);
-
-			measure.end();
-			this->ctx.logger->debug(
-				"Time elapsed: " + std::to_string(measure.elapsed()) + " milliseconds"
-			);
-		}
-		catch (const ParseError& exc)
-		{
-			this->_shutdown_request(sock);
-			this->ctx.logger->error(exc);
-		}
-		catch (const std::exception& exc)
-		{
-			this->_shutdown_request(sock);
-			this->ctx.logger->fatal(exc.what(), _ERROR_DETAILS_);
-		}
-	});
 }
 
 void HTTPServer::_shutdown_request(int sock) const

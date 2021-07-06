@@ -8,6 +8,7 @@
 
 int main()
 {
-	HelloWorldServer(8080);
+	xw::InterruptException::initialize();
+	HelloWorldServer("/tmp/xw.sock");
 	return 0;
 }

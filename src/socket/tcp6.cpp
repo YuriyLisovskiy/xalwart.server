@@ -18,7 +18,7 @@ __SERVER_BEGIN__
 void TCP6Socket::bind()
 {
 	sockaddr_in6 addr{};
-	if (inet_pton(this->family, this->address, &addr.sin6_addr) <= 0)
+	if (inet_pton(this->family, this->address.c_str(), &addr.sin6_addr) <= 0)
 	{
 		auto err = errno;
 		throw SocketError(

@@ -8,6 +8,10 @@
 
 #pragma once
 
+#include <xalwart.core/sys.h>
+
+#ifdef __unix__
+
 // Module definitions.
 #include "../_def_.h"
 
@@ -23,7 +27,13 @@ protected:
 	void bind() override;
 
 public:
-	explicit UnixSocket(const char* address);
+	explicit inline UnixSocket(const char* path) : BaseSocket(path, 0, AF_UNIX)
+	{
+	}
+
+	void close() override;
 };
 
 __SERVER_END__
+
+#endif // __unix__

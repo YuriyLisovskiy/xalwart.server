@@ -37,7 +37,7 @@ private:
 protected:
 	int sock;
 	int family;
-	const char* address;
+	std::string address;
 	uint16_t port;
 
 protected:
