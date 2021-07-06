@@ -2,7 +2,11 @@ name: "clang-build"
 on:
   push:
     branches:
+      - 'dev'
       - 'master'
+  pull_request:
+    branches:
+      - '**'
 jobs:
   build:
     name: ${{ matrix.os }} [clang-${{ matrix.compiler_version }}]
