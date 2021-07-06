@@ -1,4 +1,4 @@
-name: "alpine-gcc"
+name: "gcc-dev"
 on:
   push:
     branches:

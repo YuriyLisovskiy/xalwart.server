@@ -1,4 +1,4 @@
-name: "alpine-clang"
+name: "clang-dev"
 on:
   push:
     branches:
