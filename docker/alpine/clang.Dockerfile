@@ -37,8 +37,6 @@ RUN ldconfig /etc/ld.so.conf.d
 
 COPY . .
 
-RUN ls $APP_HOME/tests
-
 RUN mkdir $APP_HOME/build && \
     cd $APP_HOME/build && \
     cmake -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -DCMAKE_BUILD_TYPE=Debug ..
