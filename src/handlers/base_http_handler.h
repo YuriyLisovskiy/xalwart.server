@@ -2,6 +2,7 @@
  * handlers/base_http_handler.h
  *
  * Copyright (c) 2021 Yuriy Lisovskiy
+ * Based on Python 3 HTTP server.
  *
  * Reads and parses only HTTP headers, performs basic checks
  * of an incoming request, returns error in case of invalid
@@ -78,7 +79,7 @@ protected:
 
 	void log_parse_headers_error(parser::parse_headers_status st) const;
 
-	virtual void log_request(int code, const std::string& info) const;
+	virtual void log_request(uint code, const std::string& info) const;
 
 	virtual void cleanup_headers();
 
@@ -135,7 +136,10 @@ protected:
 
 	// Return the server software version string.
 	[[nodiscard]]
-	std::string version_string() const;
+	inline std::string version_string() const
+	{
+		return this->server_version() + " " + this->sys_version;
+	}
 
 	// Return the current date and time formatted for a message header.
 	[[nodiscard]]
@@ -143,7 +147,10 @@ protected:
 
 	// The server software version.
 	[[nodiscard]]
-	virtual std::string server_version() const;
+	virtual inline std::string server_version() const
+	{
+		return "BaseHTTP/" + this->server_num_version;
+	}
 
 public:
 	BaseHTTPRequestHandler(

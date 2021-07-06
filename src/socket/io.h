@@ -3,7 +3,7 @@
  *
  * Copyright (c) 2021 Yuriy Lisovskiy
  *
- * Purpose: TODO
+ * SocketIO implements logic for socket fd.
  */
 
 #pragma once
@@ -18,7 +18,7 @@
 #include "../selectors.h"
 
 
-#define MAX_BUFF_SIZE 65537 // bytes
+#define MAX_BUFF_SIZE (size_t)65537 // bytes
 
 __SERVER_BEGIN__
 
@@ -40,21 +40,24 @@ public:
 
 	SocketIO& operator= (SocketIO&& other) noexcept;
 
-	state read_line(std::string& line, int max_n=MAX_BUFF_SIZE);
-	state read_bytes(std::string& content, unsigned long long n);
+	state read_line(std::string& line, size_t max_n=MAX_BUFF_SIZE);
+	state read_bytes(std::string& content, size_t n);
 	state write(const char* data, size_t n) const;
 
 	[[nodiscard]]
-	int shutdown(int how) const;
+	inline int shutdown(int how) const
+	{
+		return ::shutdown(this->_fd, how);
+	}
 
 private:
-	state _recv(int n);
+	state _recv(size_t n);
 
 private:
 	int _fd;
 	timeval _timeout;
 	char _buffer[MAX_BUFF_SIZE]{};
-	long _buffer_size;
+	ssize_t _buffer_size;
 	std::shared_ptr<ISelector> _selector;
 };
 

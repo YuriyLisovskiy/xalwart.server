@@ -3,7 +3,7 @@
  *
  * Copyright (c) 2021 Yuriy Lisovskiy
  *
- * Purpose: TODO
+ * TCP/IPv6 socket implementation.
  */
 
 #pragma once
@@ -23,7 +23,10 @@ protected:
 	void bind() override;
 
 public:
-	explicit TCP6Socket(const char* address, uint16_t port);
+	explicit inline TCP6Socket(const char* address, uint16_t port) : BaseSocket(address, port, AF_INET6)
+	{
+	}
+
 	void set_options() override;
 };
 

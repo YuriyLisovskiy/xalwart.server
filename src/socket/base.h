@@ -3,7 +3,7 @@
  *
  * Copyright (c) 2021 Yuriy Lisovskiy
  *
- * Purpose: TODO
+ * Base wrapper for socket file descriptor.
  */
 
 #pragma once
@@ -32,12 +32,10 @@ private:
 	bool _closed;
 
 private:
-	bool _set_blocking(bool blocking);
-
-public:
-	int sock;
+	bool _set_blocking(bool blocking) const;
 
 protected:
+	int sock;
 	int family;
 	const char* address;
 	uint16_t port;
@@ -50,16 +48,22 @@ public:
 	// Overridden method must call BaseSocket::set_options()
 	virtual void set_options();
 
-	void listen();
+	virtual void listen() const;
 
 	// Overridden method must call BaseSocket::close()
 	virtual void close();
 
 	[[nodiscard]]
-	bool is_closed() const;
+	virtual inline bool is_closed() const
+	{
+		return this->_closed;
+	}
 
 	[[nodiscard]]
-	int fd() const;
+	virtual inline int fd() const
+	{
+		return this->sock;
+	}
 };
 
 __SERVER_END__

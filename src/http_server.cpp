@@ -22,16 +22,39 @@ std::shared_ptr<net::abc::IServer> HTTPServer::initialize(
 {
 	Context ctx{};
 	ctx.logger = logger;
-	ctx.workers = stoi(kwargs.get("xw.workers", "3"));
-	ctx.max_body_size = strtol(kwargs.get("xw.max_body_size", "2621440").c_str(), nullptr, 10);
-	ctx.timeout_sec = stoi(kwargs.get("xw.timeout_sec", "5"));
-	ctx.timeout_usec = strtol(kwargs.get("xw.timeout_usec", "0").c_str(), nullptr, 10);
-	return std::shared_ptr<net::abc::IServer>(new HTTPServer(ctx));
-}
+	char* end_ptr = nullptr;
+	auto workers = kwargs.get("workers", "3");
+	ctx.workers = strtol(workers.c_str(), &end_ptr, 10);
+	if (workers.c_str() == end_ptr)
+	{
+		throw ArgumentError("unable to read 'workers' parameter: " + workers, _ERROR_DETAILS_);
+	}
 
-void HTTPServer::setup_handler(net::HandlerFunc handler)
-{
-	this->_handler = std::move(handler);
+	end_ptr = nullptr;
+	auto max_body_size = kwargs.get("max_body_size", "2621440");
+	ctx.max_body_size = strtol(max_body_size.c_str(), &end_ptr, 10);
+	if (max_body_size.c_str() == end_ptr)
+	{
+		throw ArgumentError("unable to read 'max_body_size' parameter: " + max_body_size, _ERROR_DETAILS_);
+	}
+
+	end_ptr = nullptr;
+	auto timeout_sec = kwargs.get("timeout_sec", "5");
+	ctx.timeout_sec = strtol(timeout_sec.c_str(), &end_ptr, 10);
+	if (timeout_sec.c_str() == end_ptr)
+	{
+		throw ArgumentError("unable to read 'timeout_sec' parameter: " + timeout_sec, _ERROR_DETAILS_);
+	}
+
+	end_ptr = nullptr;
+	auto timeout_usec = kwargs.get("timeout_usec", "0");
+	ctx.timeout_usec = strtol(timeout_usec.c_str(), &end_ptr, 10);
+	if (timeout_usec.c_str() == end_ptr)
+	{
+		throw ArgumentError("unable to read 'timeout_usec' parameter: " + timeout_usec, _ERROR_DETAILS_);
+	}
+
+	return std::shared_ptr<net::abc::IServer>(new HTTPServer(ctx));
 }
 
 void HTTPServer::bind(const std::string& address, uint16_t port)
@@ -87,14 +110,11 @@ void HTTPServer::init_environ()
 	this->base_environ[net::meta::SERVER_PORT] = std::to_string(this->server_port);
 }
 
-collections::Dict<std::string, std::string> HTTPServer::environ() const
-{
-	return this->base_environ;
-}
-
 HTTPServer::HTTPServer(Context ctx) : ctx(std::move(ctx))
 {
 	this->ctx.normalize();
+
+	// TODO: replace ThreadPool with EventLoop.
 	this->_thread_pool = std::make_shared<ThreadPool>(
 		"server", this->ctx.workers
 	);
@@ -146,10 +166,9 @@ void HTTPServer::_handle(const int& sock)
 				this->ctx.timeout_usec
 			};
 			HTTPRequestHandler(
-				sock, "0.1", timeout, this->ctx.logger, this->base_environ
+				sock, XW_SERVER_VERSION, timeout, this->ctx.max_body_size, this->ctx.logger, this->base_environ
 			).handle(this->_handler);
 
-//			this->_shutdown_request(sock);
 			measure.end();
 			this->ctx.logger->debug(
 				"Time elapsed: " + std::to_string(measure.elapsed()) + " milliseconds"
@@ -168,7 +187,7 @@ void HTTPServer::_handle(const int& sock)
 	});
 }
 
-void HTTPServer::_shutdown_request(int sock)
+void HTTPServer::_shutdown_request(int sock) const
 {
 	if (shutdown(sock, SHUT_RDWR))
 	{

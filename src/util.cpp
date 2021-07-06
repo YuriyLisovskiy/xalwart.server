@@ -31,11 +31,6 @@ std::string join_addr(const std::string& addr, uint16_t port)
 	return result;
 }
 
-bool is_ipv6(const std::string& addr)
-{
-	return inet_pton(AF_INET6, addr.c_str(), nullptr) > 0;
-}
-
 std::shared_ptr<BaseSocket> create_socket(
 	const std::string& address, uint16_t port, size_t retries_count, log::ILogger* logger
 )

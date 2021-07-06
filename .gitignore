@@ -47,4 +47,3 @@ include/
 
 # Other stuff
 tests/tests.cpp
-Makefile

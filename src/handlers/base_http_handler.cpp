@@ -2,6 +2,7 @@
  * handlers/base_http_handler.cpp
  *
  * Copyright (c) 2021 Yuriy Lisovskiy
+ * Based on Python 3 HTTP server.
  */
 
 #include "./base_http_handler.h"
@@ -73,7 +74,7 @@ void BaseHTTPRequestHandler::log_parse_headers_error(parser::parse_headers_statu
 	}
 }
 
-void BaseHTTPRequestHandler::log_request(int code, const std::string& info) const
+void BaseHTTPRequestHandler::log_request(uint code, const std::string& info) const
 {
 	log::Logger::Color color = log::Logger::Color::GREEN;
 	if (code >= 400)
@@ -350,7 +351,7 @@ void BaseHTTPRequestHandler::handle(net::HandlerFunc func)
 	if (this->socket_io->shutdown(SHUT_RDWR))
 	{
 		this->logger->error(
-			"'shutdown(SHUT_WR)' call failed: " + std::to_string(errno), _ERROR_DETAILS_
+			"'shutdown(SHUT_RDWR)' call failed: " + std::to_string(errno), _ERROR_DETAILS_
 		);
 	}
 }
@@ -461,19 +462,9 @@ void BaseHTTPRequestHandler::flush_headers()
 	this->headers_buffer = "";
 }
 
-std::string BaseHTTPRequestHandler::version_string() const
-{
-	return this->server_version() + " " + this->sys_version;
-}
-
 std::string BaseHTTPRequestHandler::datetime_string() const
 {
-	return util::format_date(dt::Datetime::utc_now().timestamp(), false, true);
-}
-
-std::string BaseHTTPRequestHandler::server_version() const
-{
-	return "BaseHTTP/" + this->server_num_version;
+	return util::format_date((time_t)dt::Datetime::utc_now().timestamp(), false, true);
 }
 
 __SERVER_END__

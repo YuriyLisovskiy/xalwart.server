@@ -1,9 +1,9 @@
 /**
- * server_context.h
+ * context.h
  *
  * Copyright (c) 2020-2021 Yuriy Lisovskiy
  *
- * Purpose: TODO
+ * Server context.
  */
 
 #pragma once
@@ -22,14 +22,24 @@ __SERVER_BEGIN__
 
 struct Context
 {
-	log::ILogger* logger;
+	log::ILogger* logger = nullptr;
 	size_t max_body_size = 0;
-	std::string media_root;
 	size_t workers = 0;
 	time_t timeout_sec = 0;
 	time_t timeout_usec = 0;
 
-	void normalize();
+	inline void normalize()
+	{
+		if (!this->logger)
+		{
+			throw NullPointerException("logger must be instantiated");
+		}
+
+		if (!this->timeout_sec)
+		{
+			this->timeout_sec = 3;
+		}
+	}
 };
 
 __SERVER_END__

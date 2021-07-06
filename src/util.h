@@ -3,7 +3,7 @@
  *
  * Copyright (c) 2021 Yuriy Lisovskiy
  *
- * Purpose: TODO
+ * Server utilities.
  */
 
 #pragma once
@@ -26,7 +26,10 @@ __SERVER_UTIL_BEGIN__
 
 extern std::string join_addr(const std::string& addr, uint16_t port);
 
-extern bool is_ipv6(const std::string& addr);
+inline bool is_ipv6(const std::string& addr)
+{
+	return inet_pton(AF_INET6, addr.c_str(), nullptr) > 0;
+}
 
 extern std::shared_ptr<BaseSocket> create_socket(
 	const std::string& address, uint16_t port, size_t retries_count, log::ILogger* logger

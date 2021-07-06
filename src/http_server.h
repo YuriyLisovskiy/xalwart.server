@@ -3,7 +3,7 @@
  *
  * Copyright (c) 2020-2021 Yuriy Lisovskiy
  *
- * Purpose: TODO
+ * Simple HTTP server implementation for development purposes.
  */
 
 #pragma once
@@ -22,7 +22,7 @@
 #include "./_def_.h"
 
 // Server libraries.
-#include "./server_context.h"
+#include "./context.h"
 #include "./socket/base.h"
 #include "./handlers/http_handler.h"
 
@@ -32,12 +32,22 @@ __SERVER_BEGIN__
 class HTTPServer : public net::abc::IServer
 {
 public:
+
+	// Accepts parameters in kwargs:
+	//
+	// - workers: threads count;
+	// - max_body_size: maximum size of request body;
+	// - timeout_sec: timeout seconds;
+	// - timeout_usec: timeout microseconds.
 	static std::shared_ptr<net::abc::IServer> initialize(
 		log::ILogger* logger,
 		const collections::Dict<std::string, std::string>& kwargs
 	);
 
-	void setup_handler(net::HandlerFunc handler) override;
+	inline void setup_handler(net::HandlerFunc handler) override
+	{
+		this->_handler = std::move(handler);
+	}
 
 	void bind(const std::string& address, uint16_t port) override;
 
@@ -46,7 +56,10 @@ public:
 	void close() override;
 
 	[[nodiscard]]
-	collections::Dict<std::string, std::string> environ() const override;
+	inline collections::Dict<std::string, std::string> environ() const override
+	{
+		return this->base_environ;
+	}
 
 protected:
 	void init_environ() override;
@@ -70,7 +83,7 @@ private:
 
 	void _handle(const int& sock);
 
-	void _shutdown_request(int sock);
+	void _shutdown_request(int sock) const;
 };
 
 __SERVER_END__

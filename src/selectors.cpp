@@ -8,7 +8,6 @@
 
 // C++ libraries.
 #include <cerrno>
-#include <string>
 #include <cstring>
 
 
@@ -22,7 +21,7 @@ SelectSelector::SelectSelector(log::ILogger* logger) : logger(logger)
 
 void SelectSelector::register_(uint file_descriptor, int events_)
 {
-	this->fd = file_descriptor;
+	this->fd = (int)file_descriptor;
 	this->events = events_;
 	if (this->events & EVENT_READ)
 	{

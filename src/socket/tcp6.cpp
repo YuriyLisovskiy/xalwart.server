@@ -38,11 +38,6 @@ void TCP6Socket::bind()
 	}
 }
 
-TCP6Socket::TCP6Socket(const char* address, uint16_t port)
-	: BaseSocket(address, port, AF_INET6)
-{
-}
-
 void TCP6Socket::set_options()
 {
 	int opt = 1;

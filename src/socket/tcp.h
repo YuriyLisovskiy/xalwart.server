@@ -3,7 +3,7 @@
  *
  * Copyright (c) 2021 Yuriy Lisovskiy
  *
- * Purpose: TODO
+ * TCP/IPv4 socket implementation.
  */
 
 #pragma once
@@ -23,7 +23,10 @@ protected:
 	void bind() override;
 
 public:
-	explicit TCPSocket(const char* address, uint16_t port);
+	explicit inline TCPSocket(const char* address, uint16_t port) : BaseSocket(address, port, AF_INET)
+	{
+	}
+
 	void set_options() override;
 };
 

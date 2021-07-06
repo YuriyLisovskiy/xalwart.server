@@ -35,11 +35,6 @@ void TCPSocket::bind()
 	}
 }
 
-TCPSocket::TCPSocket(const char* address, uint16_t port)
-	: BaseSocket(address, port, AF_INET)
-{
-}
-
 void TCPSocket::set_options()
 {
 	int opt = 1;

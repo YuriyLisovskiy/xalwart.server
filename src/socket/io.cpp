@@ -30,7 +30,7 @@ SocketIO& SocketIO::operator= (SocketIO&& other) noexcept
 	return *this;
 }
 
-SocketIO::state SocketIO::read_line(std::string& line, int max_n)
+SocketIO::state SocketIO::read_line(std::string& line, size_t max_n)
 {
 	auto ret = this->_recv(std::min(max_n, MAX_BUFF_SIZE));
 	if (ret != s_done)
@@ -63,7 +63,7 @@ SocketIO::state SocketIO::read_line(std::string& line, int max_n)
 	return s_done;
 }
 
-SocketIO::state SocketIO::read_bytes(std::string& content, unsigned long long n_bytes)
+SocketIO::state SocketIO::read_bytes(std::string& content, size_t n_bytes)
 {
 	if (this->_buffer[0] != '\0')
 	{
@@ -72,7 +72,7 @@ SocketIO::state SocketIO::read_bytes(std::string& content, unsigned long long n_
 	}
 
 	SocketIO::state ret;
-	while ((ret = this->_recv(std::min<unsigned long long>(n_bytes, MAX_BUFF_SIZE))) == s_done)
+	while ((ret = this->_recv(std::min(n_bytes, MAX_BUFF_SIZE))) == s_done)
 	{
 		if (this->_buffer[0] != '\0')
 		{
@@ -115,7 +115,7 @@ SocketIO::state SocketIO::write(const char* data, size_t n) const
 	return s_done;
 }
 
-SocketIO::state SocketIO::_recv(int n)
+SocketIO::state SocketIO::_recv(size_t n)
 {
 	if (this->_buffer[0] != '\0')
 	{
@@ -131,7 +131,7 @@ SocketIO::state SocketIO::_recv(int n)
 			return s_timed_out;
 		}
 
-		int len = recv(this->_fd, this->_buffer, n, 0);
+		ssize_t len = recv(this->_fd, this->_buffer, n, 0);
 		if (len > 0)
 		{
 			this->_buffer_size = len;
@@ -156,11 +156,6 @@ SocketIO::state SocketIO::_recv(int n)
 	}
 	while (try_again);
 	return s_done;
-}
-
-int SocketIO::shutdown(int how) const
-{
-	return ::shutdown(this->_fd, how);
 }
 
 __SERVER_END__

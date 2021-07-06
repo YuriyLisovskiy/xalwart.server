@@ -17,7 +17,7 @@
 
 __SERVER_BEGIN__
 
-bool BaseSocket::_set_blocking(bool blocking)
+bool BaseSocket::_set_blocking(bool blocking) const
 {
 	if (this->sock < 0)
 	{
@@ -70,7 +70,7 @@ void BaseSocket::set_options()
 	this->_set_blocking(false);
 }
 
-void BaseSocket::listen()
+void BaseSocket::listen() const
 {
 	if (::listen(this->sock, SOMAXCONN))
 	{
@@ -96,16 +96,6 @@ void BaseSocket::close()
 	}
 
 	::close(this->sock);
-}
-
-bool BaseSocket::is_closed() const
-{
-	return this->_closed;
-}
-
-int BaseSocket::fd() const
-{
-	return this->sock;
 }
 
 __SERVER_END__

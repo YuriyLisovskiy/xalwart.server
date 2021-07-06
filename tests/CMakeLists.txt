@@ -30,10 +30,5 @@ function(add_sub_tests SUB_NAME)
 endfunction(add_sub_tests)
 
 add_tests("" all)
-if (NOT DEFINED CMAKE_TEST_ALL_ONLY)
-    set(CMAKE_TEST_ALL_ONLY no)
-endif()
-if (${CMAKE_TEST_ALL_ONLY} STREQUAL "no")
-    # TODO: add tests here, example:
-    # add_sub_tests(internal)
-endif()
+# TODO: add tests here, example:
+# add_sub_tests(internal)

@@ -2,6 +2,7 @@
  * handlers/http_handler.cpp
  *
  * Copyright (c) 2021 Yuriy Lisovskiy
+ * Based on Python 3 HTTP server.
  */
 
 #include "./http_handler.h"
@@ -40,6 +41,12 @@ bool HTTPRequestHandler::parse_request()
 			return false;
 		}
 
+		if (this->request_ctx.content_size > this->max_body_size)
+		{
+			this->send_error(413);
+			return false;
+		}
+
 		auto transfer_enc = this->request_ctx.headers.get("Transfer-Encoding", "");
 		if (!transfer_enc.empty() && str::lower(transfer_enc).find("chunked") != std::string::npos)
 		{
@@ -60,7 +67,11 @@ bool HTTPRequestHandler::parse_request()
 			else
 			{
 				this->request_ctx.chunked = true;
+
 				// TODO: read and parse chunked request.
+				this->send_error(400, "Chunked Transfer-Encoding is not supported by this server");
+				this->close_connection = true;
+				return false;
 			}
 		}
 		else
@@ -95,19 +106,6 @@ bool HTTPRequestHandler::parse_request()
 	return true;
 }
 
-std::string HTTPRequestHandler::server_version() const
-{
-	return "HTTPServer/" + this->server_num_version;
-}
-
-HTTPRequestHandler::HTTPRequestHandler(
-	int sock, const std::string& server_version,
-	timeval timeout, log::ILogger* logger,
-	const collections::Dict<std::string, std::string>& env
-) : BaseHTTPRequestHandler(sock, server_version, timeout, logger, env)
-{
-}
-
 void HTTPRequestHandler::handle(net::HandlerFunc func)
 {
 	this->handler_func = std::move(func);
@@ -116,7 +114,7 @@ void HTTPRequestHandler::handle(net::HandlerFunc func)
 	if (this->socket_io->shutdown(SHUT_RDWR))
 	{
 		this->logger->error(
-			"'shutdown(SHUT_WR)' call failed: " + std::to_string(errno), _ERROR_DETAILS_
+			"'shutdown(SHUT_RDWR)' call failed: " + std::to_string(errno), _ERROR_DETAILS_
 		);
 	}
 }
