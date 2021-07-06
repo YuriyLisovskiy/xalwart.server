@@ -1,4 +1,4 @@
-name: "build"
+name: "clang-build"
 on:
   push:
     branches:

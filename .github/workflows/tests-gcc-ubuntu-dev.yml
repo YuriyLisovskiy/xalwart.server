@@ -1,4 +1,4 @@
-name: "build"
+name: "gcc-build"
 on:
   push:
     branches:
