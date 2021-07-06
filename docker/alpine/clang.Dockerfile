@@ -24,13 +24,6 @@ RUN apk add --update --no-cache \
     git \
     valgrind
 
-RUN git clone -q https://github.com/google/googletest.git /googletest && \
-    mkdir -p /googletest/build && \
-    cd /googletest/build && \
-    cmake -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang .. && \
-    make && make install && \
-    cd / && rm -rf /googletest
-
 RUN git clone -q https://$GH_ACCESS_TOKEN@github.com/YuriyLisovskiy/xalwart.core.git /xalwart.core && \
     mkdir -p /xalwart.core/build && \
     cd /xalwart.core && \
@@ -48,7 +41,6 @@ RUN ls $APP_HOME/tests
 
 RUN mkdir $APP_HOME/build && \
     cd $APP_HOME/build && \
-    cmake -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -DCMAKE_BUILD_TYPE=Debug .. && \
-    make unittests-all
+    cmake -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -DCMAKE_BUILD_TYPE=Debug ..
 
-CMD valgrind --leak-check=full $APP_HOME/build/tests/unittests-all
+CMD cd $APP_HOME/build/ && make

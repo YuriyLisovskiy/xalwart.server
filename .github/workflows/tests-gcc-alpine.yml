@@ -24,6 +24,6 @@ jobs:
                             --build-arg GH_ACCESS_TOKEN=${{ secrets.GH_ACCESS_TOKEN }} \
                             -f docker/alpine/gcc.Dockerfile \
                             --tag=test-alpine:gcc
-      - name: Run Tests
+      - name: Run Library Build
         run: |
           sudo docker run test-alpine:gcc

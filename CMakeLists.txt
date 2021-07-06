@@ -48,7 +48,3 @@ install(
     FILES_MATCHING
     PATTERN "*.h"
 )
-
-if ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
-    add_subdirectory(tests)
-endif()
