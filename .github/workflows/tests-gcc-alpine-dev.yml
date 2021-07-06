@@ -1,9 +1,8 @@
-name: "gcc-dev"
+name: "build"
 on:
   push:
     branches:
       - 'dev'
-      - '!master'
   pull_request:
     branches:
       - '**'
