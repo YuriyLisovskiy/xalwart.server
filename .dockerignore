@@ -11,5 +11,4 @@ build/
 README.md
 Makefile
 docker/
-
-tests/tests.cpp
+example/
