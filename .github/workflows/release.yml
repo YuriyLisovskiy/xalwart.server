@@ -1,11 +1,12 @@
-name: "deployment"
+name: "release"
 on:
-  push:
-    branches:
-      - 'master'
+  workflow_run:
+    workflows: ["test alpine clang++", "test ubuntu clang++", "test alpine g++", "test ubuntu g++"]
+    types: [completed]
 jobs:
   release:
     runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     steps:
       - uses: actions/checkout@v2
       - name: Set up Python 3.6

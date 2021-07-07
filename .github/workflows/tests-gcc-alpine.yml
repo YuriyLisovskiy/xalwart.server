@@ -1,4 +1,4 @@
-name: "Test Alpine Linux"
+name: "test alpine g++"
 on:
   push:
     branches:

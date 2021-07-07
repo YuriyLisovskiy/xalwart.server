@@ -1,4 +1,4 @@
-name: "Test Ubuntu"
+name: "test ubuntu g++"
 on:
   push:
     branches:

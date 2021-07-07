@@ -125,7 +125,7 @@ HTTPServer::HTTPServer(Context ctx) : ctx(ctx)
 				this->ctx.timeout_usec
 			};
 			HTTPRequestHandler(
-				event.fd, XW_SERVER_VERSION, timeout, this->ctx.max_body_size, this->ctx.logger, this->base_environ
+				event.fd, v::version, timeout, this->ctx.max_body_size, this->ctx.logger, this->base_environ
 			).handle(this->_handler);
 
 			measure.end();
