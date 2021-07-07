@@ -21,15 +21,8 @@ The following library is required:
 
 ## Build Status
 
-| `dev` | Alpine Linux | Ubuntu |
-|---|---|---|
-| [![clang++](https://img.shields.io/badge/clang++-%3E=10-lightgray)](https://clang.llvm.org/) | [![build](https://github.com/YuriyLisovskiy/xalwart.server/actions/workflows/tests-clang-alpine.yml/badge.svg?branch=dev)](https://github.com/YuriyLisovskiy/xalwart.server/actions/workflows/tests-clang-alpine.yml?query=branch%3Adev) | [![build](https://github.com/YuriyLisovskiy/xalwart.server/actions/workflows/tests-clang-ubuntu.yml/badge.svg?branch=dev)](https://github.com/YuriyLisovskiy/xalwart.server/actions/workflows/tests-clang-ubuntu.yml?query=branch%3Adev) |
-| [![g++](https://img.shields.io/badge/g++-%3E=10-lightgray)](https://gcc.gnu.org/) | [![build](https://github.com/YuriyLisovskiy/xalwart.server/actions/workflows/tests-gcc-alpine.yml/badge.svg?branch=dev)](https://github.com/YuriyLisovskiy/xalwart.server/actions/workflows/tests-gcc-alpine.yml?query=branch%3Adev) | [![build](https://github.com/YuriyLisovskiy/xalwart.server/actions/workflows/tests-gcc-ubuntu.yml/badge.svg?branch=dev)](https://github.com/YuriyLisovskiy/xalwart.server/actions/workflows/tests-gcc-ubuntu.yml?query=branch%3Adev) |
-
-| `master` | Alpine Linux | Ubuntu |
-|---|---|---|
-| [![clang++](https://img.shields.io/badge/clang++-%3E=10-lightgray)](https://clang.llvm.org/) | [![build](https://github.com/YuriyLisovskiy/xalwart.server/actions/workflows/tests-clang-alpine.yml/badge.svg?branch=master)](https://github.com/YuriyLisovskiy/xalwart.server/actions/workflows/tests-clang-alpine.yml?query=branch%3Amaster) | [![build](https://github.com/YuriyLisovskiy/xalwart.server/actions/workflows/tests-clang-ubuntu.yml/badge.svg?branch=master)](https://github.com/YuriyLisovskiy/xalwart.server/actions/workflows/tests-clang-ubuntu.yml?query=branch%3Amaster) |
-| [![g++](https://img.shields.io/badge/g++-%3E=10-lightgray)](https://gcc.gnu.org/) | [![build](https://github.com/YuriyLisovskiy/xalwart.server/actions/workflows/tests-gcc-alpine.yml/badge.svg?branch=master)](https://github.com/YuriyLisovskiy/xalwart.server/actions/workflows/tests-gcc-alpine.yml?query=branch%3Amaster) | [![build](https://github.com/YuriyLisovskiy/xalwart.server/actions/workflows/tests-gcc-ubuntu.yml/badge.svg?branch=master)](https://github.com/YuriyLisovskiy/xalwart.server/actions/workflows/tests-gcc-ubuntu.yml?query=branch%3Amaster) |
+### [![clang++](https://img.shields.io/badge/clang++-%3E=10-lightgray)](https://clang.llvm.org/) - [![Test Alpine Linux](https://github.com/YuriyLisovskiy/xalwart.server/actions/workflows/tests-clang-alpine.yml/badge.svg)](https://github.com/YuriyLisovskiy/xalwart.server/actions/workflows/tests-clang-alpine.yml) [![Test Ubuntu](https://github.com/YuriyLisovskiy/xalwart.server/actions/workflows/tests-clang-ubuntu.yml/badge.svg)](https://github.com/YuriyLisovskiy/xalwart.server/actions/workflows/tests-clang-ubuntu.yml)
+### [![g++](https://img.shields.io/badge/g++-%3E=10-lightgray)](https://gcc.gnu.org/) - [![Test Alpine Linux](https://github.com/YuriyLisovskiy/xalwart.server/actions/workflows/tests-gcc-alpine.yml/badge.svg)](https://github.com/YuriyLisovskiy/xalwart.server/actions/workflows/tests-gcc-alpine.yml) [![Test Ubuntu](https://github.com/YuriyLisovskiy/xalwart.server/actions/workflows/tests-gcc-ubuntu.yml/badge.svg)](https://github.com/YuriyLisovskiy/xalwart.server/actions/workflows/tests-gcc-ubuntu.yml)
 
 ## Build and Install
 

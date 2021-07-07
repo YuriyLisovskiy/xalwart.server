@@ -2,7 +2,7 @@ ARG alpine_version=3.13
 
 FROM alpine:$alpine_version
 
-ARG GH_ACCESS_TOKEN
+ARG GITHUB_TOKEN
 
 ENV APP_HOME /app
 ENV APP_USER root
@@ -24,7 +24,7 @@ RUN apk add --update --no-cache \
     git \
     valgrind
 
-RUN git clone -q https://$GH_ACCESS_TOKEN@github.com/YuriyLisovskiy/xalwart.core.git /xalwart.core && \
+RUN git clone -q https://$GITHUB_TOKEN@github.com/YuriyLisovskiy/xalwart.core.git /xalwart.core && \
     mkdir -p /xalwart.core/build && \
     cd /xalwart.core && \
     git checkout dev && \

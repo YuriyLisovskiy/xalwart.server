@@ -12,7 +12,7 @@
 
 #include <xalwart.core/_def_.h>
 
-#define XW_SERVER_VERSION "0.1"
+#define XW_SERVER_VERSION "0.0.0"
 
 // xw::server
 #define __SERVER_BEGIN__ __MAIN_NAMESPACE_BEGIN__ namespace server {
