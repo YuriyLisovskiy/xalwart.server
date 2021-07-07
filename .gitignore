@@ -47,3 +47,4 @@ include/
 
 # Other stuff
 Makefile
+venv/
