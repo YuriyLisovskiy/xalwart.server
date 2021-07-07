@@ -27,7 +27,7 @@ jobs:
       - name: Install Core Library
         run: |
           cd /tmp && \
-          git clone https://${{secrets.GITHUB_TOKEN}}@github.com/YuriyLisovskiy/xalwart.core.git && \
+          git clone https://${{secrets.GH_ACCESS_TOKEN}}@github.com/YuriyLisovskiy/xalwart.core.git && \
           cd xalwart.core && \
           git checkout dev && \
           sudo mkdir build && \
