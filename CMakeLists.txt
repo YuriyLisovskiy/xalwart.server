@@ -32,8 +32,16 @@ endif()
 
 # Build shared library.
 set(FULL_LIBRARY_NAME ${LIBRARY_NAME}-${LIBRARY_VERSION})
-add_library(${FULL_LIBRARY_NAME} SHARED ${SOURCES})
-target_include_directories(${FULL_LIBRARY_NAME} PUBLIC ${GNU_INCLUDE_DIR})
+
+if (NOT LIB_SHARED)
+    set(LIB_SHARED no)
+endif()
+
+if (${LIB_SHARED})
+    add_library(${FULL_LIBRARY_NAME} SHARED ${SOURCES})
+else()
+    add_library(${FULL_LIBRARY_NAME} STATIC ${SOURCES})
+endif()
 
 # Install library.
 install(
