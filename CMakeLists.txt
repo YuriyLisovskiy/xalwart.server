@@ -4,7 +4,7 @@ set(CMAKE_CXX_STANDARD 20)
 
 set(FRAMEWORK_NAME "xalwart")
 set(LIBRARY_NAME "${FRAMEWORK_NAME}.server")
-set(LIBRARY_VERSION "0.0.1")
+set(LIBRARY_VERSION "0.0.0")
 
 project(${LIBRARY_NAME})
 
@@ -31,21 +31,19 @@ if(NOT ${SOURCES_COUNT})
 endif()
 
 # Build shared library.
-set(FULL_LIBRARY_NAME ${LIBRARY_NAME}-${LIBRARY_VERSION})
-
 if (NOT LIB_SHARED)
     set(LIB_SHARED no)
 endif()
 
 if (${LIB_SHARED})
-    add_library(${FULL_LIBRARY_NAME} SHARED ${SOURCES})
+    add_library(${LIBRARY_NAME} SHARED ${SOURCES})
 else()
-    add_library(${FULL_LIBRARY_NAME} STATIC ${SOURCES})
+    add_library(${LIBRARY_NAME} STATIC ${SOURCES})
 endif()
 
 # Install library.
 install(
-    TARGETS ${FULL_LIBRARY_NAME}
+    TARGETS ${LIBRARY_NAME}
     ARCHIVE DESTINATION ${GNU_LIB_DIR}
     LIBRARY DESTINATION ${GNU_LIB_DIR}
 )
