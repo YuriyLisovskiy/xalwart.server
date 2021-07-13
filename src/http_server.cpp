@@ -6,8 +6,8 @@
 
 #include "./http_server.h"
 
-// Core libraries.
-#include <xalwart.core/net/meta.h>
+// Base libraries.
+#include <xalwart.base/net/meta.h>
 
 // Server libraries.
 #include "./util.h"

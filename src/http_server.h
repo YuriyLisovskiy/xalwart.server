@@ -13,10 +13,10 @@
 #include <functional>
 #include <memory>
 
-// Core libraries.
-#include <xalwart.core/event_loop.h>
-#include <xalwart.core/result.h>
-#include <xalwart.core/net/abc.h>
+// Base libraries.
+#include <xalwart.base/event_loop.h>
+#include <xalwart.base/result.h>
+#include <xalwart.base/net/abc.h>
 
 // Module definitions.
 #include "./_def_.h"

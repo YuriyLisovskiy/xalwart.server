@@ -11,8 +11,8 @@
 // C++ libraries.
 #include <string>
 
-// Core libraries.
-#include <xalwart.core/logger.h>
+// Base libraries.
+#include <xalwart.base/logger.h>
 
 // Module definitions.
 #include "./_def_.h"

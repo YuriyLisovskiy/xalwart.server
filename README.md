@@ -20,7 +20,7 @@ To build the library from source CMake 3.12 or later is required.
 
 ### Dependencies
 The following library is required:
-- [xalwart.core](https://github.com/YuriyLisovskiy/xalwart.core) 0.x.x or later
+- [xalwart.base](https://github.com/YuriyLisovskiy/xalwart.base) 0.x.x or later
 
 ## Build and Install
 ```bash

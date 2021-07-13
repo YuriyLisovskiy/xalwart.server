@@ -15,9 +15,9 @@
 // C++ libraries.
 #include <string>
 
-// Core libraries.
-#include <xalwart.core/sys.h>
-#include <xalwart.core/net/request_context.h>
+// Base libraries.
+#include <xalwart.base/sys.h>
+#include <xalwart.base/net/request_context.h>
 
 // Module definitions.
 #include "../_def_.h"

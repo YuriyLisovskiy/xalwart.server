@@ -9,9 +9,9 @@
 // C++ libraries.
 #include <chrono>
 
-// Core libraries.
-#include <xalwart.core/exceptions.h>
-#include <xalwart.core/string_utils.h>
+// Base libraries.
+#include <xalwart.base/exceptions.h>
+#include <xalwart.base/string_utils.h>
 
 // Server libraries.
 #include "./socket/tcp.h"

@@ -12,8 +12,8 @@
 #include <sys/un.h>
 #include <cstring>
 
-// Core libraries.
-#include <xalwart.core/exceptions.h>
+// Base libraries.
+#include <xalwart.base/exceptions.h>
 
 
 __SERVER_BEGIN__

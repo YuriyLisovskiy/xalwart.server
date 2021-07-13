@@ -7,12 +7,12 @@
 
 #include "./base_http_handler.h"
 
-// Core libraries.
-#include <xalwart.core/net/status.h>
-#include <xalwart.core/utility.h>
-#include <xalwart.core/encoding.h>
-#include <xalwart.core/string_utils.h>
-#include <xalwart.core/html.h>
+// Base libraries.
+#include <xalwart.base/net/status.h>
+#include <xalwart.base/utility.h>
+#include <xalwart.base/encoding.h>
+#include <xalwart.base/string_utils.h>
+#include <xalwart.base/html.h>
 
 
 __SERVER_BEGIN__

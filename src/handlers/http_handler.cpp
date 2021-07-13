@@ -7,8 +7,8 @@
 
 #include "./http_handler.h"
 
-// Core libraries.
-#include <xalwart.core/string_utils.h>
+// Base libraries.
+#include <xalwart.base/string_utils.h>
 
 
 __SERVER_BEGIN__

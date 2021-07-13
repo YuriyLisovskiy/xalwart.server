@@ -60,11 +60,11 @@ jobs:
           sudo apt update -y && \
           sudo pip install --upgrade cmake && \
           sudo apt install -y clang-${{ matrix.compiler_version }} valgrind
-      - name: Install Core Library
+      - name: Install Base Library
         run: |
           cd /tmp && \
-          git clone https://${{secrets.GH_ACCESS_TOKEN}}@github.com/YuriyLisovskiy/xalwart.core.git && \
-          cd xalwart.core && \
+          git clone https://${{secrets.GH_ACCESS_TOKEN}}@github.com/YuriyLisovskiy/xalwart.base.git && \
+          cd xalwart.base && \
           sudo mkdir build && \
           cd build && \
           sudo cmake -DCMAKE_BUILD_TYPE=Release \
@@ -110,11 +110,11 @@ jobs:
           sudo update-alternatives --set c++ /usr/bin/g++ && \
           gcc --version && \
           g++ --version
-      - name: Install Core Library
+      - name: Install Base Library
         run: |
           cd /tmp && \
-          git clone https://${{secrets.GH_ACCESS_TOKEN}}@github.com/YuriyLisovskiy/xalwart.core.git && \
-          cd xalwart.core && \
+          git clone https://${{secrets.GH_ACCESS_TOKEN}}@github.com/YuriyLisovskiy/xalwart.base.git && \
+          cd xalwart.base && \
           sudo mkdir build && \
           cd build && \
           sudo cmake -DCMAKE_BUILD_TYPE=Release \

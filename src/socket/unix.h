@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include <xalwart.core/sys.h>
+#include <xalwart.base/sys.h>
 
 #ifdef __unix__
 

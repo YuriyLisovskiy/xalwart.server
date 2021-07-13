@@ -6,9 +6,9 @@
 
 #include "./parser.h"
 
-// Core libraries.
-#include <xalwart.core/string_utils.h>
-#include <xalwart.core/encoding.h>
+// Base libraries.
+#include <xalwart.base/string_utils.h>
+#include <xalwart.base/encoding.h>
 
 
 __SERVER_PARSER_BEGIN__

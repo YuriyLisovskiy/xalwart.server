@@ -8,5 +8,5 @@ project(${BINARY})
 
 file(GLOB SOURCES true *.cpp)
 add_executable(${BINARY} ${SOURCES} main.cpp)
-target_link_libraries(${BINARY} PUBLIC xalwart.core-0.0.1)
-target_link_libraries(${BINARY} PUBLIC xalwart.server-0.0.1)
+target_link_libraries(${BINARY} PUBLIC xalwart.base)
+target_link_libraries(${BINARY} PUBLIC xalwart.server)
