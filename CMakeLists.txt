@@ -4,7 +4,7 @@ set(CMAKE_CXX_STANDARD 20)
 
 set(FRAMEWORK_NAME "xalwart")
 set(LIBRARY_NAME "${FRAMEWORK_NAME}.server")
-set(LIBRARY_VERSION "0.0.1")
+set(LIBRARY_VERSION "0.0.0")
 
 project(${LIBRARY_NAME})
 
