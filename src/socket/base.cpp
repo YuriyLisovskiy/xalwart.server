@@ -11,8 +11,8 @@
 #include <netinet/tcp.h>
 #include <stdexcept>
 
-// Core libraries.
-#include <xalwart.core/exceptions.h>
+// Base libraries.
+#include <xalwart.base/exceptions.h>
 
 
 __SERVER_BEGIN__

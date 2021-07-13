@@ -9,8 +9,8 @@
 // C++ libraries.
 #include <netinet/tcp.h>
 
-// Core libraries.
-#include <xalwart.core/exceptions.h>
+// Base libraries.
+#include <xalwart.base/exceptions.h>
 
 
 __SERVER_BEGIN__

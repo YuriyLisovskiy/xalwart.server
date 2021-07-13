@@ -41,6 +41,8 @@ else()
     add_library(${LIBRARY_NAME} STATIC ${SOURCES})
 endif()
 
+target_link_libraries(${LIBRARY_NAME} PUBLIC ${FRAMEWORK_NAME}.base)
+
 # Install library.
 install(
     TARGETS ${LIBRARY_NAME}

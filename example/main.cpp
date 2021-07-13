@@ -4,7 +4,7 @@
  * Copyright (c) 2021 Yuriy Lisovskiy
  */
 
-#include <xalwart.core/string_utils.h>
+#include <xalwart.base/string_utils.h>
 #include <xalwart.server/http_server.h>
 
 inline const std::string CONTENT = "HTTP/1.1 200 OK\r\n"

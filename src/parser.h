@@ -8,8 +8,8 @@
 
 #pragma once
 
-// Core libraries.
-#include <xalwart.core/collections/dict.h>
+// Base libraries.
+#include <xalwart.base/collections/dict.h>
 
 // Module definitions.
 #include "./_def_.h"

@@ -10,7 +10,7 @@
 
 #include <chrono>
 
-#include <xalwart.core/_def_.h>
+#include <xalwart.base/_def_.h>
 
 // xw::server
 #define __SERVER_BEGIN__ __MAIN_NAMESPACE_BEGIN__ namespace server {
