@@ -29,7 +29,7 @@ __SERVER_BEGIN__
 namespace v
 {
 const uint major = 0;
-const uint minor = 0;
+const uint minor = 1;
 const uint patch = 0;
 
 const std::string version = std::to_string(major) + "." + std::to_string(minor) + "." + std::to_string(patch);
