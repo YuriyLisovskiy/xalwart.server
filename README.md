@@ -20,19 +20,20 @@ The following library is required:
 - [xalwart.core](https://github.com/YuriyLisovskiy/xalwart.core) 0.x.x or later
 
 ## Build Status
-
-* ### clang++
-    [![Test Alpine Linux](https://github.com/YuriyLisovskiy/xalwart.server/actions/workflows/tests-clang-alpine.yml/badge.svg)](https://github.com/YuriyLisovskiy/xalwart.server/actions/workflows/tests-clang-alpine.yml) [![Test Ubuntu](https://github.com/YuriyLisovskiy/xalwart.server/actions/workflows/tests-clang-ubuntu.yml/badge.svg)](https://github.com/YuriyLisovskiy/xalwart.server/actions/workflows/tests-clang-ubuntu.yml)
-
-* ### g++
-    [![Test Alpine Linux](https://github.com/YuriyLisovskiy/xalwart.server/actions/workflows/tests-gcc-alpine.yml/badge.svg)](https://github.com/YuriyLisovskiy/xalwart.server/actions/workflows/tests-gcc-alpine.yml) [![Test Ubuntu](https://github.com/YuriyLisovskiy/xalwart.server/actions/workflows/tests-gcc-ubuntu.yml/badge.svg)](https://github.com/YuriyLisovskiy/xalwart.server/actions/workflows/tests-gcc-ubuntu.yml)
+| @ | Build |
+|---|---|
+| Dev branch: | [![CI](https://github.com/YuriyLisovskiy/xalwart.server/actions/workflows/ci.yml/badge.svg?branch=dev)](https://github.com/YuriyLisovskiy/xalwart.server/actions/workflows/ci.yml?query=branch%3Adev) |
+| Master branch: | [![CI](https://github.com/YuriyLisovskiy/xalwart.server/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/YuriyLisovskiy/xalwart.server/actions/workflows/ci.yml?query=branch%3Amaster) |
 
 ## Build and Install
 
 ```bash
 mkdir build && cd build
 cmake -DCMAKE_BUILD_TYPE=Release ..
-make && sudo make install
+make
+
+# for linux:
+sudo make install
 ```
 
 ## Example

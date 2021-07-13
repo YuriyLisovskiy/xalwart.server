@@ -1,7 +1,7 @@
 name: "release"
 on:
   workflow_run:
-    workflows: ["test alpine clang++", "test ubuntu clang++", "test alpine g++", "test ubuntu g++"]
+    workflows: ["ci"]
     types: [completed]
 jobs:
   release:
