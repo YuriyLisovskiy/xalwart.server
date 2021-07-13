@@ -22,8 +22,8 @@ The following library is required:
 ## Build Status
 | @ | Build |
 |---|---|
-| Dev branch: | [![CI](https://github.com/YuriyLisovskiy/xalwart.server/actions/workflows/ci.yml/badge.svg?branch=dev)](https://github.com/YuriyLisovskiy/xalwart.server/actions/workflows/ci.yml?query=branch%3Adev) |
-| Master branch: | [![CI](https://github.com/YuriyLisovskiy/xalwart.server/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/YuriyLisovskiy/xalwart.server/actions/workflows/ci.yml?query=branch%3Amaster) |
+| Dev branch: | [![Build](https://github.com/YuriyLisovskiy/xalwart.server/actions/workflows/build.yml/badge.svg?branch=dev)](https://github.com/YuriyLisovskiy/xalwart.server/actions/workflows/build.yml?query=branch%3Adev) |
+| Master branch: | [![Build](https://github.com/YuriyLisovskiy/xalwart.server/actions/workflows/build.yml/badge.svg?branch=master)](https://github.com/YuriyLisovskiy/xalwart.server/actions/workflows/build.yml?query=branch%3Amaster) |
 
 ## Build and Install
 
