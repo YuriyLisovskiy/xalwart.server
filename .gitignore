@@ -39,7 +39,12 @@ CMakeSettings.json
 # CLion
 .idea/
 cmake-build-*
+build/
 
 # External libraries
 lib/
 include/
+
+# Other stuff
+Makefile
+venv/
