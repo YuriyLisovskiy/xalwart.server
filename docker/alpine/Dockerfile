@@ -20,8 +20,7 @@ RUN apk add --update --no-cache \
     dpkg \
     cmake \
     ccache \
-    git \
-    valgrind
+    git
 
 RUN git clone -q https://github.com/google/googletest.git /googletest && \
     mkdir -p /googletest/build && \
@@ -53,7 +52,6 @@ RUN mkdir build && \
           -DCMAKE_CXX_COMPILER=$cxx \
           -DCMAKE_BUILD_TYPE=Debug \
           -DBUILD_SHARED_LIB=$build_shared_lib \
-          .. && \
-    make unittests-all
+          ..
 
-CMD valgrind --leak-check=full $APP_HOME/build/tests/unittests-all
+CMD cd $APP_HOME/build/ && make
