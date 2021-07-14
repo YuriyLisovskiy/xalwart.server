@@ -23,9 +23,10 @@ The following library is required:
 - [xalwart.base](https://github.com/YuriyLisovskiy/xalwart.base) 0.x.x or later
 
 ## Build and Install
+`BUILD_SHARED_LIB` stands by building a shared or static library (`off` by default).
 ```bash
 mkdir build && cd build
-cmake -DCMAKE_BUILD_TYPE=Release ..
+cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIB=off ..
 make
 
 # for linux:

@@ -31,11 +31,11 @@ if(NOT ${SOURCES_COUNT})
 endif()
 
 # Build shared library.
-if (NOT LIB_SHARED)
-    set(LIB_SHARED no)
+if (NOT BUILD_SHARED_LIB)
+    set(BUILD_SHARED_LIB off)
 endif()
 
-if (${LIB_SHARED})
+if (${BUILD_SHARED_LIB})
     add_library(${LIBRARY_NAME} SHARED ${SOURCES})
 else()
     add_library(${LIBRARY_NAME} STATIC ${SOURCES})
