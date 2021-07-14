@@ -66,6 +66,7 @@ jobs:
           cd /tmp && \
           git clone https://${{secrets.GH_ACCESS_TOKEN}}@github.com/YuriyLisovskiy/xalwart.base.git && \
           cd xalwart.base && \
+          git checkout dev && \
           sudo mkdir build && \
           cd build && \
           sudo cmake -DCMAKE_BUILD_TYPE=Release \
