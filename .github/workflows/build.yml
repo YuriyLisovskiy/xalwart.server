@@ -24,10 +24,10 @@ jobs:
                             --build-arg cxx=$(bash ./scripts/get_cxx_name_by_cc.sh ${{ matrix.compiler }}) \
                             --build-arg GH_ACCESS_TOKEN=${{ secrets.GH_ACCESS_TOKEN }} \
                             -f docker/alpine/Dockerfile \
-                            --tag=xalwart.base-test:alpine-${{ matrix.compiler }} .
+                            --tag=xalwart.server-test:alpine-${{ matrix.compiler }} .
       - name: Run Tests
         run: |
-          sudo docker run xalwart.base-test:alpine-${{ matrix.compiler }}
+          sudo docker run xalwart.server-test:alpine-${{ matrix.compiler }}
   test-ubuntu:
     name: "${{ matrix.os }} [${{ matrix.compiler }}-${{ matrix.compiler_version }}] [shared: ${{ matrix.build_shared_lib }}]"
     runs-on: ${{ matrix.os }}
@@ -63,16 +63,16 @@ jobs:
           sudo update-alternatives --set c++ /usr/bin/g++-${{ matrix.compiler_version }}
       - name: Install Base Library
         run: |
-          cd /tmp && \
-          git clone https://${{secrets.GH_ACCESS_TOKEN}}@github.com/YuriyLisovskiy/xalwart.base.git && \
-          cd xalwart.base && \
-          git checkout dev && \
-          sudo mkdir build && \
-          cd build && \
+          cd /tmp
+          git clone https://${{secrets.GH_ACCESS_TOKEN}}@github.com/YuriyLisovskiy/xalwart.base.git
+          cd xalwart.base
+          git checkout dev
+          sudo mkdir build
+          cd build
           sudo cmake -DCMAKE_BUILD_TYPE=Release \
                      -DBUILD_SHARED_LIB=${{ matrix.build_shared_lib }} \
-                     .. && \
-          sudo make && \
+                     ..
+          sudo make
           sudo make install
       - name: Build the Library
         run: |
