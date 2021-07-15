@@ -74,6 +74,9 @@ jobs:
                      ..
           sudo make
           sudo make install
+      - name: Update Links and Cache of Linker
+        run: |
+          sudo ldconfig
       - name: Build the Library
         run: |
           sudo mkdir build
