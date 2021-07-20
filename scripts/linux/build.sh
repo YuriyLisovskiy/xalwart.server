@@ -14,13 +14,9 @@ fi
 
 # Install base library.
 cd /app/xalwart.base-"${SYSTEM_NAME}"-"${CC_NAME}"-"${CC_VERSION}"/include || exit 1
-cp -r xalwart.base /usr/local/include
+cp -r xalwart.base/ /usr/local/include
 cd ../lib || exit 1
 cp libxalwart.base* /usr/local/lib
-
-ls /usr/local/include
-ls /usr/local/include/xalwart.base/
-ls /usr/local/lib
 
 mkdir -p /app/build
 cd /app/build || exit 1
