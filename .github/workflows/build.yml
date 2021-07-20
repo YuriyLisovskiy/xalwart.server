@@ -24,7 +24,7 @@ jobs:
       - name: Download Base Library
         uses: dawidd6/action-download-artifact@v2
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          github_token: ${{ secrets.GH_ACCESS_TOKEN }}
           workflow: ci.yml
           branch: dev
           name: xalwart.base-${{ matrix.os.name }}-${{ matrix.compiler }}-${{ matrix.compiler_version }}
