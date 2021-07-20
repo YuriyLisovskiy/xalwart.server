@@ -24,19 +24,10 @@ jobs:
       - name: Download Base Library
         uses: dawidd6/action-download-artifact@v2
         with:
-          # Optional, GitHub token, a Personal Access Token with `public_repo` scope if needed
-          # Required, if artifact is from a different repo
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          # Required, workflow file name or ID
           workflow: ci.yml
-          # Optional, will use the branch
           branch: dev
-          # Optional, uploaded artifact name,
-          # will download all artifacts if not specified
-          # and extract them in respective subdirectories
-          # https://github.com/actions/download-artifact#download-all-artifacts
           name: xalwart.base-${{ matrix.os.name }}-${{ matrix.compiler }}-${{ matrix.compiler_version }}
-          # Optional, defaults to current repo
           repo: YuriyLisovskiy/xalwart.base
       - name: Build the Library
         run: |
@@ -47,6 +38,6 @@ jobs:
       - name: Upload the Artifact
         uses: actions/upload-artifact@v2
         with:
-          name: xalwart.render-${{ matrix.os.name }}-${{ matrix.compiler }}-${{ matrix.compiler_version }}
-          path: xalwart.render-${{ matrix.os.name }}-${{ matrix.compiler }}-${{ matrix.compiler_version }}
+          name: xalwart.server-${{ matrix.os.name }}-${{ matrix.compiler }}-${{ matrix.compiler_version }}
+          path: xalwart.server-${{ matrix.os.name }}-${{ matrix.compiler }}-${{ matrix.compiler_version }}
           retention-days: 90

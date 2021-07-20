@@ -35,14 +35,14 @@ elif [[ "${SYSTEM_NAME}" == "ubuntu"* ]]; then
 else
   echo "System is not supported: ${SYSTEM_NAME}" && exit 1
 fi
-make xalwart.render && make install
+make xalwart.server && make install
 
 # Copy installed library to the result directory.
-BUILD_PATH=/app/xalwart.render-"${SYSTEM_NAME}"-"${CC_NAME}"-"${CC_VERSION}"
+BUILD_PATH=/app/xalwart.server-"${SYSTEM_NAME}"-"${CC_NAME}"-"${CC_VERSION}"
 cd /usr/local || exit 1
 mkdir -p "${BUILD_PATH}"/include
 mkdir -p "${BUILD_PATH}"/lib
 cd include/ || exit 1
-cp -r xalwart.render "${BUILD_PATH}"/include
+cp -r xalwart.server "${BUILD_PATH}"/include
 cd ../lib/ || exit 1
-cp libxalwart.render* "${BUILD_PATH}"/lib
+cp libxalwart.server* "${BUILD_PATH}"/lib
