@@ -32,7 +32,6 @@ jobs:
           repo: YuriyLisovskiy/xalwart.base
       - name: Build the Library
         run: |
-          ls xalwart.base-${{ matrix.os.name }}-${{ matrix.compiler }}-${{ matrix.compiler_version }}/include/xalwart.base
           sudo docker run -i \
                           -v ${{ github.workspace }}:/app \
                           xalwart/${{ matrix.compiler }}:${{ matrix.compiler_version }}-${{ matrix.os.name }}-${{ matrix.os.version }} \
