@@ -23,14 +23,19 @@ The following library is required:
 - [xalwart.base](https://github.com/YuriyLisovskiy/xalwart.base) 0.x.x or later
 
 ## Build and Install
-* `BUILD_SHARED_LIB` means to build a shared or static library (`off` by default).
+* `BUILD_SHARED_LIBS` means to build a shared or static library (`off` by default).
 ```bash
-mkdir build && cd build
-cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIB=off ..
+git clone https://github.com/YuriyLisovskiy/xalwart.server.git
+cd xalwart.server
+mkdir build
+cd build
+cmake -D CMAKE_BUILD_TYPE=Release \
+      -D BUILD_SHARED_LIBS=ON \
+      ..
 make
 
 # for linux:
-sudo make install
+make install
 ```
 
 ## Example
