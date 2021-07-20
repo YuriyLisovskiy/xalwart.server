@@ -22,6 +22,8 @@ endforeach()
 list(LENGTH SOURCES SOURCES_COUNT)
 message(STATUS "[INFO] Sources found: ${SOURCES_COUNT}")
 
+option(BUILD_SHARED_LIBS "Build shared libraries (DLLs)." ON)
+
 # Add the library.
 add_library(${LIBRARY_NAME} ${SOURCES})
 
