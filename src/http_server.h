@@ -32,6 +32,33 @@ __SERVER_BEGIN__
 
 class HTTPServer : public net::abc::IServer
 {
+private:
+	std::shared_ptr<EventLoop> _event_loop;
+	net::HandlerFunc _handler;
+	std::shared_ptr<BaseSocket> _socket;
+
+private:
+	explicit HTTPServer(Context ctx);
+
+	int _get_request();
+
+	inline void _handle(const int& sock)
+	{
+		this->_event_loop->inject_event<RequestEvent>(sock);
+	}
+
+	void _shutdown_request(int sock) const;
+
+protected:
+	void init_environ() override;
+
+protected:
+	std::string host;
+	std::string server_name;
+	uint16_t server_port = 0;
+	Context ctx;
+	collections::Dict<std::string, std::string> base_environ;
+
 protected:
 	struct RequestEvent : public Event
 	{
@@ -48,7 +75,7 @@ public:
 	// - timeout_sec: timeout seconds;
 	// - timeout_usec: timeout microseconds.
 	static std::shared_ptr<net::abc::IServer> initialize(
-		log::ILogger* logger, const Kwargs& kwargs
+		log::ILogger* logger, const Kwargs& kwargs, std::shared_ptr<dt::Timezone> tz
 	);
 
 	inline void setup_handler(net::HandlerFunc handler) override
@@ -67,33 +94,6 @@ public:
 	{
 		return this->base_environ;
 	}
-
-protected:
-	void init_environ() override;
-
-protected:
-	std::string host;
-	std::string server_name;
-	uint16_t server_port = 0;
-	Context ctx;
-	collections::Dict<std::string, std::string> base_environ;
-
-private:
-	std::shared_ptr<EventLoop> _event_loop;
-	net::HandlerFunc _handler;
-	std::shared_ptr<BaseSocket> _socket;
-
-private:
-	explicit HTTPServer(Context ctx);
-
-	int _get_request();
-
-	inline void _handle(const int& sock)
-	{
-		this->_event_loop->inject_event<RequestEvent>(sock);
-	}
-
-	void _shutdown_request(int sock) const;
 };
 
 __SERVER_END__
