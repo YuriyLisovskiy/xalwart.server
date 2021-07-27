@@ -16,44 +16,16 @@
 __SERVER_BEGIN__
 
 std::shared_ptr<net::abc::IServer> HTTPServer::initialize(
-	log::ILogger* logger,
-	const collections::Dict<std::string, std::string>& kwargs
+	log::ILogger* logger, const Kwargs& kwargs
 )
 {
 	Context ctx{};
 	ctx.logger = logger;
-	char* end_ptr = nullptr;
-	auto workers = kwargs.get("workers", "3");
-	ctx.workers = strtol(workers.c_str(), &end_ptr, 10);
-	if (workers.c_str() == end_ptr)
-	{
-		throw ArgumentError("unable to read 'workers' parameter: " + workers, _ERROR_DETAILS_);
-	}
-
-	end_ptr = nullptr;
-	auto max_body_size = kwargs.get("max_body_size", "2621440");
-	ctx.max_body_size = strtol(max_body_size.c_str(), &end_ptr, 10);
-	if (max_body_size.c_str() == end_ptr)
-	{
-		throw ArgumentError("unable to read 'max_body_size' parameter: " + max_body_size, _ERROR_DETAILS_);
-	}
-
-	end_ptr = nullptr;
-	auto timeout_sec = kwargs.get("timeout_sec", "5");
-	ctx.timeout_sec = strtol(timeout_sec.c_str(), &end_ptr, 10);
-	if (timeout_sec.c_str() == end_ptr)
-	{
-		throw ArgumentError("unable to read 'timeout_sec' parameter: " + timeout_sec, _ERROR_DETAILS_);
-	}
-
-	end_ptr = nullptr;
-	auto timeout_usec = kwargs.get("timeout_usec", "0");
-	ctx.timeout_usec = strtol(timeout_usec.c_str(), &end_ptr, 10);
-	if (timeout_usec.c_str() == end_ptr)
-	{
-		throw ArgumentError("unable to read 'timeout_usec' parameter: " + timeout_usec, _ERROR_DETAILS_);
-	}
-
+	ctx.workers = kwargs.get<unsigned long int>("workers", 3);
+	ctx.max_body_size = kwargs.get<unsigned long int>("max_body_size", 2621440);
+	ctx.timeout_sec = (time_t)kwargs.get<unsigned long int>("timeout_sec", 5);
+	ctx.timeout_usec = (time_t)kwargs.get<unsigned long int>("timeout_usec", 0);
+	ctx.retries_count = kwargs.get<unsigned long int>("retries_count", 5);
 	return std::shared_ptr<net::abc::IServer>(new HTTPServer(ctx));
 }
 
@@ -61,12 +33,10 @@ void HTTPServer::bind(const std::string& address, uint16_t port)
 {
 	if (!this->_handler)
 	{
-		throw NullPointerException(
-			"request handler is not specified", _ERROR_DETAILS_
-		);
+		throw NullPointerException("server::HTTPServer: request handler is nullptr", _ERROR_DETAILS_);
 	}
 
-	this->_socket = util::create_socket(address, port, 5, this->ctx.logger);
+	this->_socket = util::create_socket(address, port, this->ctx.retries_count, this->ctx.logger);
 	this->_socket->set_options();
 	this->host = address;
 	this->server_port = port;

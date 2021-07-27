@@ -14,6 +14,7 @@
 #include <memory>
 
 // Base libraries.
+#include <xalwart.base/kwargs.h>
 #include <xalwart.base/event_loop.h>
 #include <xalwart.base/result.h>
 #include <xalwart.base/net/abc.h>
@@ -47,8 +48,7 @@ public:
 	// - timeout_sec: timeout seconds;
 	// - timeout_usec: timeout microseconds.
 	static std::shared_ptr<net::abc::IServer> initialize(
-		log::ILogger* logger,
-		const collections::Dict<std::string, std::string>& kwargs
+		log::ILogger* logger, const Kwargs& kwargs
 	);
 
 	inline void setup_handler(net::HandlerFunc handler) override

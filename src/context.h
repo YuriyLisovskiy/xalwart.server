@@ -8,9 +8,6 @@
 
 #pragma once
 
-// C++ libraries.
-#include <string>
-
 // Base libraries.
 #include <xalwart.base/logger.h>
 
@@ -27,12 +24,13 @@ struct Context
 	size_t workers = 0;
 	time_t timeout_sec = 0;
 	time_t timeout_usec = 0;
+	size_t retries_count = 0;
 
 	inline void normalize()
 	{
 		if (!this->logger)
 		{
-			throw NullPointerException("logger must be instantiated");
+			throw NullPointerException("logger is nullptr", _ERROR_DETAILS_);
 		}
 
 		if (!this->timeout_sec)
