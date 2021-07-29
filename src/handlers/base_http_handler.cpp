@@ -124,7 +124,7 @@ void BaseHTTPRequestHandler::cleanup_headers()
 BaseHTTPRequestHandler::BaseHTTPRequestHandler(
 	int sock, std::string server_version,
 	timeval timeout, log::ILogger* logger,
-	collections::Dict<std::string, std::string> env
+	collections::Dictionary<std::string, std::string> env
 ) : logger(logger),
     server_num_version(std::move(server_version)),
     close_connection(false),

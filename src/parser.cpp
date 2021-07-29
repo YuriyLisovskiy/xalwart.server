@@ -17,7 +17,7 @@ const int _MAX_LINE = 65536;
 const int _MAX_HEADERS = 100;
 
 parse_headers_status parse_headers(
-	collections::Dict<std::string, std::string>& result, server::SocketIO* r_file
+	collections::Dictionary<std::string, std::string>& result, server::SocketIO* r_file
 )
 {
 	while (true)
@@ -64,7 +64,7 @@ parse_headers_status parse_headers(
 		}
 
 		pair[1] = str::ltrim(pair[1]);
-		result[pair[0]] = pair[1];
+		result.set(pair[0], pair[1]);
 	}
 
 	return ph_done;

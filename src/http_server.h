@@ -57,7 +57,7 @@ protected:
 	std::string server_name;
 	uint16_t server_port = 0;
 	Context ctx;
-	collections::Dict<std::string, std::string> base_environ;
+	collections::Dictionary<std::string, std::string> base_environ;
 
 protected:
 	struct RequestEvent : public Event
@@ -90,7 +90,7 @@ public:
 	void close() override;
 
 	[[nodiscard]]
-	inline collections::Dict<std::string, std::string> environ() const override
+	inline collections::Dictionary<std::string, std::string> environ() const override
 	{
 		return this->base_environ;
 	}

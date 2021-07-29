@@ -76,8 +76,8 @@ void HTTPServer::close()
 
 void HTTPServer::init_environ()
 {
-	this->base_environ[net::meta::SERVER_NAME] = this->server_name;
-	this->base_environ[net::meta::SERVER_PORT] = std::to_string(this->server_port);
+	this->base_environ.set(net::meta::SERVER_NAME, this->server_name);
+	this->base_environ.set(net::meta::SERVER_PORT, std::to_string(this->server_port));
 }
 
 HTTPServer::HTTPServer(Context ctx) : ctx(ctx)

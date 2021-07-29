@@ -67,7 +67,7 @@ protected:
 
 	bool parsed;
 
-	collections::Dict<std::string, std::string> env;
+	collections::Dictionary<std::string, std::string> env;
 
 protected:
 	[[nodiscard]]
@@ -156,7 +156,7 @@ public:
 	BaseHTTPRequestHandler(
 		int sock, std::string server_version,
 		timeval timeout, log::ILogger* logger,
-		collections::Dict<std::string, std::string> env
+		collections::Dictionary<std::string, std::string> env
 	);
 
 	// Handle multiple requests if necessary.

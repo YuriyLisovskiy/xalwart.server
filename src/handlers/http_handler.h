@@ -36,7 +36,7 @@ public:
 	explicit inline HTTPRequestHandler(
 		int sock, const std::string& server_version,
 		timeval timeout, size_t max_body_size, log::ILogger* logger,
-		const collections::Dict<std::string, std::string>& env
+		const collections::Dictionary<std::string, std::string>& env
 	) : BaseHTTPRequestHandler(sock, server_version, timeout, logger, env), max_body_size(max_body_size)
 	{
 	}
