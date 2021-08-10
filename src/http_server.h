@@ -16,7 +16,6 @@
 // Base libraries.
 #include <xalwart.base/kwargs.h>
 #include <xalwart.base/event_loop.h>
-#include <xalwart.base/result.h>
 #include <xalwart.base/net/abc.h>
 
 // Module definitions.
