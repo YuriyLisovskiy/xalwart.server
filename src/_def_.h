@@ -3,7 +3,7 @@
  *
  * Copyright (c) 2020-2021 Yuriy Lisovskiy
  *
- * Definition of 'main' module.
+ * Definition of main module.
  */
 
 #pragma once
