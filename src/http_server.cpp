@@ -16,7 +16,7 @@
 __SERVER_BEGIN__
 
 std::shared_ptr<net::abc::IServer> HTTPServer::initialize(
-	log::ILogger* logger, const Kwargs& kwargs, std::shared_ptr<dt::Timezone>
+	log::ILogger* logger, const Kwargs& kwargs, std::shared_ptr<dt::Timezone> /*timezone*/
 )
 {
 	Context ctx{};
@@ -33,7 +33,7 @@ void HTTPServer::bind(const std::string& address, uint16_t port)
 {
 	if (!this->_handler)
 	{
-		throw NullPointerException("server::HTTPServer: request handler is nullptr", _ERROR_DETAILS_);
+		throw NullPointerException("xw::server::HTTPServer: request handler is nullptr", _ERROR_DETAILS_);
 	}
 
 	this->_socket = util::create_socket(address, port, this->ctx.retries_count, this->ctx.logger);
@@ -56,8 +56,7 @@ void HTTPServer::listen(const std::string& message)
 	selector.register_(this->_socket->fd(), EVENT_READ);
 	while (!this->_socket->is_closed())
 	{
-		auto ready = selector.select(this->ctx.timeout_sec, this->ctx.timeout_usec);
-		if (ready)
+		if (selector.select(this->ctx.timeout_sec, this->ctx.timeout_usec))
 		{
 			auto conn = this->_get_request();
 			if (conn >= 0)
@@ -84,25 +83,21 @@ HTTPServer::HTTPServer(Context ctx) : ctx(ctx)
 {
 	this->ctx.normalize();
 	this->_event_loop = std::make_shared<EventLoop>(this->ctx.workers);
-	this->_event_loop->add_event_listener<RequestEvent>([this](auto&, auto& event) {
+	this->_event_loop->add_event_listener<RequestEvent>([this](auto&, auto& event)
+	{
 		try
 		{
 			Measure measure;
 			measure.start();
 
-			timeval timeout{
-				this->ctx.timeout_sec,
-				this->ctx.timeout_usec
-			};
+			timeval timeout{this->ctx.timeout_sec, this->ctx.timeout_usec};
 			HTTPRequestHandler(
 				event.fd, v::version.to_string(), timeout,
 				this->ctx.max_body_size, this->ctx.logger, this->base_environ
 			).handle(this->_handler);
 
 			measure.end();
-			this->ctx.logger->debug(
-				"Time elapsed: " + std::to_string(measure.elapsed()) + " milliseconds"
-			);
+			this->ctx.logger->debug("Time elapsed: " + std::to_string(measure.elapsed()) + " milliseconds");
 		}
 		catch (const ParseError& exc)
 		{
@@ -122,22 +117,20 @@ int HTTPServer::_get_request()
 	int new_sock;
 	if ((new_sock = ::accept(this->_socket->fd(), nullptr, nullptr)) < 0)
 	{
-		if (errno == EBADF || errno == EINVAL)
+		auto err_code = errno;
+		if (err_code == EBADF || err_code == EINVAL)
 		{
-			throw SocketError(
-				errno, "'accept' call failed: " + std::to_string(errno), _ERROR_DETAILS_
-			);
+			throw SocketError(err_code, "'accept' call failed: " + std::to_string(err_code), _ERROR_DETAILS_);
 		}
 
-		if (errno == EMFILE)
+		if (err_code == EMFILE)
 		{
 			std::this_thread::sleep_for(std::chrono::milliseconds(300));
 			return -1;
 		}
 
 		throw SocketError(
-			errno,
-			"'accept' call failed while accepting a new connection: " + std::to_string(errno),
+			err_code, "'accept' call failed while accepting a new connection: " + std::to_string(err_code),
 			_ERROR_DETAILS_
 		);
 	}
@@ -150,16 +143,14 @@ int HTTPServer::_get_request()
 	return -1;
 }
 
-void HTTPServer::_shutdown_request(int sock) const
+void HTTPServer::_shutdown_request(int fd) const
 {
-	if (shutdown(sock, SHUT_RDWR))
+	if (shutdown(fd, SHUT_RDWR))
 	{
-		this->ctx.logger->error(
-			"'shutdown' call failed: " + std::to_string(errno), _ERROR_DETAILS_
-		);
+		this->ctx.logger->error("'shutdown' call failed: " + std::to_string(errno), _ERROR_DETAILS_);
 	}
 
-	::close(sock);
+	::close(fd);
 }
 
 __SERVER_END__

@@ -2,7 +2,7 @@
  * handlers/http_handler.h
  *
  * Copyright (c) 2021 Yuriy Lisovskiy
- * Based on Python 3 HTTP server.
+ * Based on Python 3.6.9 HTTP server.
  *
  * Simple handler implementation.
  */
@@ -18,6 +18,7 @@
 
 __SERVER_BEGIN__
 
+// TODO: docs for 'HTTPRequestHandler'
 class HTTPRequestHandler : public BaseHTTPRequestHandler
 {
 protected:
@@ -27,13 +28,13 @@ protected:
 	bool parse_request() override;
 
 	[[nodiscard]]
-	std::string server_version() const override
+	inline std::string server_version() const override
 	{
 		return "HTTPServer/" + this->server_num_version;
 	}
 
 public:
-	explicit inline HTTPRequestHandler(
+	inline explicit HTTPRequestHandler(
 		int sock, const std::string& server_version,
 		timeval timeout, size_t max_body_size, log::ILogger* logger,
 		const collections::Dictionary<std::string, std::string>& env

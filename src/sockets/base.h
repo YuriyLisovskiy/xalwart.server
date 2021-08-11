@@ -9,15 +9,6 @@
 #pragma once
 
 // C++ libraries.
-#if defined(__linux__) || defined(__APPLE__)
-#include <arpa/inet.h>
-#include <sys/socket.h>
-#include <sys/types.h>
-#include <unistd.h>
-#include <netdb.h>
-#elif _WIN32
-#include <winsock32.h>
-#endif
 #include <string>
 
 // Module definitions.
@@ -26,6 +17,7 @@
 
 __SERVER_BEGIN__
 
+// TODO: docs for 'BaseSocket'
 class BaseSocket
 {
 private:
@@ -45,22 +37,22 @@ protected:
 	virtual void bind() = 0;
 
 public:
-	// Overridden method must call BaseSocket::set_options()
+	// Overridden method must call `BaseSocket::set_options()`
 	virtual void set_options();
 
 	virtual void listen() const;
 
-	// Overridden method must call BaseSocket::close()
+	// Overridden method must call `BaseSocket::close()`
 	virtual void close();
 
 	[[nodiscard]]
-	virtual inline bool is_closed() const
+	inline virtual bool is_closed() const
 	{
 		return this->_closed;
 	}
 
 	[[nodiscard]]
-	virtual inline int fd() const
+	inline virtual int fd() const
 	{
 		return this->sock;
 	}

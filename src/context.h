@@ -17,6 +17,7 @@
 
 __SERVER_BEGIN__
 
+// TODO: docs for 'Context'
 struct Context
 {
 	log::ILogger* logger = nullptr;
@@ -30,7 +31,7 @@ struct Context
 	{
 		if (!this->logger)
 		{
-			throw NullPointerException("logger is nullptr", _ERROR_DETAILS_);
+			throw NullPointerException("'this->logger' is nullptr", _ERROR_DETAILS_);
 		}
 
 		if (!this->timeout_sec)

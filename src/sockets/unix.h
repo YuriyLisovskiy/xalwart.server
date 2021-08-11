@@ -8,9 +8,10 @@
 
 #pragma once
 
-#include <xalwart.base/sys.h>
-
 #ifdef __unix__
+
+// C++ libraries.
+#include <sys/socket.h>
 
 // Module definitions.
 #include "../_def_.h"
@@ -21,13 +22,14 @@
 
 __SERVER_BEGIN__
 
+// TODO: docs for 'UnixSocket'
 class UnixSocket : public BaseSocket
 {
 protected:
 	void bind() override;
 
 public:
-	explicit inline UnixSocket(const char* path) : BaseSocket(path, 0, AF_UNIX)
+	inline explicit UnixSocket(const char* path) : BaseSocket(path, 0, AF_UNIX)
 	{
 	}
 

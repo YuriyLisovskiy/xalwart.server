@@ -13,12 +13,6 @@
 
 __SERVER_BEGIN__
 
-SelectSelector::SelectSelector(log::ILogger* logger) : logger(logger)
-{
-	this->fd = -1;
-	this->events = -1;
-}
-
 void SelectSelector::register_(uint file_descriptor, int events_)
 {
 	this->fd = (int)file_descriptor;
@@ -46,9 +40,7 @@ bool SelectSelector::select(uint timeout_sec, uint timeout_usec)
 	int ret = ::select(this->fd + 1, &fd_readers, &fd_writers, nullptr, &t_val);
 	if (ret == -1)
 	{
-		this->logger->error(
-			"'select' call failed: " + std::string(strerror(errno)), _ERROR_DETAILS_
-		);
+		this->logger->error("'select' call failed: " + std::string(strerror(errno)), _ERROR_DETAILS_);
 	}
 	else if (ret == 0)
 	{

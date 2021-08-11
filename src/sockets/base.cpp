@@ -8,8 +8,12 @@
 
 // C++ libraries.
 #include <fcntl.h>
-#include <netinet/tcp.h>
-#include <stdexcept>
+#if defined(__linux__) || defined(__APPLE__)
+#include <sys/socket.h>
+#include <unistd.h>
+#elif _WIN32
+#include <winsock32.h>
+#endif
 
 // Base libraries.
 #include <xalwart.base/exceptions.h>
@@ -35,15 +39,12 @@ bool BaseSocket::_set_blocking(bool blocking) const
 #endif
 }
 
-BaseSocket::BaseSocket(
-	const char* address, uint16_t port, int family
-) : address(address), port(port), family(family), _closed(false)
+BaseSocket::BaseSocket(const char* address, uint16_t port, int family) :
+	address(address), port(port), family(family), _closed(false)
 {
 	if ((this->sock = socket(this->family, SOCK_STREAM, 0)) < 0)
 	{
-		throw SocketError(
-			errno, "'socket' call failed: " + std::to_string(errno), _ERROR_DETAILS_
-		);
+		throw SocketError(errno, "'socket' call failed: " + std::to_string(errno), _ERROR_DETAILS_);
 	}
 }
 
@@ -60,9 +61,7 @@ void BaseSocket::set_options()
 			case EINVAL:
 				break;
 			default:
-				throw SocketError(
-					err, "'setsockopt' call failed: " + std::to_string(err), _ERROR_DETAILS_
-				);
+				throw SocketError(err, "'setsockopt' call failed: " + std::to_string(err), _ERROR_DETAILS_);
 		}
 	}
 
@@ -74,9 +73,7 @@ void BaseSocket::listen() const
 {
 	if (::listen(this->sock, SOMAXCONN))
 	{
-		throw SocketError(
-			errno, "'listen' call failed: " + std::to_string(errno), _ERROR_DETAILS_
-		);
+		throw SocketError(errno, "'listen' call failed: " + std::to_string(errno), _ERROR_DETAILS_);
 	}
 }
 
@@ -90,9 +87,7 @@ void BaseSocket::close()
 	this->_closed = true;
 	if (shutdown(this->sock, SHUT_RDWR))
 	{
-		throw SocketError(
-			errno, "'shutdown' call failed: " + std::to_string(errno), _ERROR_DETAILS_
-		);
+		throw SocketError(errno, "'shutdown' call failed: " + std::to_string(errno), _ERROR_DETAILS_);
 	}
 
 	::close(this->sock);

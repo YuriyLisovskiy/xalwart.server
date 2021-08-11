@@ -14,9 +14,10 @@
 #include <xalwart.base/string_utils.h>
 
 // Server libraries.
-#include "./socket/tcp.h"
-#include "./socket/tcp6.h"
-#include "./socket/unix.h"
+#include "./sockets/tcp.h"
+#include "./sockets/tcp6.h"
+#include "./sockets/unix.h"
+
 
 __SERVER_UTIL_BEGIN__
 
@@ -91,9 +92,7 @@ std::shared_ptr<BaseSocket> create_socket(
 	return socket;
 }
 
-void close_socket(
-	std::shared_ptr<BaseSocket>& socket, log::ILogger* logger
-)
+void close_socket(std::shared_ptr<BaseSocket>& socket, log::ILogger* logger)
 {
 	try
 	{
@@ -110,9 +109,8 @@ std::string get_host_name()
 	char host_buffer[256];
 	if (gethostname(host_buffer, sizeof(host_buffer)))
 	{
-		throw SocketError(
-			errno, "'gethostname' call failed: " + std::to_string(errno), _ERROR_DETAILS_
-		);
+		auto err_code = errno;
+		throw SocketError(err_code, "'gethostname' call failed: " + std::to_string(err_code), _ERROR_DETAILS_);
 	}
 
 	return host_buffer;
@@ -121,19 +119,15 @@ std::string get_host_name()
 struct hostent* get_host_by_addr(const std::string& address)
 {
 	struct in_addr ip{};
-	struct hostent* hp;
+	hostent* hp;
 	if (!inet_aton(address.c_str(), &ip))
 	{
-		throw SocketError(
-			1, "can't parse IP address " + address, _ERROR_DETAILS_
-		);
+		throw SocketError(1, "can't parse IP address " + address, _ERROR_DETAILS_);
 	}
 
 	if ((hp = gethostbyaddr((const char *) &ip, sizeof(ip), INADDR_ANY)) == nullptr)
 	{
-		throw SocketError(
-			1, "no name associated with " + address, _ERROR_DETAILS_
-		);
+		throw SocketError(1, "no name associated with " + address, _ERROR_DETAILS_);
 	}
 
 	return hp;

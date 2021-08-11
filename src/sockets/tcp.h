@@ -8,6 +8,13 @@
 
 #pragma once
 
+// C++ libraries.
+#if defined(__linux__) || defined(__APPLE__)
+#include <sys/socket.h>
+#elif _WIN32
+#include <winsock32.h>
+#endif
+
 // Module definitions.
 #include "../_def_.h"
 
@@ -17,13 +24,14 @@
 
 __SERVER_BEGIN__
 
+// TODO: docs for 'TCPSocket'
 class TCPSocket : public BaseSocket
 {
 protected:
 	void bind() override;
 
 public:
-	explicit inline TCPSocket(const char* address, uint16_t port) : BaseSocket(address, port, AF_INET)
+	inline explicit TCPSocket(const char* address, uint16_t port) : BaseSocket(address, port, AF_INET)
 	{
 	}
 

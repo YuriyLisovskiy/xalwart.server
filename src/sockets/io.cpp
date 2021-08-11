@@ -12,14 +12,6 @@
 
 __SERVER_BEGIN__
 
-SocketIO::SocketIO(
-	int fd, timeval timeout, std::shared_ptr<ISelector> selector
-) : _fd(fd), _timeout(timeout), _selector(std::move(selector)), _buffer_size(-1)
-{
-	this->_buffer[0] = '\0';
-	this->_selector->register_(fd, EVENT_READ);
-}
-
 SocketIO& SocketIO::operator= (SocketIO&& other) noexcept
 {
 	this->_fd = other._fd;
@@ -32,7 +24,7 @@ SocketIO& SocketIO::operator= (SocketIO&& other) noexcept
 
 SocketIO::State SocketIO::read_line(std::string& line, size_t max_n)
 {
-	auto ret = this->_recv(std::min(max_n, MAX_BUFF_SIZE));
+	auto ret = this->_recv(std::min(max_n, MAX_BUFFER_SIZE));
 	if (ret != State::Done)
 	{
 		return ret;
@@ -72,7 +64,7 @@ SocketIO::State SocketIO::read_bytes(std::string& content, size_t n_bytes)
 	}
 
 	SocketIO::State ret;
-	while ((ret = this->_recv(std::min(n_bytes, MAX_BUFF_SIZE))) == State::Done)
+	while ((ret = this->_recv(std::min(n_bytes, MAX_BUFFER_SIZE))) == State::Done)
 	{
 		if (this->_buffer[0] != '\0')
 		{

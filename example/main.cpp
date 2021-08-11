@@ -25,16 +25,16 @@ int main()
 	logCfg.add_console_stream();
 	auto logger = xw::log::Logger(logCfg);
 	logger.use_colors(true);
-	auto server = xw::server::HTTPServer::initialize(&logger, {{
+	auto server = xw::server::HTTPServer::initialize(&logger, xw::Kwargs{{
 		{"workers", "10"},
 		{"max_body_size", "1610611911"}, // 1.5 GB
 		{"timeout_sec", "3"},
 		{"timeout_usec", "0"},
-	}});
+	}}, nullptr);
 	server->setup_handler([](
 		xw::net::RequestContext* ctx,
-		const xw::collections::Dict<std::string, std::string>& env
-	) -> unsigned int
+		const xw::collections::Dictionary<std::string, std::string>& env
+	) -> uint
 	{
 		ctx->write(CONTENT.c_str(), CONTENT.size());
 		return 200;

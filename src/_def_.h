@@ -3,13 +3,15 @@
  *
  * Copyright (c) 2020-2021 Yuriy Lisovskiy
  *
- * Purpose: main module's definitions.
+ * Definition of 'main' module.
  */
 
 #pragma once
 
+// C++ libraries.
 #include <chrono>
 
+// Module definitions.
 #include <xalwart.base/_def_.h>
 
 // xw::server

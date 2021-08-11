@@ -2,7 +2,6 @@
  * handlers/http_handler.cpp
  *
  * Copyright (c) 2021 Yuriy Lisovskiy
- * Based on Python 3 HTTP server.
  */
 
 #include "./http_handler.h"
@@ -35,9 +34,7 @@ bool HTTPRequestHandler::parse_request()
 		this->request_ctx.content_size = std::stoi(s_content_len, nullptr, 10);
 		if (!s_content_len)
 		{
-			this->send_error(
-				400, "Bad request Content-Length header value (" + content_len + ")"
-			);
+			this->send_error(400, "Bad request Content-Length header value (" + content_len + ")");
 			return false;
 		}
 
@@ -76,9 +73,7 @@ bool HTTPRequestHandler::parse_request()
 		}
 		else
 		{
-			auto s_status = this->socket_io->read_bytes(
-				this->request_ctx.content, this->request_ctx.content_size
-			);
+			auto s_status = this->socket_io->read_bytes(this->request_ctx.content, this->request_ctx.content_size);
 			if (s_status != SocketIO::State::Done)
 			{
 				switch (s_status)
@@ -113,9 +108,7 @@ void HTTPRequestHandler::handle(net::HandlerFunc func)
 	this->handle_one_request();
 	if (this->socket_io->shutdown(SHUT_RDWR))
 	{
-		this->logger->error(
-			"'shutdown(SHUT_RDWR)' call failed: " + std::to_string(errno), _ERROR_DETAILS_
-		);
+		this->logger->error("'shutdown(SHUT_RDWR)' call failed: " + std::to_string(errno), _ERROR_DETAILS_);
 	}
 }
 

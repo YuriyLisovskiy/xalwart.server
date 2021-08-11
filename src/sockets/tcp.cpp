@@ -6,6 +6,11 @@
 
 #include "./tcp.h"
 
+// C++ libraries.
+#if defined(__linux__) || defined(__APPLE__)
+#include <arpa/inet.h>
+#endif
+
 // Base libraries.
 #include <xalwart.base/exceptions.h>
 
@@ -18,20 +23,15 @@ void TCPSocket::bind()
 	if (inet_pton(this->family, this->address.c_str(), &addr.sin_addr) <= 0)
 	{
 		auto err = errno;
-		throw SocketError(
-			err, "'inet_pton' call failed: " + std::to_string(err), _ERROR_DETAILS_
-		);
+		throw SocketError(err, "'inet_pton' call failed: " + std::to_string(err), _ERROR_DETAILS_);
 	}
 
 	addr.sin_family = this->family;
 	addr.sin_port = htons(this->port);
-
 	if (::bind(this->sock, (const sockaddr *)&addr, sizeof(addr)))
 	{
 		auto err = errno;
-		throw SocketError(
-			err, "'bind' call failed: " + std::to_string(err), _ERROR_DETAILS_
-		);
+		throw SocketError(err, "'bind' call failed: " + std::to_string(err), _ERROR_DETAILS_);
 	}
 }
 

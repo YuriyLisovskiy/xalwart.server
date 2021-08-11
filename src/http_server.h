@@ -23,12 +23,13 @@
 
 // Server libraries.
 #include "./context.h"
-#include "./socket/base.h"
+#include "./sockets/base.h"
 #include "./handlers/http_handler.h"
 
 
 __SERVER_BEGIN__
 
+// TODO: docs for 'HTTPServer'
 class HTTPServer : public net::abc::IServer
 {
 private:
@@ -41,12 +42,12 @@ private:
 
 	int _get_request();
 
-	inline void _handle(const int& sock)
+	inline void _handle(const int& fd)
 	{
-		this->_event_loop->inject_event<RequestEvent>(sock);
+		this->_event_loop->inject_event<RequestEvent>(fd);
 	}
 
-	void _shutdown_request(int sock) const;
+	void _shutdown_request(int fd) const;
 
 protected:
 	void init_environ() override;

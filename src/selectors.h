@@ -25,16 +25,19 @@
 
 __SERVER_BEGIN__
 
-const int EVENT_READ = (1 << 0);
-const int EVENT_WRITE = (1 << 1);
+inline const int EVENT_READ = (1 << 0);
+inline const int EVENT_WRITE = (1 << 1);
 
+// TODO: docs for 'ISelector'
 class ISelector
 {
 public:
 	virtual void register_(uint file_descriptor, int events) = 0;
+
 	virtual bool select(uint timeout_sec, uint timeout_usec) = 0;
 };
 
+// TODO: docs for 'SelectSelector'
 class SelectSelector : public ISelector
 {
 protected:
@@ -45,8 +48,14 @@ protected:
 	int events;
 
 public:
-	explicit SelectSelector(log::ILogger* logger);
+	inline explicit SelectSelector(log::ILogger* logger) : logger(logger)
+	{
+		this->fd = -1;
+		this->events = -1;
+	}
+
 	void register_(uint fd, int events) override;
+
 	bool select(uint timeout_sec, uint timeout_usec) override;
 };
 

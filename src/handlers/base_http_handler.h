@@ -2,7 +2,7 @@
  * handlers/base_http_handler.h
  *
  * Copyright (c) 2021 Yuriy Lisovskiy
- * Based on Python 3 HTTP server.
+ * Based on Python 3.6.9 HTTP server.
  *
  * Reads and parses only HTTP headers, performs basic checks
  * of an incoming request, returns error in case of invalid
@@ -18,17 +18,20 @@
 // Base libraries.
 #include <xalwart.base/sys.h>
 #include <xalwart.base/net/request_context.h>
+#include <xalwart.base/datetime.h>
+#include <xalwart.base/utility.h>
 
 // Module definitions.
 #include "../_def_.h"
 
 // Server libraries.
-#include "../socket/io.h"
+#include "../sockets/io.h"
 #include "../parser.h"
 
 
 __SERVER_BEGIN__
 
+// TODO: docs for 'BaseHTTPRequestHandler'
 class BaseHTTPRequestHandler
 {
 protected:
@@ -71,9 +74,7 @@ protected:
 
 protected:
 	[[nodiscard]]
-	virtual std::string default_error_message(
-		int code, const std::string& message, const std::string& explain
-	) const;
+	virtual std::string default_error_message(int code, const std::string& message, const std::string& explain) const;
 
 	void log_socket_error(SocketIO::State state) const;
 
@@ -112,9 +113,7 @@ protected:
 	// This sends an error response (so it must be called before any
 	// output has been generated), logs the error, and finally sends
 	// a piece of HTML explaining the error to the user.
-	void send_error(
-		int code, const std::string& message="", const std::string& explain=""
-	);
+	void send_error(int code, const std::string& message="", const std::string& explain="");
 
 	// Add the response header to the headers buffer and log the
 	// response code.
@@ -132,7 +131,11 @@ protected:
 	// Send the blank line ending the MIME headers.
 	void end_headers();
 
-	void flush_headers();
+	inline void flush_headers()
+	{
+		this->socket_io->write(this->headers_buffer.c_str(), this->headers_buffer.size());
+		this->headers_buffer = "";
+	}
 
 	// Return the server software version string.
 	[[nodiscard]]
@@ -143,11 +146,14 @@ protected:
 
 	// Return the current date and time formatted for a message header.
 	[[nodiscard]]
-	virtual std::string datetime_string() const;
+	inline virtual std::string datetime_string() const
+	{
+		return util::format_date((time_t)dt::Datetime::utc_now().timestamp(), false, true);
+	}
 
 	// The server software version.
 	[[nodiscard]]
-	virtual inline std::string server_version() const
+	inline virtual std::string server_version() const
 	{
 		return "BaseHTTP/" + this->server_num_version;
 	}
@@ -157,7 +163,14 @@ public:
 		int sock, std::string server_version,
 		timeval timeout, log::ILogger* logger,
 		collections::Dictionary<std::string, std::string> env
-	);
+	) : logger(logger),
+		server_num_version(std::move(server_version)),
+		close_connection(false),
+		parsed(false),
+		env(std::move(env))
+	{
+		this->socket_io = std::make_shared<SocketIO>(sock, timeout, std::make_shared<SelectSelector>(logger));
+	}
 
 	// Handle multiple requests if necessary.
 	virtual void handle(net::HandlerFunc func);

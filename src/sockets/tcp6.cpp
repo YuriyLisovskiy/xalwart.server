@@ -8,6 +8,9 @@
 
 // C++ libraries.
 #include <netinet/tcp.h>
+#if defined(__linux__) || defined(__APPLE__)
+#include <arpa/inet.h>
+#endif
 
 // Base libraries.
 #include <xalwart.base/exceptions.h>
@@ -21,9 +24,7 @@ void TCP6Socket::bind()
 	if (inet_pton(this->family, this->address.c_str(), &addr.sin6_addr) <= 0)
 	{
 		auto err = errno;
-		throw SocketError(
-			err, "'inet_pton' call failed: " + std::to_string(err), _ERROR_DETAILS_
-		);
+		throw SocketError(err, "'inet_pton' call failed: " + std::to_string(err), _ERROR_DETAILS_);
 	}
 
 	addr.sin6_family = this->family;
@@ -32,9 +33,7 @@ void TCP6Socket::bind()
 	if (::bind(this->sock, (const sockaddr *)&addr, sizeof(addr)))
 	{
 		auto err = errno;
-		throw SocketError(
-			err, "'bind' call failed: " + std::to_string(err), _ERROR_DETAILS_
-		);
+		throw SocketError(err, "'bind' call failed: " + std::to_string(err), _ERROR_DETAILS_);
 	}
 }
 

@@ -13,8 +13,8 @@
 
 __SERVER_PARSER_BEGIN__
 
-inline const int _MAX_LINE = 65536;
-inline const int _MAX_HEADERS = 100;
+inline const int MAX_LINE_LENGTH = 65536;
+inline const int MAX_HEADERS_NUMBER = 100;
 
 ParseHeadersStatus parse_headers(
 	collections::Dictionary<std::string, std::string>& result, server::SocketIO* r_file
@@ -23,7 +23,7 @@ ParseHeadersStatus parse_headers(
 	while (true)
 	{
 		std::string line;
-		auto r_status = r_file->read_line(line, _MAX_LINE + 1);
+		auto r_status = r_file->read_line(line, MAX_LINE_LENGTH + 1);
 		if (r_status != SocketIO::State::Done)
 		{
 			switch (r_status)
@@ -39,16 +39,14 @@ ParseHeadersStatus parse_headers(
 			}
 		}
 
-		if (line.size() > _MAX_LINE)
+		if (line.size() > MAX_LINE_LENGTH)
 		{
 			return ParseHeadersStatus::LineTooLong;
 		}
 
 		line = str::rtrim(line, "\r\n");
-		auto pair = str::split(
-			encoding::encode_iso_8859_1(line, encoding::STRICT), ':', 1
-		);
-		if (result.size() > _MAX_HEADERS)
+		auto pair = str::split(encoding::encode_iso_8859_1(line, encoding::STRICT), ':', 1);
+		if (result.size() > MAX_HEADERS_NUMBER)
 		{
 			return ParseHeadersStatus::MaxHeadersReached;
 		}

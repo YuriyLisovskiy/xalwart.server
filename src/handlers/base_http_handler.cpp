@@ -2,14 +2,12 @@
  * handlers/base_http_handler.cpp
  *
  * Copyright (c) 2021 Yuriy Lisovskiy
- * Based on Python 3 HTTP server.
  */
 
 #include "./base_http_handler.h"
 
 // Base libraries.
 #include <xalwart.base/net/status.h>
-#include <xalwart.base/utility.h>
 #include <xalwart.base/encoding.h>
 #include <xalwart.base/string_utils.h>
 #include <xalwart.base/html.h>
@@ -97,9 +95,7 @@ void BaseHTTPRequestHandler::log_request(uint code, const std::string& info) con
 	}
 
 	this->logger->print(
-		"[" + dt::Datetime::now().strftime("%d/%b/%Y %T") + "] \"" +
-		msg + "\" " + std::to_string(code),
-		color
+		"[" + dt::Datetime::now().strftime("%d/%b/%Y %T") + "] \"" + msg + "\" " + std::to_string(code), color
 	);
 }
 
@@ -121,30 +117,12 @@ void BaseHTTPRequestHandler::cleanup_headers()
 	}
 }
 
-BaseHTTPRequestHandler::BaseHTTPRequestHandler(
-	int sock, std::string server_version,
-	timeval timeout, log::ILogger* logger,
-	collections::Dictionary<std::string, std::string> env
-) : logger(logger),
-    server_num_version(std::move(server_version)),
-    close_connection(false),
-    parsed(false),
-    env(std::move(env))
-{
-	this->socket_io = std::make_shared<SocketIO>(
-		sock, timeout, std::make_shared<SelectSelector>(logger)
-	);
-}
-
 bool BaseHTTPRequestHandler::parse_request()
 {
 	this->request_version = this->default_request_version;
 	auto version = this->default_request_version;
 	this->close_connection = true;
-	auto req_line = str::rtrim(
-		encoding::encode_iso_8859_1(this->raw_request_line, encoding::STRICT),
-		"\r\n"
-	);
+	auto req_line = str::rtrim(encoding::encode_iso_8859_1(this->raw_request_line, encoding::STRICT), "\r\n");
 	this->request_line = req_line;
 
 	std::string path;
@@ -224,9 +202,7 @@ bool BaseHTTPRequestHandler::parse_request()
 	this->request_version = version;
 
 	// Examine the headers and look for a Connection directive.
-	auto p_status = parser::parse_headers(
-		this->request_ctx.headers, this->socket_io.get()
-	);
+	auto p_status = parser::parse_headers(this->request_ctx.headers, this->socket_io.get());
 	if (p_status != parser::ParseHeadersStatus::Done)
 	{
 		switch (p_status)
@@ -241,7 +217,8 @@ bool BaseHTTPRequestHandler::parse_request()
 			case parser::ParseHeadersStatus::MaxHeadersReached:
 				this->send_error(
 					431, "Too many headers",
-					"The server is unwilling to process the request because its header fields are too large");
+					"The server is unwilling to process the request because its header fields are too large"
+				);
 				return false;
 			case parser::ParseHeadersStatus::TimedOut:
 			case parser::ParseHeadersStatus::ConnectionBroken:
@@ -265,12 +242,10 @@ bool BaseHTTPRequestHandler::parse_request()
 		this->request_ctx.keep_alive = true;
 	}
 
-	// Examine the headers and look for an Expect directive.
+	// Examine the headers and look for expect directive.
 	auto expect = str::lower(this->request_ctx.headers.get("Expect", ""));
 	if (
-		expect == "100-continue" &&
-		this->protocol_version >= "HTTP/1.1" &&
-		this->request_version >= "HTTP/1.1"
+		expect == "100-continue" && this->protocol_version >= "HTTP/1.1" && this->request_version >= "HTTP/1.1"
 	)
 	{
 		if (!this->handle_expect_100())
@@ -322,7 +297,6 @@ void BaseHTTPRequestHandler::handle_one_request()
 	}
 
 	this->cleanup_headers();
-
 	this->request_ctx.write = [this](const char* data, size_t n) -> bool {
 		auto status = this->socket_io->write(data, n);
 		bool success = status == SocketIO::State::Done;
@@ -333,9 +307,7 @@ void BaseHTTPRequestHandler::handle_one_request()
 
 		return success;
 	};
-	this->log_request(
-		this->handler_func(&this->request_ctx, this->env), ""
-	);
+	this->log_request(this->handler_func(&this->request_ctx, this->env), "");
 }
 
 void BaseHTTPRequestHandler::handle(net::HandlerFunc func)
@@ -350,19 +322,13 @@ void BaseHTTPRequestHandler::handle(net::HandlerFunc func)
 
 	if (this->socket_io->shutdown(SHUT_RDWR))
 	{
-		this->logger->error(
-			"'shutdown(SHUT_RDWR)' call failed: " + std::to_string(errno), _ERROR_DETAILS_
-		);
+		this->logger->error("'shutdown(SHUT_RDWR)' call failed: " + std::to_string(errno), _ERROR_DETAILS_);
 	}
 }
 
-void BaseHTTPRequestHandler::send_error(
-	int code, const std::string& message, const std::string& explain
-)
+void BaseHTTPRequestHandler::send_error(int code, const std::string& message, const std::string& explain)
 {
-	auto msg = net::HTTP_STATUS.get(
-		code, std::pair<std::string, std::string>("???", "???")
-	);
+	auto msg = net::HTTP_STATUS.get(code, std::pair<std::string, std::string>("???", "???"));
 	if (!message.empty())
 	{
 		msg.first = message;
@@ -418,8 +384,7 @@ void BaseHTTPRequestHandler::send_response_only(int code, const std::string& mes
 		}
 
 		this->headers_buffer += encoding::encode_iso_8859_1(
-			this->protocol_version + " " + std::to_string(code) + " " + msg + "\r\n",
-			encoding::STRICT
+			this->protocol_version + " " + std::to_string(code) + " " + msg + "\r\n", encoding::STRICT
 		);
 	}
 }
@@ -428,9 +393,7 @@ void BaseHTTPRequestHandler::send_header(const std::string& keyword, const std::
 {
 	if (this->request_version != "HTTP/0.9")
 	{
-		this->headers_buffer += encoding::encode_iso_8859_1(
-			keyword + ": " + value + "\r\n", encoding::STRICT
-		);
+		this->headers_buffer += encoding::encode_iso_8859_1(keyword + ": " + value + "\r\n", encoding::STRICT);
 	}
 
 	if (str::lower(keyword) == "connection")
@@ -454,17 +417,6 @@ void BaseHTTPRequestHandler::end_headers()
 		this->headers_buffer += "\r\n";
 		this->flush_headers();
 	}
-}
-
-void BaseHTTPRequestHandler::flush_headers()
-{
-	this->socket_io->write(this->headers_buffer.c_str(), this->headers_buffer.size());
-	this->headers_buffer = "";
-}
-
-std::string BaseHTTPRequestHandler::datetime_string() const
-{
-	return util::format_date((time_t)dt::Datetime::utc_now().timestamp(), false, true);
 }
 
 __SERVER_END__
