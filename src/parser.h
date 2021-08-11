@@ -20,18 +20,18 @@
 
 __SERVER_PARSER_BEGIN__
 
-enum parse_headers_status
+enum class ParseHeadersStatus
 {
-	ph_done,
-	ph_line_too_long,
-	ph_max_headers_reached,
-	ph_timed_out,
-	ph_conn_broken,
-	ph_failed
+	Done,
+	LineTooLong,
+	MaxHeadersReached,
+	TimedOut,
+	ConnectionBroken,
+	Failed
 };
 
 // Parses only RFC2822 headers from a file pointer.
-extern parse_headers_status parse_headers(
+extern ParseHeadersStatus parse_headers(
 	collections::Dictionary<std::string, std::string>& result, server::SocketIO* r_file
 );
 

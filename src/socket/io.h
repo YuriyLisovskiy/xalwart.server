@@ -25,13 +25,13 @@ __SERVER_BEGIN__
 class SocketIO final
 {
 public:
-	enum state
+	enum class State
 	{
-		s_done,
-		s_timed_out,
-		s_conn_broken,
-		s_failed
-//		s_eof
+		Done,
+		TimedOut,
+		ConnectionBroken,
+		Failed
+//		Eof
 	};
 
 	explicit SocketIO(
@@ -40,9 +40,9 @@ public:
 
 	SocketIO& operator= (SocketIO&& other) noexcept;
 
-	state read_line(std::string& line, size_t max_n=MAX_BUFF_SIZE);
-	state read_bytes(std::string& content, size_t n);
-	state write(const char* data, size_t n) const;
+	State read_line(std::string& line, size_t max_n=MAX_BUFF_SIZE);
+	State read_bytes(std::string& content, size_t n);
+	State write(const char* data, size_t n) const;
 
 	[[nodiscard]]
 	inline int shutdown(int how) const
@@ -51,7 +51,7 @@ public:
 	}
 
 private:
-	state _recv(size_t n);
+	State _recv(size_t n);
 
 private:
 	int _fd;
@@ -61,27 +61,27 @@ private:
 	std::shared_ptr<ISelector> _selector;
 };
 
-inline std::ostream& operator<< (std::ostream& os, SocketIO::state st)
+inline std::ostream& operator<< (std::ostream& os, SocketIO::State state)
 {
-	switch (st)
+	switch (state)
 	{
-		case SocketIO::s_done:
-			os << "s_done";
+		case SocketIO::State::Done:
+			os << "SocketIO::State::Done";
 			break;
-		case SocketIO::s_timed_out:
-			os << "s_timed_out";
+		case SocketIO::State::TimedOut:
+			os << "SocketIO::State::TimedOut";
 			break;
-		case SocketIO::s_conn_broken:
-			os << "s_conn_broken";
+		case SocketIO::State::ConnectionBroken:
+			os << "SocketIO::State::ConnectionBroken";
 			break;
-		case SocketIO::s_failed:
-			os << "s_failed";
+		case SocketIO::State::Failed:
+			os << "SocketIO::State::Failed";
 			break;
-//		case SocketIO::s_eof:
-//			os << "s_eof";
+//		case SocketIO::State::Eof:
+//			os << "SocketIO::State::Eof";
 //			break;
 		default:
-			os << "s_unknown";
+			os << "Unknown";
 			break;
 	}
 

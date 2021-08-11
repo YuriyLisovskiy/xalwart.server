@@ -75,9 +75,9 @@ protected:
 		int code, const std::string& message, const std::string& explain
 	) const;
 
-	void log_socket_error(SocketIO::state st) const;
+	void log_socket_error(SocketIO::State state) const;
 
-	void log_parse_headers_error(parser::parse_headers_status st) const;
+	void log_parse_headers_error(parser::ParseHeadersStatus status) const;
 
 	virtual void log_request(uint code, const std::string& info) const;
 

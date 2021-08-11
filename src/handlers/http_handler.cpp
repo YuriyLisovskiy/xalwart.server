@@ -79,13 +79,13 @@ bool HTTPRequestHandler::parse_request()
 			auto s_status = this->socket_io->read_bytes(
 				this->request_ctx.content, this->request_ctx.content_size
 			);
-			if (s_status != SocketIO::s_done)
+			if (s_status != SocketIO::State::Done)
 			{
 				switch (s_status)
 				{
-					case SocketIO::s_timed_out:
-					case SocketIO::s_conn_broken:
-					case SocketIO::s_failed:
+					case SocketIO::State::TimedOut:
+					case SocketIO::State::ConnectionBroken:
+					case SocketIO::State::Failed:
 						this->log_socket_error(s_status);
 						this->close_connection = true;
 					default:

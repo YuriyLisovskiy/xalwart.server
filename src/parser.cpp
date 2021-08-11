@@ -13,10 +13,10 @@
 
 __SERVER_PARSER_BEGIN__
 
-const int _MAX_LINE = 65536;
-const int _MAX_HEADERS = 100;
+inline const int _MAX_LINE = 65536;
+inline const int _MAX_HEADERS = 100;
 
-parse_headers_status parse_headers(
+ParseHeadersStatus parse_headers(
 	collections::Dictionary<std::string, std::string>& result, server::SocketIO* r_file
 )
 {
@@ -24,16 +24,16 @@ parse_headers_status parse_headers(
 	{
 		std::string line;
 		auto r_status = r_file->read_line(line, _MAX_LINE + 1);
-		if (r_status != SocketIO::s_done)
+		if (r_status != SocketIO::State::Done)
 		{
 			switch (r_status)
 			{
-				case SocketIO::s_timed_out:
-					return ph_timed_out;
-				case SocketIO::s_conn_broken:
-					return ph_conn_broken;
-				case SocketIO::s_failed:
-					return ph_failed;
+				case SocketIO::State::TimedOut:
+					return ParseHeadersStatus::TimedOut;
+				case SocketIO::State::ConnectionBroken:
+					return ParseHeadersStatus::ConnectionBroken;
+				case SocketIO::State::Failed:
+					return ParseHeadersStatus::Failed;
 				default:
 					break;
 			}
@@ -41,7 +41,7 @@ parse_headers_status parse_headers(
 
 		if (line.size() > _MAX_LINE)
 		{
-			return ph_line_too_long;
+			return ParseHeadersStatus::LineTooLong;
 		}
 
 		line = str::rtrim(line, "\r\n");
@@ -50,7 +50,7 @@ parse_headers_status parse_headers(
 		);
 		if (result.size() > _MAX_HEADERS)
 		{
-			return ph_max_headers_reached;
+			return ParseHeadersStatus::MaxHeadersReached;
 		}
 
 		if (line.empty() || line == "\r\n" || line == "\n")
@@ -67,7 +67,7 @@ parse_headers_status parse_headers(
 		result.set(pair[0], pair[1]);
 	}
 
-	return ph_done;
+	return ParseHeadersStatus::Done;
 }
 
 __SERVER_PARSER_END__

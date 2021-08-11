@@ -38,17 +38,17 @@ std::string BaseHTTPRequestHandler::default_error_message(
 		"</html>";
 }
 
-void BaseHTTPRequestHandler::log_socket_error(SocketIO::state st) const
+void BaseHTTPRequestHandler::log_socket_error(SocketIO::State state) const
 {
-	switch (st)
+	switch (state)
 	{
-		case SocketIO::s_timed_out:
+		case SocketIO::State::TimedOut:
 			this->logger->debug("Request timed out", _ERROR_DETAILS_);
 			break;
-		case SocketIO::s_conn_broken:
+		case SocketIO::State::ConnectionBroken:
 			this->logger->debug("Connection was broken", _ERROR_DETAILS_);
 			break;
-		case SocketIO::s_failed:
+		case SocketIO::State::Failed:
 			this->logger->debug("Connection failed", _ERROR_DETAILS_);
 			break;
 		default:
@@ -56,17 +56,17 @@ void BaseHTTPRequestHandler::log_socket_error(SocketIO::state st) const
 	}
 }
 
-void BaseHTTPRequestHandler::log_parse_headers_error(parser::parse_headers_status st) const
+void BaseHTTPRequestHandler::log_parse_headers_error(parser::ParseHeadersStatus status) const
 {
-	switch (st)
+	switch (status)
 	{
-		case parser::ph_timed_out:
+		case parser::ParseHeadersStatus::TimedOut:
 			this->logger->debug("Request timed out", _ERROR_DETAILS_);
 			break;
-		case parser::ph_conn_broken:
+		case parser::ParseHeadersStatus::ConnectionBroken:
 			this->logger->debug("Connection was broken", _ERROR_DETAILS_);
 			break;
-		case parser::ph_failed:
+		case parser::ParseHeadersStatus::Failed:
 			this->logger->debug("Connection failed", _ERROR_DETAILS_);
 			break;
 		default:
@@ -227,25 +227,25 @@ bool BaseHTTPRequestHandler::parse_request()
 	auto p_status = parser::parse_headers(
 		this->request_ctx.headers, this->socket_io.get()
 	);
-	if (p_status != parser::ph_done)
+	if (p_status != parser::ParseHeadersStatus::Done)
 	{
 		switch (p_status)
 		{
-			case parser::ph_line_too_long:
+			case parser::ParseHeadersStatus::LineTooLong:
 				// Request Header Fields Too Large.
 				this->send_error(
 					431, "Line too long",
 					"The server is unwilling to process the request because its header fields are too large"
 				);
 				return false;
-			case parser::ph_max_headers_reached:
+			case parser::ParseHeadersStatus::MaxHeadersReached:
 				this->send_error(
 					431, "Too many headers",
 					"The server is unwilling to process the request because its header fields are too large");
 				return false;
-			case parser::ph_timed_out:
-			case parser::ph_conn_broken:
-			case parser::ph_failed:
+			case parser::ParseHeadersStatus::TimedOut:
+			case parser::ParseHeadersStatus::ConnectionBroken:
+			case parser::ParseHeadersStatus::Failed:
 				this->log_parse_headers_error(p_status);
 				this->close_connection = true;
 				return false;
@@ -295,7 +295,7 @@ bool BaseHTTPRequestHandler::handle_expect_100()
 void BaseHTTPRequestHandler::handle_one_request()
 {
 	auto state = this->socket_io->read_line(this->raw_request_line, 65537);
-	if (state != SocketIO::s_done)
+	if (state != SocketIO::State::Done)
 	{
 		this->log_socket_error(state);
 		this->close_connection = true;
@@ -325,7 +325,7 @@ void BaseHTTPRequestHandler::handle_one_request()
 
 	this->request_ctx.write = [this](const char* data, size_t n) -> bool {
 		auto status = this->socket_io->write(data, n);
-		bool success = status == SocketIO::s_done;
+		bool success = status == SocketIO::State::Done;
 		if (!success)
 		{
 			this->log_socket_error(status);
@@ -391,7 +391,7 @@ void BaseHTTPRequestHandler::send_error(
 	if (this->command != "HEAD" && !body.empty())
 	{
 		auto status = this->socket_io->write(body.c_str(), body.size());
-		if (status != SocketIO::s_done)
+		if (status != SocketIO::State::Done)
 		{
 			this->log_socket_error(status);
 		}
