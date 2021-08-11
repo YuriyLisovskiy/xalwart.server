@@ -10,6 +10,7 @@
 
 // C++ libraries.
 #include <sys/un.h>
+#include <cstring>
 
 // Base libraries.
 #include <xalwart.base/exceptions.h>
