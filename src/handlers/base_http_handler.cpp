@@ -74,14 +74,14 @@ void BaseHTTPRequestHandler::log_parse_headers_error(parser::ParseHeadersStatus 
 
 void BaseHTTPRequestHandler::log_request(uint code, const std::string& info) const
 {
-	log::Logger::Color color = log::Logger::Color::GREEN;
+	log::Logger::Color color = log::Logger::Color::Green;
 	if (code >= 400)
 	{
-		color = log::Logger::Color::YELLOW;
+		color = log::Logger::Color::Yellow;
 	}
 	else if (code >= 500)
 	{
-		color = log::Logger::Color::RED;
+		color = log::Logger::Color::Red;
 	}
 
 	std::string msg;
@@ -122,7 +122,7 @@ bool BaseHTTPRequestHandler::parse_request()
 	this->request_version = this->default_request_version;
 	auto version = this->default_request_version;
 	this->close_connection = true;
-	auto req_line = str::rtrim(encoding::encode_iso_8859_1(this->raw_request_line, encoding::STRICT), "\r\n");
+	auto req_line = str::rtrim(encoding::encode_iso_8859_1(this->raw_request_line, encoding::Mode::Strict), "\r\n");
 	this->request_line = req_line;
 
 	std::string path;
@@ -348,7 +348,7 @@ void BaseHTTPRequestHandler::send_error(int code, const std::string& message, co
 		std::string content = this->default_error_message(
 			code, html::escape(msg.first, false), html::escape(msg.second, false)
 		);
-		body = encoding::encode_utf_8(content, encoding::REPLACE);
+		body = encoding::encode_utf_8(content, encoding::Mode::Replace);
 		this->send_header("Content-Type", this->error_content_type);
 		this->send_header("Content-Length", std::to_string(body.size()));
 	}
@@ -384,7 +384,7 @@ void BaseHTTPRequestHandler::send_response_only(int code, const std::string& mes
 		}
 
 		this->headers_buffer += encoding::encode_iso_8859_1(
-			this->protocol_version + " " + std::to_string(code) + " " + msg + "\r\n", encoding::STRICT
+			this->protocol_version + " " + std::to_string(code) + " " + msg + "\r\n", encoding::Mode::Strict
 		);
 	}
 }
@@ -393,7 +393,7 @@ void BaseHTTPRequestHandler::send_header(const std::string& keyword, const std::
 {
 	if (this->request_version != "HTTP/0.9")
 	{
-		this->headers_buffer += encoding::encode_iso_8859_1(keyword + ": " + value + "\r\n", encoding::STRICT);
+		this->headers_buffer += encoding::encode_iso_8859_1(keyword + ": " + value + "\r\n", encoding::Mode::Strict);
 	}
 
 	if (str::lower(keyword) == "connection")

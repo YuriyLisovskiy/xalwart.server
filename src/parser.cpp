@@ -45,7 +45,7 @@ ParseHeadersStatus parse_headers(
 		}
 
 		line = str::rtrim(line, "\r\n");
-		auto pair = str::split(encoding::encode_iso_8859_1(line, encoding::STRICT), ':', 1);
+		auto pair = str::split(encoding::encode_iso_8859_1(line, encoding::Mode::Strict), ':', 1);
 		if (result.size() > MAX_HEADERS_NUMBER)
 		{
 			return ParseHeadersStatus::MaxHeadersReached;
