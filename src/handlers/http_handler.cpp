@@ -108,7 +108,7 @@ void HTTPRequestHandler::handle(net::HandlerFunc func)
 	this->handle_one_request();
 	if (this->socket_io->shutdown(SHUT_RDWR))
 	{
-		this->logger->error("'shutdown(SHUT_RDWR)' call failed: " + std::to_string(errno), _ERROR_DETAILS_);
+		this->logger()->error("'shutdown(SHUT_RDWR)' call failed: " + std::to_string(errno), _ERROR_DETAILS_);
 	}
 }
 

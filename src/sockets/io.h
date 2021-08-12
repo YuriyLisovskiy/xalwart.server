@@ -25,6 +25,13 @@ inline const size_t MAX_BUFFER_SIZE = 65537; // in bytes
 // TODO: docs for 'SocketIO'
 class SocketIO final
 {
+private:
+	int _fd;
+	timeval _timeout;
+	char _buffer[MAX_BUFFER_SIZE]{};
+	ssize_t _buffer_size;
+	std::unique_ptr<ISelector> _selector;
+
 public:
 	enum class State
 	{
@@ -35,7 +42,7 @@ public:
 //		Eof
 	};
 
-	inline explicit SocketIO(int fd, timeval timeout, std::shared_ptr<ISelector> selector) :
+	inline explicit SocketIO(int fd, timeval timeout, std::unique_ptr<ISelector> selector) :
 		_fd(fd), _timeout(timeout), _selector(std::move(selector)), _buffer_size(-1)
 	{
 		this->_buffer[0] = '\0';
@@ -58,13 +65,6 @@ public:
 
 private:
 	State _recv(size_t n);
-
-private:
-	int _fd;
-	timeval _timeout;
-	char _buffer[MAX_BUFFER_SIZE]{};
-	ssize_t _buffer_size;
-	std::shared_ptr<ISelector> _selector;
 };
 
 // TODO: docs for 'operator<<'

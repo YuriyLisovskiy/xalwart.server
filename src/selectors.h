@@ -32,6 +32,8 @@ inline const int EVENT_WRITE = (1 << 1);
 class ISelector
 {
 public:
+	virtual ~ISelector() = default;
+
 	virtual void register_(uint file_descriptor, int events) = 0;
 
 	virtual bool select(uint timeout_sec, uint timeout_usec) = 0;

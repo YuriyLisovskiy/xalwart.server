@@ -40,6 +40,11 @@ bool SelectSelector::select(uint timeout_sec, uint timeout_usec)
 	int ret = ::select(this->fd + 1, &fd_readers, &fd_writers, nullptr, &t_val);
 	if (ret == -1)
 	{
+		if (!this->logger)
+		{
+			throw NullPointerException("xw::server::SelectSelector: logger is nullptr", _ERROR_DETAILS_);
+		}
+
 		this->logger->error("'select' call failed: " + std::string(strerror(errno)), _ERROR_DETAILS_);
 	}
 	else if (ret == 0)

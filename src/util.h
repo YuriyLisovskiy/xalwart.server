@@ -46,7 +46,7 @@ extern std::shared_ptr<BaseSocket> create_socket(
 );
 
 // TODO: docs for 'close_socket'
-extern void close_socket(std::shared_ptr<BaseSocket>& socket, log::ILogger* logger);
+extern void close_socket(BaseSocket* socket, log::ILogger* logger);
 
 // Wrapper for standard gethostname(char *__name, size_t __len) function.
 extern std::string get_host_name();

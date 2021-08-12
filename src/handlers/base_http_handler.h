@@ -34,14 +34,15 @@ __SERVER_BEGIN__
 // TODO: docs for 'BaseHTTPRequestHandler'
 class BaseHTTPRequestHandler
 {
+private:
+	log::ILogger* _logger;
+
 protected:
 	net::HandlerFunc handler_func;
 
 	net::RequestContext request_ctx;
 
-	std::shared_ptr<SocketIO> socket_io;
-
-	log::ILogger* logger;
+	std::unique_ptr<SocketIO> socket_io;
 
 	std::string sys_version = sys::compiler + "/" + sys::compiler_version;
 
@@ -158,18 +159,28 @@ protected:
 		return "BaseHTTP/" + this->server_num_version;
 	}
 
+	inline log::ILogger* logger() const
+	{
+		if (!this->_logger)
+		{
+			throw NullPointerException("'logger' is nullptr", _ERROR_DETAILS_);
+		}
+
+		return this->_logger;
+	}
+
 public:
 	BaseHTTPRequestHandler(
 		int sock, std::string server_version,
 		timeval timeout, log::ILogger* logger,
 		collections::Dictionary<std::string, std::string> env
-	) : logger(logger),
+	) : _logger(logger),
 		server_num_version(std::move(server_version)),
 		close_connection(false),
 		parsed(false),
 		env(std::move(env))
 	{
-		this->socket_io = std::make_shared<SocketIO>(sock, timeout, std::make_shared<SelectSelector>(logger));
+		this->socket_io = std::make_unique<SocketIO>(sock, timeout, std::make_unique<SelectSelector>(logger));
 	}
 
 	// Handle multiple requests if necessary.

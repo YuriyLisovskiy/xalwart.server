@@ -12,28 +12,58 @@
 #include <string>
 #include <functional>
 #include <memory>
+#include <map>
 
 // Base libraries.
 #include <xalwart.base/kwargs.h>
 #include <xalwart.base/event_loop.h>
 #include <xalwart.base/net/abc.h>
+#include <xalwart.base/logger.h>
 
 // Module definitions.
 #include "./_def_.h"
 
 // Server libraries.
-#include "./context.h"
 #include "./sockets/base.h"
 #include "./handlers/http_handler.h"
 
 
 __SERVER_BEGIN__
 
+// TODO: docs for 'Context'
+class Context
+{
+private:
+	log::ILogger* _logger = nullptr;
+
+public:
+	size_t max_body_size = 0;
+	size_t workers = 0;
+	time_t timeout_sec = 0;
+	time_t timeout_usec = 0;
+	size_t retries_count = 0;
+
+	inline explicit Context(log::ILogger* logger) : _logger(logger)
+	{
+	}
+
+	[[nodiscard]]
+	inline log::ILogger* logger() const
+	{
+		if (!this->_logger)
+		{
+			throw NullPointerException("xw::server::Context: logger is nullptr", _ERROR_DETAILS_);
+		}
+
+		return this->_logger;
+	}
+};
+
 // TODO: docs for 'HTTPServer'
 class HTTPServer : public net::abc::IServer
 {
 private:
-	std::shared_ptr<EventLoop> _event_loop;
+	std::unique_ptr<EventLoop> _event_loop;
 	net::HandlerFunc _handler;
 	std::shared_ptr<BaseSocket> _socket;
 
@@ -57,7 +87,7 @@ protected:
 	std::string server_name;
 	uint16_t server_port = 0;
 	Context ctx;
-	collections::Dictionary<std::string, std::string> base_environ;
+	std::map<std::string, std::string> base_environ;
 
 protected:
 	struct RequestEvent : public Event
@@ -74,7 +104,7 @@ public:
 	// - max_body_size: maximum size of request body (in bytes);
 	// - timeout_sec: timeout seconds;
 	// - timeout_usec: timeout microseconds.
-	static std::shared_ptr<net::abc::IServer> initialize(
+	static std::unique_ptr<net::abc::IServer> initialize(
 		log::ILogger* logger, const Kwargs& kwargs, std::shared_ptr<dt::Timezone> tz
 	);
 

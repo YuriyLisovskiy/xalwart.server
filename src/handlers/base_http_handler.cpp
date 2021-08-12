@@ -41,13 +41,13 @@ void BaseHTTPRequestHandler::log_socket_error(SocketIO::State state) const
 	switch (state)
 	{
 		case SocketIO::State::TimedOut:
-			this->logger->debug("Request timed out", _ERROR_DETAILS_);
+			this->logger()->debug("Request timed out", _ERROR_DETAILS_);
 			break;
 		case SocketIO::State::ConnectionBroken:
-			this->logger->debug("Connection was broken", _ERROR_DETAILS_);
+			this->logger()->debug("Connection was broken", _ERROR_DETAILS_);
 			break;
 		case SocketIO::State::Failed:
-			this->logger->debug("Connection failed", _ERROR_DETAILS_);
+			this->logger()->debug("Connection failed", _ERROR_DETAILS_);
 			break;
 		default:
 			break;
@@ -59,13 +59,13 @@ void BaseHTTPRequestHandler::log_parse_headers_error(parser::ParseHeadersStatus 
 	switch (status)
 	{
 		case parser::ParseHeadersStatus::TimedOut:
-			this->logger->debug("Request timed out", _ERROR_DETAILS_);
+			this->logger()->debug("Request timed out", _ERROR_DETAILS_);
 			break;
 		case parser::ParseHeadersStatus::ConnectionBroken:
-			this->logger->debug("Connection was broken", _ERROR_DETAILS_);
+			this->logger()->debug("Connection was broken", _ERROR_DETAILS_);
 			break;
 		case parser::ParseHeadersStatus::Failed:
-			this->logger->debug("Connection failed", _ERROR_DETAILS_);
+			this->logger()->debug("Connection failed", _ERROR_DETAILS_);
 			break;
 		default:
 			break;
@@ -94,7 +94,7 @@ void BaseHTTPRequestHandler::log_request(uint code, const std::string& info) con
 		msg = info;
 	}
 
-	this->logger->print(
+	this->logger()->print(
 		"[" + dt::Datetime::now().strftime("%d/%b/%Y %T") + "] \"" + msg + "\" " + std::to_string(code), color
 	);
 }
@@ -322,7 +322,7 @@ void BaseHTTPRequestHandler::handle(net::HandlerFunc func)
 
 	if (this->socket_io->shutdown(SHUT_RDWR))
 	{
-		this->logger->error("'shutdown(SHUT_RDWR)' call failed: " + std::to_string(errno), _ERROR_DETAILS_);
+		this->logger()->error("'shutdown(SHUT_RDWR)' call failed: " + std::to_string(errno), _ERROR_DETAILS_);
 	}
 }
 

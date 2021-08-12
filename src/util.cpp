@@ -70,6 +70,11 @@ std::shared_ptr<BaseSocket> create_socket(
 		}
 		catch (const SocketError& exc)
 		{
+			if (!logger)
+			{
+				throw NullPointerException("'logger' is nullptr", _ERROR_DETAILS_);
+			}
+
 			switch (exc.err_no())
 			{
 				case EADDRINUSE:
@@ -92,8 +97,13 @@ std::shared_ptr<BaseSocket> create_socket(
 	return socket;
 }
 
-void close_socket(std::shared_ptr<BaseSocket>& socket, log::ILogger* logger)
+void close_socket(BaseSocket* socket, log::ILogger* logger)
 {
+	if (!socket)
+	{
+		throw NullPointerException("'socket' is nullptr", _ERROR_DETAILS_);
+	}
+
 	try
 	{
 		socket->close();
