@@ -16,9 +16,7 @@ __SERVER_PARSER_BEGIN__
 inline const int MAX_LINE_LENGTH = 65536;
 inline const int MAX_HEADERS_NUMBER = 100;
 
-ParseHeadersStatus parse_headers(
-	collections::Dictionary<std::string, std::string>& result, server::SocketIO* r_file
-)
+ParseHeadersStatus parse_headers(std::map<std::string, std::string>& result, server::SocketIO* r_file)
 {
 	while (true)
 	{
@@ -62,7 +60,7 @@ ParseHeadersStatus parse_headers(
 		}
 
 		pair[1] = str::ltrim(pair[1]);
-		result.set(pair[0], pair[1]);
+		result.insert(std::make_pair(pair[0], pair[1]));
 	}
 
 	return ParseHeadersStatus::Done;

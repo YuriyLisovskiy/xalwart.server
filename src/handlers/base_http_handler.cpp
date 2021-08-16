@@ -106,12 +106,15 @@ void BaseHTTPRequestHandler::cleanup_headers()
 	// connection.
 	if (!this->request_ctx.headers.contains("Content-Length"))
 	{
-		this->request_ctx.headers.set("Connection", "close");
+		this->request_ctx.headers.insert(std::make_pair("Connection", "close"));
 	}
 
 	// Mark the connection for closing if it's set as such above or if the
 	// application sent the header.
-	if (str::lower(this->request_ctx.headers.get("Connection")) == "close")
+	if (
+		this->request_ctx.headers.contains("Connection") &&
+		str::lower(this->request_ctx.headers.at("Connection")) == "close"
+	)
 	{
 		this->close_connection = true;
 	}
@@ -231,7 +234,8 @@ bool BaseHTTPRequestHandler::parse_request()
 		}
 	}
 
-	auto conn_type = str::lower(this->request_ctx.headers.get("Connection", ""));
+	auto conn_type = this->request_ctx.headers.contains("Connection") ?
+		str::lower(this->request_ctx.headers.at("Connection")) : "";
 	if (conn_type == "close")
 	{
 		this->close_connection = true;
@@ -243,7 +247,8 @@ bool BaseHTTPRequestHandler::parse_request()
 	}
 
 	// Examine the headers and look for expect directive.
-	auto expect = str::lower(this->request_ctx.headers.get("Expect", ""));
+	auto expect = this->request_ctx.headers.contains("Expect") ?
+		str::lower(this->request_ctx.headers.at("Expect")) : "";
 	if (
 		expect == "100-continue" && this->protocol_version >= "HTTP/1.1" && this->request_version >= "HTTP/1.1"
 	)
@@ -328,25 +333,25 @@ void BaseHTTPRequestHandler::handle(net::HandlerFunc func)
 
 void BaseHTTPRequestHandler::send_error(int code, const std::string& message, const std::string& explain)
 {
-	auto msg = net::HTTP_STATUS.get(code, std::pair<std::string, std::string>("???", "???"));
+	auto [msg, _] = net::get_status_by_code(code);
 	if (!message.empty())
 	{
-		msg.first = message;
+		msg.phrase = message;
 	}
 
 	if (!explain.empty())
 	{
-		msg.second = explain;
+		msg.description = explain;
 	}
 
-	this->send_response(code, msg.first);
+	this->send_response(code, msg.phrase);
 	this->send_header("Connection", "close");
 	std::string body;
 	if (code >= 200 && code != 204 && code != 205 && code != 304)
 	{
 		// HTML encode to prevent Cross Site Scripting attacks.
 		std::string content = this->default_error_message(
-			code, html::escape(msg.first, false), html::escape(msg.second, false)
+			code, html::escape(msg.phrase, false), html::escape(msg.description, false)
 		);
 		body = encoding::encode_utf_8(content, encoding::Mode::Replace);
 		this->send_header("Content-Type", this->error_content_type);
@@ -378,9 +383,10 @@ void BaseHTTPRequestHandler::send_response_only(int code, const std::string& mes
 	auto msg = message;
 	if (this->request_version != "HTTP/0.9")
 	{
-		if (msg.empty() && net::HTTP_STATUS.contains(code))
+		auto [status, found] = net::get_status_by_code(code);
+		if (msg.empty() && found)
 		{
-			msg = net::HTTP_STATUS.get(code).first;
+			msg = status.phrase;
 		}
 
 		this->headers_buffer += encoding::encode_iso_8859_1(

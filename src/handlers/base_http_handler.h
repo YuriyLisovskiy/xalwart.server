@@ -14,6 +14,7 @@
 
 // C++ libraries.
 #include <string>
+#include <map>
 
 // Base libraries.
 #include <xalwart.base/sys.h>
@@ -71,7 +72,7 @@ protected:
 
 	bool parsed;
 
-	collections::Dictionary<std::string, std::string> env;
+	std::map<std::string, std::string> env;
 
 protected:
 	[[nodiscard]]
@@ -173,7 +174,7 @@ public:
 	BaseHTTPRequestHandler(
 		int sock, std::string server_version,
 		timeval timeout, log::ILogger* logger,
-		collections::Dictionary<std::string, std::string> env
+		std::map<std::string, std::string> env
 	) : _logger(logger),
 		server_num_version(std::move(server_version)),
 		close_connection(false),

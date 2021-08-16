@@ -27,7 +27,8 @@ bool HTTPRequestHandler::parse_request()
 		this->request_ctx.query = full_p[1];
 	}
 
-	auto content_len = this->request_ctx.headers.get("Content-Length", "");
+	auto content_len = this->request_ctx.headers.contains("Content-Length") ?
+		this->request_ctx.headers.at("Content-Length") : "";
 	if (!content_len.empty())
 	{
 		const char* s_content_len = content_len.c_str();
@@ -44,7 +45,8 @@ bool HTTPRequestHandler::parse_request()
 			return false;
 		}
 
-		auto transfer_enc = this->request_ctx.headers.get("Transfer-Encoding", "");
+		auto transfer_enc = this->request_ctx.headers.contains("Transfer-Encoding") ?
+			this->request_ctx.headers.at("Transfer-Encoding") : "";
 		if (!transfer_enc.empty() && str::lower(transfer_enc).find("chunked") != std::string::npos)
 		{
 			if (this->protocol_version < "HTTP/1.1")

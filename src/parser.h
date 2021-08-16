@@ -8,8 +8,9 @@
 
 #pragma once
 
-// Base libraries.
-#include <xalwart.base/collections/dictionary.h>
+// C++ libraries.
+#include <string>
+#include <map>
 
 // Module definitions.
 #include "./_def_.h"
@@ -31,8 +32,6 @@ enum class ParseHeadersStatus
 };
 
 // Parses only RFC2822 headers from a file pointer.
-extern ParseHeadersStatus parse_headers(
-	collections::Dictionary<std::string, std::string>& result, server::SocketIO* r_file
-);
+extern ParseHeadersStatus parse_headers(std::map<std::string, std::string>& result, server::SocketIO* r_file);
 
 __SERVER_PARSER_END__
