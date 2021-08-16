@@ -35,7 +35,7 @@ void HTTPServer::bind(const std::string& address, uint16_t port)
 		throw NullPointerException("xw::server::HTTPServer: request handler is nullptr", _ERROR_DETAILS_);
 	}
 
-	this->_socket = util::create_socket(address, port, this->ctx.retries_count, this->ctx.logger());
+	this->_socket = util::create_socket(address, port, this->ctx.retries_count, this->ctx.logger);
 	this->_socket->set_options();
 	this->host = address;
 	this->server_port = port;
@@ -48,10 +48,10 @@ void HTTPServer::listen(const std::string& message)
 	this->_socket->listen();
 	if (!message.empty())
 	{
-		this->ctx.logger()->print(message);
+		this->ctx.logger->print(message);
 	}
 
-	SelectSelector selector(this->ctx.logger());
+	SelectSelector selector(this->ctx.logger);
 	selector.register_(this->_socket->fd(), EVENT_READ);
 	while (!this->_socket->is_closed())
 	{
@@ -69,7 +69,7 @@ void HTTPServer::listen(const std::string& message)
 void HTTPServer::close()
 {
 	this->_event_loop->wait_for_threads();
-	util::close_socket(this->_socket.get(), this->ctx.logger());
+	util::close_socket(this->_socket.get(), this->ctx.logger);
 }
 
 void HTTPServer::init_environ()
@@ -91,21 +91,21 @@ HTTPServer::HTTPServer(Context ctx) : ctx(ctx)
 			timeval timeout{this->ctx.timeout_sec, this->ctx.timeout_usec};
 			HTTPRequestHandler(
 				event.fd, v::version.to_string(), timeout,
-				this->ctx.max_body_size, this->ctx.logger(), this->base_environ
+				this->ctx.max_body_size, this->ctx.logger, this->base_environ
 			).handle(this->_handler);
 
 			measure.end();
-			this->ctx.logger()->debug("Time elapsed: " + std::to_string(measure.elapsed()) + " milliseconds");
+			this->ctx.logger->debug("Time elapsed: " + std::to_string(measure.elapsed()) + " milliseconds");
 		}
 		catch (const ParseError& exc)
 		{
 			this->_shutdown_request(event.fd);
-			this->ctx.logger()->error(exc);
+			this->ctx.logger->error(exc);
 		}
 		catch (const std::exception& exc)
 		{
 			this->_shutdown_request(event.fd);
-			this->ctx.logger()->fatal(exc.what(), _ERROR_DETAILS_);
+			this->ctx.logger->fatal(exc.what(), _ERROR_DETAILS_);
 		}
 	});
 }
@@ -145,7 +145,7 @@ void HTTPServer::_shutdown_request(int fd) const
 {
 	if (shutdown(fd, SHUT_RDWR))
 	{
-		this->ctx.logger()->error("'shutdown' call failed: " + std::to_string(errno), _ERROR_DETAILS_);
+		this->ctx.logger->error("'shutdown' call failed: " + std::to_string(errno), _ERROR_DETAILS_);
 	}
 
 	::close(fd);

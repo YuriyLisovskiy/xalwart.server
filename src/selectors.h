@@ -9,6 +9,8 @@
 #pragma once
 
 // C++ libraries.
+#include <memory>
+
 #if defined(__linux__) || defined(__APPLE__)
 #include <sys/socket.h>
 #include <sys/select.h>
@@ -52,6 +54,11 @@ protected:
 public:
 	inline explicit SelectSelector(log::ILogger* logger) : logger(logger)
 	{
+		if (!this->logger)
+		{
+			throw NullPointerException("'logger' is nullptr", _ERROR_DETAILS_);
+		}
+
 		this->fd = -1;
 		this->events = -1;
 	}

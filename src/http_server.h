@@ -33,29 +33,20 @@ __SERVER_BEGIN__
 // TODO: docs for 'Context'
 class Context
 {
-private:
-	log::ILogger* _logger = nullptr;
-
 public:
+	log::ILogger* logger = nullptr;
 	size_t max_body_size = 0;
 	size_t workers = 0;
 	time_t timeout_sec = 0;
 	time_t timeout_usec = 0;
 	size_t retries_count = 0;
 
-	inline explicit Context(log::ILogger* logger) : _logger(logger)
+	inline explicit Context(log::ILogger* logger) : logger(logger)
 	{
-	}
-
-	[[nodiscard]]
-	inline log::ILogger* logger() const
-	{
-		if (!this->_logger)
+		if (!this->logger)
 		{
-			throw NullPointerException("xw::server::Context: logger is nullptr", _ERROR_DETAILS_);
+			throw NullPointerException("'logger' is nullptr", _ERROR_DETAILS_);
 		}
-
-		return this->_logger;
 	}
 };
 

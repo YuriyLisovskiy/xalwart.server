@@ -17,9 +17,14 @@ inline const int MAX_LINE_LENGTH = 65536;
 inline const int MAX_HEADERS_NUMBER = 100;
 
 ParseHeadersStatus parse_headers(
-	collections::Dictionary<std::string, std::string>& result, server::SocketIO* r_file
+	std::map<std::string, std::string>& result, const std::unique_ptr<server::SocketIO>& r_file
 )
 {
+	if (!r_file)
+	{
+		throw NullPointerException("'r_file' is nullptr", _ERROR_DETAILS_);
+	}
+
 	while (true)
 	{
 		std::string line;
@@ -62,7 +67,7 @@ ParseHeadersStatus parse_headers(
 		}
 
 		pair[1] = str::ltrim(pair[1]);
-		result.set(pair[0], pair[1]);
+		result.insert(std::make_pair(pair[0], pair[1]));
 	}
 
 	return ParseHeadersStatus::Done;

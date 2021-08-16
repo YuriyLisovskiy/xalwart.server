@@ -110,6 +110,11 @@ void close_socket(BaseSocket* socket, log::ILogger* logger)
 	}
 	catch (const SocketError& exc)
 	{
+		if (!logger)
+		{
+			throw NullPointerException("'logger' is nullptr", _ERROR_DETAILS_);
+		}
+
 		logger->error("Error while closing socket: " + std::string(exc.what()));
 	}
 }

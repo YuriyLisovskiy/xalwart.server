@@ -14,6 +14,7 @@
 
 // C++ libraries.
 #include <string>
+#include <memory>
 
 // Base libraries.
 #include <xalwart.base/sys.h>
@@ -34,10 +35,9 @@ __SERVER_BEGIN__
 // TODO: docs for 'BaseHTTPRequestHandler'
 class BaseHTTPRequestHandler
 {
-private:
-	log::ILogger* _logger;
-
 protected:
+	std::shared_ptr<log::ILogger> logger;
+
 	net::HandlerFunc handler_func;
 
 	net::RequestContext request_ctx;
@@ -71,7 +71,7 @@ protected:
 
 	bool parsed;
 
-	collections::Dictionary<std::string, std::string> env;
+	std::map<std::string, std::string> env;
 
 protected:
 	[[nodiscard]]
@@ -159,27 +159,18 @@ protected:
 		return "BaseHTTP/" + this->server_num_version;
 	}
 
-	inline log::ILogger* logger() const
+public:
+	BaseHTTPRequestHandler(
+		int sock, std::string server_version, timeval timeout,
+		log::ILogger* logger, std::map<std::string, std::string> env
+	) : logger(std::move(logger)),
+		server_num_version(std::move(server_version)), close_connection(false), parsed(false), env(std::move(env))
 	{
-		if (!this->_logger)
+		if (!this->logger)
 		{
 			throw NullPointerException("'logger' is nullptr", _ERROR_DETAILS_);
 		}
 
-		return this->_logger;
-	}
-
-public:
-	BaseHTTPRequestHandler(
-		int sock, std::string server_version,
-		timeval timeout, log::ILogger* logger,
-		collections::Dictionary<std::string, std::string> env
-	) : _logger(logger),
-		server_num_version(std::move(server_version)),
-		close_connection(false),
-		parsed(false),
-		env(std::move(env))
-	{
 		this->socket_io = std::make_unique<SocketIO>(sock, timeout, std::make_unique<SelectSelector>(logger));
 	}
 
