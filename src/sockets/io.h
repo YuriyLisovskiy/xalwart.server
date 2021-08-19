@@ -11,6 +11,10 @@
 // C++ libraries.
 #include <string>
 
+// Base libraries.
+#include <xalwart.base/io.h>
+#include <xalwart.base/net/request_context.h>
+
 // Module definitions.
 #include "../_def_.h"
 
@@ -23,7 +27,7 @@ __SERVER_BEGIN__
 inline const size_t MAX_BUFFER_SIZE = 65537; // in bytes
 
 // TODO: docs for 'SocketIO'
-class SocketIO final
+class SocketIO final : public io::IReader
 {
 private:
 	int _fd;
@@ -33,15 +37,6 @@ private:
 	std::unique_ptr<ISelector> _selector;
 
 public:
-	enum class State
-	{
-		Done,
-		TimedOut,
-		ConnectionBroken,
-		Failed
-//		Eof
-	};
-
 	inline explicit SocketIO(int fd, timeval timeout, std::unique_ptr<ISelector> selector) :
 		_fd(fd), _timeout(timeout), _selector(std::move(selector)), _buffer_size(-1)
 	{
@@ -51,11 +46,11 @@ public:
 
 	SocketIO& operator= (SocketIO&& other) noexcept;
 
-	State read_line(std::string& line, size_t max_n=MAX_BUFFER_SIZE);
+	int read_line(std::string& line, size_t max_n) override;
 
-	State read_bytes(std::string& content, size_t n);
+	int read(std::string& content, size_t n) override;
 
-	State write(const char* data, size_t n) const;
+	net::SocketReaderState write(const char* data, size_t n) const;
 
 	[[nodiscard]]
 	inline int shutdown(int how) const
@@ -64,29 +59,29 @@ public:
 	}
 
 private:
-	State _recv(size_t n);
+	net::SocketReaderState _recv(size_t n);
 };
 
 // TODO: docs for 'operator<<'
-inline std::ostream& operator<< (std::ostream& os, SocketIO::State state)
+inline std::ostream& operator<< (std::ostream& os, net::SocketReaderState state)
 {
 	switch (state)
 	{
-		case SocketIO::State::Done:
-			os << "SocketIO::State::Done";
+		case net::SocketReaderState::Done:
+			os << "xw::net::SocketReaderState::Done";
 			break;
-		case SocketIO::State::TimedOut:
-			os << "SocketIO::State::TimedOut";
+		case net::SocketReaderState::TimedOut:
+			os << "xw::net::SocketReaderState::TimedOut";
 			break;
-		case SocketIO::State::ConnectionBroken:
-			os << "SocketIO::State::ConnectionBroken";
+		case net::SocketReaderState::ConnectionBroken:
+			os << "xw::net::SocketReaderState::ConnectionBroken";
 			break;
-		case SocketIO::State::Failed:
-			os << "SocketIO::State::Failed";
+		case net::SocketReaderState::Failed:
+			os << "xw::net::SocketReaderState::Failed";
 			break;
-//		case SocketIO::State::Eof:
-//			os << "SocketIO::State::Eof";
-//			break;
+		case net::SocketReaderState::Eof:
+			os << "xw::net::SocketReaderState::Eof";
+			break;
 		default:
 			os << "Unknown";
 			break;

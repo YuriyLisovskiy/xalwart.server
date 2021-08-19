@@ -78,7 +78,7 @@ protected:
 	[[nodiscard]]
 	virtual std::string default_error_message(int code, const std::string& message, const std::string& explain) const;
 
-	void log_socket_error(SocketIO::State state) const;
+	void log_socket_error(net::SocketReaderState state) const;
 
 	void log_parse_headers_error(parser::ParseHeadersStatus status) const;
 

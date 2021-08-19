@@ -36,17 +36,17 @@ std::string BaseHTTPRequestHandler::default_error_message(
 		"</html>";
 }
 
-void BaseHTTPRequestHandler::log_socket_error(SocketIO::State state) const
+void BaseHTTPRequestHandler::log_socket_error(net::SocketReaderState state) const
 {
 	switch (state)
 	{
-		case SocketIO::State::TimedOut:
+		case net::SocketReaderState::TimedOut:
 			this->logger()->debug("Request timed out", _ERROR_DETAILS_);
 			break;
-		case SocketIO::State::ConnectionBroken:
+		case net::SocketReaderState::ConnectionBroken:
 			this->logger()->debug("Connection was broken", _ERROR_DETAILS_);
 			break;
-		case SocketIO::State::Failed:
+		case net::SocketReaderState::Failed:
 			this->logger()->debug("Connection failed", _ERROR_DETAILS_);
 			break;
 		default:
@@ -275,9 +275,9 @@ bool BaseHTTPRequestHandler::handle_expect_100()
 void BaseHTTPRequestHandler::handle_one_request()
 {
 	auto state = this->socket_io->read_line(this->raw_request_line, 65537);
-	if (state != SocketIO::State::Done)
+	if (state != net::SocketReaderState::Done)
 	{
-		this->log_socket_error(state);
+		this->log_socket_error((net::SocketReaderState)state);
 		this->close_connection = true;
 		return;
 	}
@@ -304,7 +304,7 @@ void BaseHTTPRequestHandler::handle_one_request()
 	this->cleanup_headers();
 	this->request_ctx.write = [this](const char* data, size_t n) -> bool {
 		auto status = this->socket_io->write(data, n);
-		bool success = status == SocketIO::State::Done;
+		bool success = status == net::SocketReaderState::Done;
 		if (!success)
 		{
 			this->log_socket_error(status);
@@ -312,6 +312,7 @@ void BaseHTTPRequestHandler::handle_one_request()
 
 		return success;
 	};
+	this->request_ctx.body = this->socket_io.get();
 	this->log_request(this->handler_func(&this->request_ctx, this->env), "");
 }
 
@@ -362,7 +363,7 @@ void BaseHTTPRequestHandler::send_error(int code, const std::string& message, co
 	if (this->command != "HEAD" && !body.empty())
 	{
 		auto status = this->socket_io->write(body.c_str(), body.size());
-		if (status != SocketIO::State::Done)
+		if (status != net::SocketReaderState::Done)
 		{
 			this->log_socket_error(status);
 		}

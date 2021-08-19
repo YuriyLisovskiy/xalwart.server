@@ -73,31 +73,31 @@ bool HTTPRequestHandler::parse_request()
 				return false;
 			}
 		}
-		else
-		{
-			auto s_status = this->socket_io->read_bytes(this->request_ctx.content, this->request_ctx.content_size);
-			if (s_status != SocketIO::State::Done)
-			{
-				switch (s_status)
-				{
-					case SocketIO::State::TimedOut:
-					case SocketIO::State::ConnectionBroken:
-					case SocketIO::State::Failed:
-						this->log_socket_error(s_status);
-						this->close_connection = true;
-					default:
-						break;
-				}
-
-				return false;
-			}
-		}
-
-		if (this->request_ctx.content_size != this->request_ctx.content.size())
-		{
-			this->send_error(400, "Bad request content");
-			return false;
-		}
+//		else
+//		{
+//			auto s_status = this->socket_io->read_bytes(this->request_ctx.content, this->request_ctx.content_size);
+//			if (s_status != SocketIO::State::Done)
+//			{
+//				switch (s_status)
+//				{
+//					case SocketIO::State::TimedOut:
+//					case SocketIO::State::ConnectionBroken:
+//					case SocketIO::State::Failed:
+//						this->log_socket_error(s_status);
+//						this->close_connection = true;
+//					default:
+//						break;
+//				}
+//
+//				return false;
+//			}
+//		}
+//
+//		if (this->request_ctx.content_size != this->request_ctx.content.size())
+//		{
+//			this->send_error(400, "Bad request content");
+//			return false;
+//		}
 	}
 
 	return true;

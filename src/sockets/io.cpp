@@ -22,10 +22,10 @@ SocketIO& SocketIO::operator= (SocketIO&& other) noexcept
 	return *this;
 }
 
-SocketIO::State SocketIO::read_line(std::string& line, size_t max_n)
+int SocketIO::read_line(std::string& line, size_t max_n)
 {
 	auto ret = this->_recv(std::min(max_n, MAX_BUFFER_SIZE));
-	if (ret != State::Done)
+	if (ret != net::SocketReaderState::Done)
 	{
 		return ret;
 	}
@@ -52,19 +52,25 @@ SocketIO::State SocketIO::read_line(std::string& line, size_t max_n)
 		}
 	}
 
-	return State::Done;
+	return net::SocketReaderState::Done;
 }
 
-SocketIO::State SocketIO::read_bytes(std::string& content, size_t n_bytes)
+int SocketIO::read(std::string& content, size_t n_bytes)
 {
+	content.clear();
 	if (this->_buffer[0] != '\0')
 	{
 		content += std::string(this->_buffer, this->_buffer_size);
 		this->_buffer[0] = '\0';
 	}
 
-	SocketIO::State ret;
-	while ((ret = this->_recv(std::min(n_bytes, MAX_BUFFER_SIZE))) == State::Done)
+	if (content.size() >= n_bytes)
+	{
+		return net::SocketReaderState::Done;
+	}
+
+	net::SocketReaderState ret;
+	while ((ret = this->_recv(std::min(n_bytes, MAX_BUFFER_SIZE))) == net::SocketReaderState::Done)
 	{
 		if (this->_buffer[0] != '\0')
 		{
@@ -81,7 +87,7 @@ SocketIO::State SocketIO::read_bytes(std::string& content, size_t n_bytes)
 	return ret;
 }
 
-SocketIO::State SocketIO::write(const char* data, size_t n) const
+net::SocketReaderState SocketIO::write(const char* data, size_t n) const
 {
 	bool try_again;
 	do
@@ -97,21 +103,21 @@ SocketIO::State SocketIO::write(const char* data, size_t n) const
 					break;
 				case ECONNRESET:
 				case ENOTCONN:
-					return State::ConnectionBroken;
+					return net::SocketReaderState::ConnectionBroken;
 				default:
-					return State::Failed;
+					return net::SocketReaderState::Failed;
 			}
 		}
 	}
 	while (try_again);
-	return State::Done;
+	return net::SocketReaderState::Done;
 }
 
-SocketIO::State SocketIO::_recv(size_t n)
+net::SocketReaderState SocketIO::_recv(size_t n)
 {
 	if (this->_buffer[0] != '\0')
 	{
-		return State::Done;
+		return net::SocketReaderState::Done;
 	}
 
 	bool try_again;
@@ -120,7 +126,7 @@ SocketIO::State SocketIO::_recv(size_t n)
 		try_again = false;
 		if (!this->_selector->select(this->_timeout.tv_sec, this->_timeout.tv_usec))
 		{
-			return State::TimedOut;
+			return net::SocketReaderState::TimedOut;
 		}
 
 		ssize_t len = recv(this->_fd, this->_buffer, n, 0);
@@ -128,7 +134,7 @@ SocketIO::State SocketIO::_recv(size_t n)
 		{
 			this->_buffer_size = len;
 			this->_buffer[len] = '\0';
-			return State::Done;
+			return net::SocketReaderState::Done;
 		}
 		else if (len < 0)
 		{
@@ -140,14 +146,14 @@ SocketIO::State SocketIO::_recv(size_t n)
 					break;
 				case ECONNRESET:
 				case ENOTCONN:
-					return State::ConnectionBroken;
+					return net::SocketReaderState::ConnectionBroken;
 				default:
-					return State::Failed;
+					return net::SocketReaderState::Failed;
 			}
 		}
 	}
 	while (try_again);
-	return State::Done;
+	return net::SocketReaderState::Done;
 }
 
 __SERVER_END__

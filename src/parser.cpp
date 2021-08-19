@@ -22,16 +22,17 @@ ParseHeadersStatus parse_headers(std::map<std::string, std::string>& result, ser
 	{
 		std::string line;
 		auto r_status = r_file->read_line(line, MAX_LINE_LENGTH + 1);
-		if (r_status != SocketIO::State::Done)
+		if (r_status != net::SocketReaderState::Done)
 		{
 			switch (r_status)
 			{
-				case SocketIO::State::TimedOut:
+				case net::SocketReaderState::TimedOut:
 					return ParseHeadersStatus::TimedOut;
-				case SocketIO::State::ConnectionBroken:
+				case net::SocketReaderState::ConnectionBroken:
 					return ParseHeadersStatus::ConnectionBroken;
-				case SocketIO::State::Failed:
+				case net::SocketReaderState::Failed:
 					return ParseHeadersStatus::Failed;
+				case net::SocketReaderState::Eof:
 				default:
 					break;
 			}
