@@ -22,25 +22,17 @@
 // Module definitions.
 #include "./_def_.h"
 
+// Server errors.
+#include "./abc.h"
+
 
 __SERVER_BEGIN__
 
 inline const int EVENT_READ = (1 << 0);
 inline const int EVENT_WRITE = (1 << 1);
 
-// TODO: docs for 'ISelector'
-class ISelector
-{
-public:
-	virtual ~ISelector() = default;
-
-	virtual void register_(uint file_descriptor, int events) = 0;
-
-	virtual bool select(uint timeout_sec, uint timeout_usec) = 0;
-};
-
-// TODO: docs for 'SelectSelector'
-class SelectSelector : public ISelector
+// TODO: docs for 'Selector'
+class Selector : public abc::ISelector
 {
 protected:
 	log::ILogger* logger;
@@ -50,7 +42,7 @@ protected:
 	int events;
 
 public:
-	inline explicit SelectSelector(log::ILogger* logger) : logger(logger)
+	inline explicit Selector(log::ILogger* logger) : logger(logger)
 	{
 		this->fd = -1;
 		this->events = -1;

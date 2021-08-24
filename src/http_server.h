@@ -30,32 +30,76 @@
 
 __SERVER_BEGIN__
 
+namespace p
+{
+inline const char* MAX_REQUEST_SIZE = "MAX_REQUEST_SIZE";
+inline const char* WORKERS_COUNT = "WORKERS_COUNT";
+inline const char* TIMEOUT_SECONDS = "TIMEOUT_SECONDS";
+inline const char* TIMEOUT_MICROSECONDS = "TIMEOUT_MICROSECONDS";
+inline const char* SOCKET_CREATION_RETRIES_COUNT = "SOCKET_CREATION_RETRIES_COUNT";
+}
+
 // TODO: docs for 'Context'
-class Context
+class Context final
 {
 private:
-	log::ILogger* _logger = nullptr;
-
-public:
-	size_t max_body_size = 0;
-	size_t workers = 0;
-	time_t timeout_sec = 0;
-	time_t timeout_usec = 0;
-	size_t retries_count = 0;
-
-	inline explicit Context(log::ILogger* logger) : _logger(logger)
+	template <typename T>
+	static inline T _convert_to(const std::string& parameter, T default_value)
 	{
-	}
-
-	[[nodiscard]]
-	inline log::ILogger* logger() const
-	{
-		if (!this->_logger)
+		try
 		{
-			throw NullPointerException("xw::server::Context: logger is nullptr", _ERROR_DETAILS_);
+			return util::as<T>(parameter.c_str());
+		}
+		catch (const std::invalid_argument&)
+		{
+		}
+		catch (const std::range_error&)
+		{
 		}
 
-		return this->_logger;
+		return default_value;
+	}
+
+	template <typename T>
+	static inline T _get_parameter(
+		const std::map<std::string, std::string>& parameters, const char* key, T default_value
+	)
+	{
+		if (parameters.contains(key))
+		{
+			return _convert_to<T>(parameters.at(key), default_value);
+		}
+
+		return default_value;
+	}
+
+	inline void _from_map_parameters(const std::map<std::string, std::string>& parameters)
+	{
+		this->workers_count = _get_parameter<size_t>(parameters, p::WORKERS_COUNT, 3);
+		this->max_request_size = _get_parameter<size_t>(parameters, p::MAX_REQUEST_SIZE, 2621440);
+		this->timeout_seconds = _get_parameter<unsigned int>(parameters, p::TIMEOUT_SECONDS, 5);
+		this->timeout_microseconds = _get_parameter<unsigned int>(parameters, p::TIMEOUT_MICROSECONDS, 0);
+		this->socket_creation_retries_count = _get_parameter<size_t>(
+			parameters, p::SOCKET_CREATION_RETRIES_COUNT, 5
+		);
+	}
+
+public:
+	log::ILogger* logger = nullptr;
+
+	size_t max_request_size = 0;
+	size_t workers_count = 0;
+	time_t timeout_seconds = 0;
+	time_t timeout_microseconds = 0;
+	size_t socket_creation_retries_count = 0;
+
+	Context() = default;
+
+	inline explicit Context(
+		log::ILogger* logger, const std::map<std::string, std::string>& parameters
+	) : logger(logger)
+	{
+		this->_from_map_parameters(parameters);
 	}
 };
 
@@ -68,8 +112,6 @@ private:
 	std::shared_ptr<BaseSocket> _socket;
 
 private:
-	explicit HTTPServer(Context ctx);
-
 	int _get_request();
 
 	inline void _handle(const int& fd)
@@ -96,17 +138,12 @@ protected:
 		explicit RequestEvent(int fd) : fd(fd) {}
 	};
 
-public:
+	void handle_event(EventLoop& loop, RequestEvent& event);
 
-	// Accepts parameters in kwargs:
-	//
-	// - workers: threads count;
-	// - max_body_size: maximum size of request body (in bytes);
-	// - timeout_sec: timeout seconds;
-	// - timeout_usec: timeout microseconds.
-	static std::unique_ptr<net::abc::IServer> initialize(
-		log::ILogger* logger, const Kwargs& kwargs, std::shared_ptr<dt::Timezone> tz
-	);
+	void event_function(EventLoop& loop, RequestEvent& event);
+
+public:
+	explicit HTTPServer(Context ctx, const std::shared_ptr<dt::Timezone>& /* timezone */);
 
 	inline void setup_handler(net::HandlerFunc handler) override
 	{

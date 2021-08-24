@@ -13,7 +13,7 @@
 
 __SERVER_BEGIN__
 
-void SelectSelector::register_(uint file_descriptor, int events_)
+void Selector::register_(uint file_descriptor, int events_)
 {
 	this->fd = (int)file_descriptor;
 	this->events = events_;
@@ -30,7 +30,7 @@ void SelectSelector::register_(uint file_descriptor, int events_)
 	}
 }
 
-bool SelectSelector::select(uint timeout_sec, uint timeout_usec)
+bool Selector::select(uint timeout_sec, uint timeout_usec)
 {
 	auto fd_writers = this->writers;
 	auto fd_readers = this->readers;

@@ -32,13 +32,15 @@ int main()
 	logCfg.add_console_stream();
 	auto logger = xw::log::Logger(logCfg);
 	logger.use_colors(true);
-	auto server = xw::server::HTTPServer::initialize(&logger, xw::Kwargs{{
-		{"workers", "1"},
-		{"max_body_size", "1610611911"}, // 1.5 GB
-		{"timeout_sec", "3"},
-		{"timeout_usec", "0"},
-	}}, nullptr);
-	server->setup_handler([](
+	auto server = xw::server::HTTPServer(xw::server::Context(
+		&logger, {{
+			{xw::server::p::WORKERS_COUNT, "1"},
+			{xw::server::p::MAX_REQUEST_SIZE, "1610611911"}, // 1.5 GB
+			{xw::server::p::TIMEOUT_SECONDS, "3"},
+			{xw::server::p::TIMEOUT_MICROSECONDS, "0"},
+		}}
+	), nullptr);
+	server.setup_handler([](
 		xw::net::RequestContext* ctx,
 		const xw::collections::Dictionary<std::string, std::string>& env
 	) -> uint
@@ -46,45 +48,44 @@ int main()
 		if (ctx->content_size > 0)
 		{
 			std::string buffer;
-			auto ret = ctx->body->read(buffer, ctx->content_size);
-			std::cerr << "[" << ret << "]\n\n" << buffer;
+
+			auto part_1 = ctx->content_size - 50;
+			ctx->body->read(buffer, part_1);
+			std::cerr << "BUFFER 1:\n" << buffer << '\n';
+
+			auto part_2 = 50;
+			ctx->body->read(buffer, part_2);
+			std::cerr << "BUFFER 2:\n" << buffer << '\n';
 		}
 
 		ctx->write(CONTENT.c_str(), CONTENT.size());
 		return 200;
 	});
 
+	auto pair = xw::str::split(SERVER_ADDRESS, ':', -1);
+	auto host = pair[0];
+	uint16_t port = 0;
+	if (pair.size() > 1)
+	{
+		port = std::stoi(pair[1]);
+	}
+
+	server.bind(host, port);
 	try
 	{
-		auto pair = xw::str::split(SERVER_ADDRESS, ':', -1);
-		auto host = pair[0];
-		uint16_t port = 0;
-		if (pair.size() > 1)
+		auto msg = std::string(SERVER_ADDRESS);
+		if (port)
 		{
-			port = std::stoi(pair[1]);
+			msg = "http://" + msg;
 		}
 
-		server->bind(host, port);
-		try
-		{
-			auto msg = std::string(SERVER_ADDRESS);
-			if (port)
-			{
-				msg = "http://" + msg;
-			}
-
-			server->listen("Server is started at " + msg);
-		}
-		catch (const xw::InterruptException &exc)
-		{
-			// skip
-		}
-
-		server->close();
+		server.listen("Server is started at " + msg);
 	}
-	catch (const xw::SocketError& exc)
+	catch (const xw::InterruptException& exc)
 	{
-		logger.error(exc);
+		logger.warning(exc);
 	}
+
+	server.close();
 	return 0;
 }

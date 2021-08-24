@@ -15,8 +15,8 @@
 #include <winsock32.h>
 #endif
 
-// Base libraries.
-#include <xalwart.base/exceptions.h>
+// Server libraries.
+#include "../exceptions.h"
 
 
 __SERVER_BEGIN__

@@ -12,6 +12,9 @@
 #include <xalwart.base/string_utils.h>
 #include <xalwart.base/html.h>
 
+// Server libraries.
+#include "../exceptions.h"
+
 
 __SERVER_BEGIN__
 
@@ -36,42 +39,6 @@ std::string BaseHTTPRequestHandler::default_error_message(
 		"</html>";
 }
 
-void BaseHTTPRequestHandler::log_socket_error(net::SocketReaderState state) const
-{
-	switch (state)
-	{
-		case net::SocketReaderState::TimedOut:
-			this->logger()->debug("Request timed out", _ERROR_DETAILS_);
-			break;
-		case net::SocketReaderState::ConnectionBroken:
-			this->logger()->debug("Connection was broken", _ERROR_DETAILS_);
-			break;
-		case net::SocketReaderState::Failed:
-			this->logger()->debug("Connection failed", _ERROR_DETAILS_);
-			break;
-		default:
-			break;
-	}
-}
-
-void BaseHTTPRequestHandler::log_parse_headers_error(parser::ParseHeadersStatus status) const
-{
-	switch (status)
-	{
-		case parser::ParseHeadersStatus::TimedOut:
-			this->logger()->debug("Request timed out", _ERROR_DETAILS_);
-			break;
-		case parser::ParseHeadersStatus::ConnectionBroken:
-			this->logger()->debug("Connection was broken", _ERROR_DETAILS_);
-			break;
-		case parser::ParseHeadersStatus::Failed:
-			this->logger()->debug("Connection failed", _ERROR_DETAILS_);
-			break;
-		default:
-			break;
-	}
-}
-
 void BaseHTTPRequestHandler::log_request(uint code, const std::string& info) const
 {
 	log::Logger::Color color = log::Logger::Color::Green;
@@ -94,7 +61,7 @@ void BaseHTTPRequestHandler::log_request(uint code, const std::string& info) con
 		msg = info;
 	}
 
-	this->logger()->print(
+	this->logger->print(
 		"[" + dt::Datetime::now().strftime("%d/%b/%Y %T") + "] \"" + msg + "\" " + std::to_string(code), color
 	);
 }
@@ -125,7 +92,9 @@ bool BaseHTTPRequestHandler::parse_request()
 	this->request_version = this->default_request_version;
 	auto version = this->default_request_version;
 	this->close_connection = true;
-	auto req_line = str::rtrim(encoding::encode_iso_8859_1(this->raw_request_line, encoding::Mode::Strict), "\r\n");
+	auto req_line = str::rtrim(
+		encoding::encode_iso_8859_1(this->raw_request_line, encoding::Mode::Strict), "\r\n"
+	);
 	this->request_line = req_line;
 
 	std::string path;
@@ -205,33 +174,10 @@ bool BaseHTTPRequestHandler::parse_request()
 	this->request_version = version;
 
 	// Examine the headers and look for a Connection directive.
-	auto p_status = parser::parse_headers(this->request_ctx.headers, this->socket_io.get());
-	if (p_status != parser::ParseHeadersStatus::Done)
+
+	if (!this->parse_headers())
 	{
-		switch (p_status)
-		{
-			case parser::ParseHeadersStatus::LineTooLong:
-				// Request Header Fields Too Large.
-				this->send_error(
-					431, "Line too long",
-					"The server is unwilling to process the request because its header fields are too large"
-				);
-				return false;
-			case parser::ParseHeadersStatus::MaxHeadersReached:
-				this->send_error(
-					431, "Too many headers",
-					"The server is unwilling to process the request because its header fields are too large"
-				);
-				return false;
-			case parser::ParseHeadersStatus::TimedOut:
-			case parser::ParseHeadersStatus::ConnectionBroken:
-			case parser::ParseHeadersStatus::Failed:
-				this->log_parse_headers_error(p_status);
-				this->close_connection = true;
-				return false;
-			default:
-				break;
-		}
+		return false;
 	}
 
 	auto conn_type = this->request_ctx.headers.contains("Connection") ?
@@ -274,10 +220,8 @@ bool BaseHTTPRequestHandler::handle_expect_100()
 
 void BaseHTTPRequestHandler::handle_one_request()
 {
-	auto state = this->socket_io->read_line(this->raw_request_line, 65537);
-	if (state != net::SocketReaderState::Done)
+	if (!this->read_line(this->raw_request_line))
 	{
-		this->log_socket_error((net::SocketReaderState)state);
 		this->close_connection = true;
 		return;
 	}
@@ -294,6 +238,7 @@ void BaseHTTPRequestHandler::handle_one_request()
 		return;
 	}
 
+	this->total_bytes_read_count += this->raw_request_line.size();
 	this->parsed = this->parse_request();
 	if (!this->parsed)
 	{
@@ -303,17 +248,77 @@ void BaseHTTPRequestHandler::handle_one_request()
 
 	this->cleanup_headers();
 	this->request_ctx.write = [this](const char* data, size_t n) -> bool {
-		auto status = this->socket_io->write(data, n);
-		bool success = status == net::SocketReaderState::Done;
-		if (!success)
-		{
-			this->log_socket_error(status);
-		}
-
-		return success;
+		return this->write(data, (ssize_t)n);
 	};
-	this->request_ctx.body = this->socket_io.get();
+	this->request_ctx.body = this->socket_reader;
 	this->log_request(this->handler_func(&this->request_ctx, this->env), "");
+}
+
+bool BaseHTTPRequestHandler::read_line(std::string& destination)
+{
+	try
+	{
+		this->socket_reader->read_line(destination);
+	}
+	catch (const IOError& exc)
+	{
+		this->logger->error(exc);
+		return false;
+	}
+
+	return true;
+}
+
+bool BaseHTTPRequestHandler::write(const char* content, ssize_t count)
+{
+	try
+	{
+		this->socket_writer->write(content, count);
+	}
+	catch (const IOError& exc)
+	{
+		this->logger->error(exc);
+		return false;
+	}
+
+	return true;
+}
+
+bool BaseHTTPRequestHandler::parse_headers()
+{
+	try
+	{
+		this->total_bytes_read_count += parser::parse_headers(
+			this->request_ctx.headers, this->socket_reader, this->max_request_size
+		);
+		return true;
+	}
+	catch (const LineTooLongError& exc)
+	{
+		// Request Header Fields Too Large.
+		this->send_error(
+			431, "Line too long",
+			"The server is unwilling to process the request because its header fields are too large"
+		);
+	}
+	catch (const TooMuchHeadersError& exc)
+	{
+		this->send_error(
+			431, "Too many headers",
+			"The server is unwilling to process the request because its header fields are too large"
+		);
+	}
+	catch (const IOError& exc)
+	{
+		this->close_connection = true;
+	}
+	catch (const ParseError& exc)
+	{
+		this->logger->error(exc);
+		this->close_connection = true;
+	}
+
+	return false;
 }
 
 void BaseHTTPRequestHandler::handle(net::HandlerFunc func)
@@ -326,10 +331,7 @@ void BaseHTTPRequestHandler::handle(net::HandlerFunc func)
 		this->handle_one_request();
 	}
 
-	if (this->socket_io->shutdown(SHUT_RDWR))
-	{
-		this->logger()->error("'shutdown(SHUT_RDWR)' call failed: " + std::to_string(errno), _ERROR_DETAILS_);
-	}
+	this->close_io();
 }
 
 void BaseHTTPRequestHandler::send_error(int code, const std::string& message, const std::string& explain)
@@ -350,7 +352,7 @@ void BaseHTTPRequestHandler::send_error(int code, const std::string& message, co
 	std::string body;
 	if (code >= 200 && code != 204 && code != 205 && code != 304)
 	{
-		// HTML encode to prevent Cross Site Scripting attacks.
+		// Encode HTML to prevent Cross Site Scripting attacks.
 		std::string content = this->default_error_message(
 			code, html::escape(msg.phrase, false), html::escape(msg.description, false)
 		);
@@ -362,14 +364,11 @@ void BaseHTTPRequestHandler::send_error(int code, const std::string& message, co
 	this->end_headers();
 	if (this->command != "HEAD" && !body.empty())
 	{
-		auto status = this->socket_io->write(body.c_str(), body.size());
-		if (status != net::SocketReaderState::Done)
+		if (this->write(body.c_str(), (ssize_t)body.size()))
 		{
-			this->log_socket_error(status);
+			this->log_request(code, message);
 		}
 	}
-
-	this->log_request(code, message);
 }
 
 void BaseHTTPRequestHandler::send_response(int code, const std::string& message)
@@ -400,7 +399,9 @@ void BaseHTTPRequestHandler::send_header(const std::string& keyword, const std::
 {
 	if (this->request_version != "HTTP/0.9")
 	{
-		this->headers_buffer += encoding::encode_iso_8859_1(keyword + ": " + value + "\r\n", encoding::Mode::Strict);
+		this->headers_buffer += encoding::encode_iso_8859_1(
+			keyword + ": " + value + "\r\n", encoding::Mode::Strict
+		);
 	}
 
 	if (str::lower(keyword) == "connection")

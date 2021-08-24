@@ -18,6 +18,10 @@
 #define __SERVER_BEGIN__ __MAIN_NAMESPACE_BEGIN__ namespace server {
 #define __SERVER_END__ } __MAIN_NAMESPACE_END__
 
+// xw::server::abc
+#define __SERVER_ABC_BEGIN__ __SERVER_BEGIN__ namespace abc {
+#define __SERVER_ABC_END__ } __SERVER_END__
+
 // xw::server::util
 #define __SERVER_UTIL_BEGIN__ __SERVER_BEGIN__ namespace util {
 #define __SERVER_UTIL_END__ } __SERVER_END__
@@ -71,3 +75,7 @@ public:
 		this->_end = {};
 	}
 };
+
+inline const int MAX_LINE_LENGTH = 65536;
+
+inline const int MAX_HEADERS_NUMBER = 100;

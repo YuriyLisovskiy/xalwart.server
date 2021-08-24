@@ -21,13 +21,14 @@
 #include <xalwart.base/net/request_context.h>
 #include <xalwart.base/datetime.h>
 #include <xalwart.base/utility.h>
+#include <xalwart.base/logger.h>
+#include <xalwart.base/io.h>
 
 // Module definitions.
 #include "../_def_.h"
 
 // Server libraries.
-#include "../sockets/io.h"
-#include "../parser.h"
+#include "../parsers.h"
 
 
 __SERVER_BEGIN__
@@ -35,15 +36,15 @@ __SERVER_BEGIN__
 // TODO: docs for 'BaseHTTPRequestHandler'
 class BaseHTTPRequestHandler
 {
-private:
-	log::ILogger* _logger;
-
 protected:
+	log::ILogger* logger;
+
 	net::HandlerFunc handler_func;
 
 	net::RequestContext request_ctx;
 
-	std::unique_ptr<SocketIO> socket_io;
+	io::IReader* socket_reader;
+	io::IWriter* socket_writer;
 
 	std::string sys_version = sys::compiler + "/" + sys::compiler_version;
 
@@ -68,6 +69,9 @@ protected:
 	std::string command;
 	std::string full_path;
 
+	size_t max_request_size;
+	size_t total_bytes_read_count;
+
 	std::string headers_buffer;
 
 	bool parsed;
@@ -77,10 +81,6 @@ protected:
 protected:
 	[[nodiscard]]
 	virtual std::string default_error_message(int code, const std::string& message, const std::string& explain) const;
-
-	void log_socket_error(net::SocketReaderState state) const;
-
-	void log_parse_headers_error(parser::ParseHeadersStatus status) const;
 
 	virtual void log_request(uint code, const std::string& info) const;
 
@@ -135,7 +135,7 @@ protected:
 
 	inline void flush_headers()
 	{
-		this->socket_io->write(this->headers_buffer.c_str(), this->headers_buffer.size());
+		this->socket_writer->write(this->headers_buffer.c_str(), (ssize_t)this->headers_buffer.size());
 		this->headers_buffer = "";
 	}
 
@@ -160,28 +160,40 @@ protected:
 		return "BaseHTTP/" + this->server_num_version;
 	}
 
-	inline log::ILogger* logger() const
+	virtual bool read_line(std::string& destination);
+
+	virtual bool write(const char* content, ssize_t count);
+
+	virtual bool parse_headers();
+
+	virtual inline void close_io() const
 	{
-		if (!this->_logger)
+		if (!this->socket_reader->close_reader())
 		{
-			throw NullPointerException("'logger' is nullptr", _ERROR_DETAILS_);
+			this->logger->error("failed to close socket reader: " + std::to_string(errno), _ERROR_DETAILS_);
 		}
 
-		return this->_logger;
+		if (!this->socket_writer->close_writer())
+		{
+			this->logger->error("failed to close socket writer: " + std::to_string(errno), _ERROR_DETAILS_);
+		}
 	}
 
 public:
 	BaseHTTPRequestHandler(
-		int sock, std::string server_version,
-		timeval timeout, log::ILogger* logger,
+		io::IReader* socket_reader, io::IWriter* socket_writer,
+		size_t max_request_size, std::string server_version, log::ILogger* logger,
 		std::map<std::string, std::string> env
-	) : _logger(logger),
+	) : logger(logger),
+		socket_reader(socket_reader),
+		socket_writer(socket_writer),
+		max_request_size(max_request_size),
 		server_num_version(std::move(server_version)),
 		close_connection(false),
 		parsed(false),
-		env(std::move(env))
+		env(std::move(env)),
+		total_bytes_read_count(0)
 	{
-		this->socket_io = std::make_unique<SocketIO>(sock, timeout, std::make_unique<SelectSelector>(logger));
 	}
 
 	// Handle multiple requests if necessary.

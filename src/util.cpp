@@ -10,13 +10,13 @@
 #include <chrono>
 
 // Base libraries.
-#include <xalwart.base/exceptions.h>
 #include <xalwart.base/string_utils.h>
 
 // Server libraries.
 #include "./sockets/tcp.h"
 #include "./sockets/tcp6.h"
 #include "./sockets/unix.h"
+#include "./exceptions.h"
 
 
 __SERVER_UTIL_BEGIN__
@@ -75,7 +75,7 @@ std::shared_ptr<BaseSocket> create_socket(
 				throw NullPointerException("'logger' is nullptr", _ERROR_DETAILS_);
 			}
 
-			switch (exc.err_no())
+			switch (exc.error_code())
 			{
 				case EADDRINUSE:
 					logger->error("Connection in use: " + join_addr(address, port));

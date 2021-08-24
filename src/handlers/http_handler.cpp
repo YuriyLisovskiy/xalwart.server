@@ -39,7 +39,7 @@ bool HTTPRequestHandler::parse_request()
 			return false;
 		}
 
-		if (this->request_ctx.content_size > this->max_body_size)
+		if (this->total_bytes_read_count + this->request_ctx.content_size > this->max_request_size)
 		{
 			this->send_error(413);
 			return false;
@@ -73,31 +73,6 @@ bool HTTPRequestHandler::parse_request()
 				return false;
 			}
 		}
-//		else
-//		{
-//			auto s_status = this->socket_io->read_bytes(this->request_ctx.content, this->request_ctx.content_size);
-//			if (s_status != SocketIO::State::Done)
-//			{
-//				switch (s_status)
-//				{
-//					case SocketIO::State::TimedOut:
-//					case SocketIO::State::ConnectionBroken:
-//					case SocketIO::State::Failed:
-//						this->log_socket_error(s_status);
-//						this->close_connection = true;
-//					default:
-//						break;
-//				}
-//
-//				return false;
-//			}
-//		}
-//
-//		if (this->request_ctx.content_size != this->request_ctx.content.size())
-//		{
-//			this->send_error(400, "Bad request content");
-//			return false;
-//		}
 	}
 
 	return true;
@@ -108,10 +83,7 @@ void HTTPRequestHandler::handle(net::HandlerFunc func)
 	this->handler_func = std::move(func);
 	this->close_connection = true;
 	this->handle_one_request();
-	if (this->socket_io->shutdown(SHUT_RDWR))
-	{
-		this->logger()->error("'shutdown(SHUT_RDWR)' call failed: " + std::to_string(errno), _ERROR_DETAILS_);
-	}
+	this->close_io();
 }
 
 __SERVER_END__

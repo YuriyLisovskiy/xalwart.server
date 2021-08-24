@@ -11,21 +11,58 @@
 
 // Server libraries.
 #include "./util.h"
+#include "./selectors.h"
+#include "./sockets/io.h"
+#include "./exceptions.h"
 
 
 __SERVER_BEGIN__
 
-std::unique_ptr<net::abc::IServer> HTTPServer::initialize(
-	log::ILogger* logger, const Kwargs& kwargs, std::shared_ptr<dt::Timezone> /* timezone */
-)
+void HTTPServer::handle_event(EventLoop& loop, RequestEvent& event)
 {
-	Context ctx(logger);
-	ctx.workers = kwargs.get<unsigned long int>("workers", 3);
-	ctx.max_body_size = kwargs.get<unsigned long int>("max_body_size", 2621440);
-	ctx.timeout_sec = (time_t)kwargs.get<unsigned long int>("timeout_sec", 5);
-	ctx.timeout_usec = (time_t)kwargs.get<unsigned long int>("timeout_usec", 0);
-	ctx.retries_count = kwargs.get<unsigned long int>("retries_count", 5);
-	return std::unique_ptr<net::abc::IServer>(new HTTPServer(ctx));
+	Measure measure;
+	measure.start();
+
+	timeval timeout{this->ctx.timeout_seconds, this->ctx.timeout_microseconds};
+	auto socket_io = std::make_unique<SocketIO>(
+		event.fd, timeout, std::make_unique<Selector>(this->ctx.logger)
+	);
+	HTTPRequestHandler handler(
+		socket_io.get(), socket_io.get(), v::version.to_string(),
+		this->ctx.max_request_size, this->ctx.logger, this->base_environ
+	);
+	handler.handle(this->_handler);
+
+	measure.end();
+	this->ctx.logger->debug("Time elapsed: " + std::to_string(measure.elapsed()) + " milliseconds");
+}
+
+void HTTPServer::event_function(EventLoop& loop, RequestEvent& event)
+{
+	try
+	{
+		this->handle_event(loop, event);
+	}
+	catch (const ServerError& exc)
+	{
+		this->_shutdown_request(event.fd);
+		this->ctx.logger->error(exc);
+	}
+	catch (const std::exception& exc)
+	{
+		this->_shutdown_request(event.fd);
+		this->ctx.logger->fatal(exc.what(), _ERROR_DETAILS_);
+	}
+}
+
+HTTPServer::HTTPServer(Context ctx, const std::shared_ptr<dt::Timezone>& /* timezone */) : ctx(ctx)
+{
+	this->_event_loop = std::make_unique<EventLoop>(this->ctx.workers_count);
+	this->_event_loop->add_event_listener<RequestEvent>(
+		[this](auto&& loop, auto&& event) {
+			this->event_function(std::forward<decltype(loop)>(loop), std::forward<decltype(event)>(event));
+		}
+	);
 }
 
 void HTTPServer::bind(const std::string& address, uint16_t port)
@@ -35,7 +72,9 @@ void HTTPServer::bind(const std::string& address, uint16_t port)
 		throw NullPointerException("xw::server::HTTPServer: request handler is nullptr", _ERROR_DETAILS_);
 	}
 
-	this->_socket = util::create_socket(address, port, this->ctx.retries_count, this->ctx.logger());
+	this->_socket = util::create_socket(
+		address, port, this->ctx.socket_creation_retries_count, this->ctx.logger
+	);
 	this->_socket->set_options();
 	this->host = address;
 	this->server_port = port;
@@ -48,14 +87,14 @@ void HTTPServer::listen(const std::string& message)
 	this->_socket->listen();
 	if (!message.empty())
 	{
-		this->ctx.logger()->print(message);
+		this->ctx.logger->print(message);
 	}
 
-	SelectSelector selector(this->ctx.logger());
+	Selector selector(this->ctx.logger);
 	selector.register_(this->_socket->fd(), EVENT_READ);
 	while (!this->_socket->is_closed())
 	{
-		if (selector.select(this->ctx.timeout_sec, this->ctx.timeout_usec))
+		if (selector.select(this->ctx.timeout_seconds, this->ctx.timeout_microseconds))
 		{
 			auto conn = this->_get_request();
 			if (conn >= 0)
@@ -69,45 +108,13 @@ void HTTPServer::listen(const std::string& message)
 void HTTPServer::close()
 {
 	this->_event_loop->wait_for_threads();
-	util::close_socket(this->_socket.get(), this->ctx.logger());
+	util::close_socket(this->_socket.get(), this->ctx.logger);
 }
 
 void HTTPServer::init_environ()
 {
 	this->base_environ.insert(std::make_pair(net::meta::SERVER_NAME, this->server_name));
 	this->base_environ.insert(std::make_pair(net::meta::SERVER_PORT, std::to_string(this->server_port)));
-}
-
-HTTPServer::HTTPServer(Context ctx) : ctx(ctx)
-{
-	this->_event_loop = std::make_unique<EventLoop>(this->ctx.workers);
-	this->_event_loop->add_event_listener<RequestEvent>([this](auto&, auto& event)
-	{
-		try
-		{
-			Measure measure;
-			measure.start();
-
-			timeval timeout{this->ctx.timeout_sec, this->ctx.timeout_usec};
-			HTTPRequestHandler(
-				event.fd, v::version.to_string(), timeout,
-				this->ctx.max_body_size, this->ctx.logger(), this->base_environ
-			).handle(this->_handler);
-
-			measure.end();
-			this->ctx.logger()->debug("Time elapsed: " + std::to_string(measure.elapsed()) + " milliseconds");
-		}
-		catch (const ParseError& exc)
-		{
-			this->_shutdown_request(event.fd);
-			this->ctx.logger()->error(exc);
-		}
-		catch (const std::exception& exc)
-		{
-			this->_shutdown_request(event.fd);
-			this->ctx.logger()->fatal(exc.what(), _ERROR_DETAILS_);
-		}
-	});
 }
 
 int HTTPServer::_get_request()
@@ -145,7 +152,7 @@ void HTTPServer::_shutdown_request(int fd) const
 {
 	if (shutdown(fd, SHUT_RDWR))
 	{
-		this->ctx.logger()->error("'shutdown' call failed: " + std::to_string(errno), _ERROR_DETAILS_);
+		this->ctx.logger->error("'shutdown' call failed: " + std::to_string(errno), _ERROR_DETAILS_);
 	}
 
 	::close(fd);

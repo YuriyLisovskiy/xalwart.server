@@ -22,9 +22,6 @@ __SERVER_BEGIN__
 class HTTPRequestHandler : public BaseHTTPRequestHandler
 {
 protected:
-	size_t max_body_size;
-
-protected:
 	bool parse_request() override;
 
 	[[nodiscard]]
@@ -35,10 +32,13 @@ protected:
 
 public:
 	inline explicit HTTPRequestHandler(
-		int sock, const std::string& server_version,
-		timeval timeout, size_t max_body_size, log::ILogger* logger,
+		io::IReader* socket_reader, io::IWriter* socket_writer,
+		const std::string& server_version,
+		size_t max_request_size, log::ILogger* logger,
 		const std::map<std::string, std::string>& env
-	) : BaseHTTPRequestHandler(sock, server_version, timeout, logger, env), max_body_size(max_body_size)
+	) : BaseHTTPRequestHandler(
+		socket_reader, socket_writer, max_request_size, server_version, logger, env
+	)
 	{
 	}
 
