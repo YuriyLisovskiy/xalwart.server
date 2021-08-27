@@ -24,31 +24,37 @@
 
 __SERVER_BEGIN__
 
-inline const size_t MAX_BUFFER_SIZE = 65537; // in bytes
+inline const size_t MAX_BUFFER_SIZE = 65535; // in bytes
 
 // TODO: docs for 'SocketIO'
-class SocketIO final : public io::IReader, public io::IWriter
+class SocketIO final : public io::IStream
 {
-private:
-	int _fd;
-	timeval _timeout;
-	std::unique_ptr<abc::ISelector> _selector;
-	char _buffer[MAX_BUFFER_SIZE]{};
-	ssize_t _buffer_size;
-	bool _has_bytes_to_read;
+public:
+	explicit SocketIO(int fd, timeval timeout, std::unique_ptr<abc::ISelector> selector);
+
+	SocketIO& operator= (SocketIO&& other) noexcept;
+
+	ssize_t read_line(std::string& line) override;
+
+	ssize_t read(std::string& buffer, size_t max_count) override;
+
+	ssize_t write(const char* data, ssize_t count) override;
+
+	bool close_reader() override;
+
+	bool close_writer() override;
+
+	[[nodiscard]]
+	int shutdown(int how) const;
 
 protected:
 	[[nodiscard]]
 	inline int file_descriptor() const
 	{
-		return this->_fd;
+		return this->_file_descriptor;
 	}
 
-	inline void append_buffer_to(std::string& destination, ssize_t max_count=-1) const
-	{
-		auto count = (max_count >= 0 && max_count < this->_buffer_size) ? max_count : this->_buffer_size;
-		destination += std::string(this->_buffer, count);
-	}
+	ssize_t append_from_buffer_to(std::string& buffer, ssize_t max_count=-1);
 
 	bool read_bytes(size_t max_count);
 
@@ -64,23 +70,12 @@ protected:
 		return this->_buffer[0] == '\0';
 	}
 
-public:
-	explicit SocketIO(int fd, timeval timeout, std::unique_ptr<abc::ISelector> selector);
-
-	SocketIO& operator= (SocketIO&& other) noexcept;
-
-	bool read_line(std::string& line) override;
-
-	bool read(std::string& content, size_t max_count) override;
-
-	bool write(const char* data, ssize_t count) override;
-
-	bool close_reader() override;
-
-	bool close_writer() override;
-
-	[[nodiscard]]
-	int shutdown(int how) const;
+private:
+	Socket _file_descriptor;
+	timeval _timeout;
+	std::unique_ptr<abc::ISelector> _selector;
+	char _buffer[MAX_BUFFER_SIZE]{};
+	ssize_t _buffer_size;
 };
 
 __SERVER_END__

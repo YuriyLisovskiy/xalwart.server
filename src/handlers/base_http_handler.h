@@ -15,11 +15,11 @@
 // C++ libraries.
 #include <string>
 #include <map>
+#include <memory>
 
 // Base libraries.
 #include <xalwart.base/sys.h>
 #include <xalwart.base/net/request_context.h>
-#include <xalwart.base/datetime.h>
 #include <xalwart.base/utility.h>
 #include <xalwart.base/logger.h>
 #include <xalwart.base/io.h>
@@ -28,28 +28,54 @@
 #include "../_def_.h"
 
 // Server libraries.
-#include "../parsers.h"
+#include "../abc.h"
 
 
 __SERVER_BEGIN__
 
+using HandlerFunction = std::function<net::StatusCode(
+	net::RequestContext* /* context */, const std::map<std::string, std::string>& /* environment */
+)>;
+
 // TODO: docs for 'BaseHTTPRequestHandler'
-class BaseHTTPRequestHandler
+class BaseHTTPRequestHandler : public abc::IRequestHandler
 {
+public:
+	BaseHTTPRequestHandler(
+		std::unique_ptr<io::IStream> socket_stream,
+		size_t max_request_size, std::string server_version, log::ILogger* logger,
+		std::map<std::string, std::string> environment,
+		HandlerFunction handler_function
+	) : logger(logger),
+	    socket_stream(std::move(socket_stream)),
+	    max_request_size(max_request_size),
+	    server_version_number(std::move(server_version)),
+	    close_connection(false),
+	    request_is_parsed(false),
+	    environment(std::move(environment)),
+	    total_bytes_read_count(0),
+		handler_function(std::move(handler_function))
+	{
+		if (!this->handler_function)
+		{
+			throw NullPointerException("'handler_function' is nullptr", _ERROR_DETAILS_);
+		}
+	}
+
+	// Handle multiple requests if necessary.
+	void handle() override;
+
 protected:
 	log::ILogger* logger;
 
-	net::HandlerFunc handler_func;
+	HandlerFunction handler_function;
 
-	net::RequestContext request_ctx;
+	net::RequestContext request_context;
 
-	io::IReader* socket_reader;
-	io::IWriter* socket_writer;
-
-	std::string sys_version = sys::compiler + "/" + sys::compiler_version;
+	std::unique_ptr<io::IStream> socket_stream;
 
 	// The server software number version.
-	std::string server_num_version;
+	std::string server_version_number;
 
 	// The default request version. This only affects responses up until
 	// the point where the request line is parsed, so it mainly decides what
@@ -64,7 +90,6 @@ protected:
 	bool close_connection;
 
 	std::string raw_request_line;
-	std::string request_line;
 	std::string request_version;
 	std::string command;
 	std::string full_path;
@@ -74,13 +99,14 @@ protected:
 
 	std::string headers_buffer;
 
-	bool parsed;
+	bool request_is_parsed;
 
-	std::map<std::string, std::string> env;
+	std::map<std::string, std::string> environment;
 
-protected:
 	[[nodiscard]]
-	virtual std::string default_error_message(int code, const std::string& message, const std::string& explain) const;
+	virtual std::string default_error_message(
+		unsigned int code, const std::string& phrase, const std::string& description
+	) const;
 
 	virtual void log_request(uint code, const std::string& info) const;
 
@@ -115,17 +141,17 @@ protected:
 	// This sends an error response (so it must be called before any
 	// output has been generated), logs the error, and finally sends
 	// a piece of HTML explaining the error to the user.
-	void send_error(int code, const std::string& message="", const std::string& explain="");
+	void send_error(unsigned int code, const std::string& message="", const std::string& explain="");
 
 	// Add the response header to the headers buffer and log the
 	// response code.
 	//
 	// Also send two standard headers with the server software
 	// version and the current date.
-	void send_response(int code, const std::string& message="");
+	void send_response(unsigned int code, const std::string& message="");
 
 	// Send the response header only.
-	void send_response_only(int code, const std::string& message="");
+	void send_response_only(unsigned int code, std::string message="");
 
 	// Send a MIME header to the headers buffer.
 	void send_header(const std::string& keyword, const std::string& value);
@@ -135,7 +161,7 @@ protected:
 
 	inline void flush_headers()
 	{
-		this->socket_writer->write(this->headers_buffer.c_str(), (ssize_t)this->headers_buffer.size());
+		this->socket_stream->write(this->headers_buffer.c_str(), (ssize_t)this->headers_buffer.size());
 		this->headers_buffer = "";
 	}
 
@@ -143,7 +169,7 @@ protected:
 	[[nodiscard]]
 	inline std::string version_string() const
 	{
-		return this->server_version() + " " + this->sys_version;
+		return this->server_version() + " " + sys::compiler + "/" + sys::compiler_version;
 	}
 
 	// Return the current date and time formatted for a message header.
@@ -157,7 +183,7 @@ protected:
 	[[nodiscard]]
 	inline virtual std::string server_version() const
 	{
-		return "BaseHTTP/" + this->server_num_version;
+		return "BaseHTTPServer/" + this->server_version_number;
 	}
 
 	virtual bool read_line(std::string& destination);
@@ -168,36 +194,16 @@ protected:
 
 	virtual inline void close_io() const
 	{
-		if (!this->socket_reader->close_reader())
+		if (!this->socket_stream->close_reader())
 		{
 			this->logger->error("failed to close socket reader: " + std::to_string(errno), _ERROR_DETAILS_);
 		}
 
-		if (!this->socket_writer->close_writer())
+		if (!this->socket_stream->close_writer())
 		{
 			this->logger->error("failed to close socket writer: " + std::to_string(errno), _ERROR_DETAILS_);
 		}
 	}
-
-public:
-	BaseHTTPRequestHandler(
-		io::IReader* socket_reader, io::IWriter* socket_writer,
-		size_t max_request_size, std::string server_version, log::ILogger* logger,
-		std::map<std::string, std::string> env
-	) : logger(logger),
-		socket_reader(socket_reader),
-		socket_writer(socket_writer),
-		max_request_size(max_request_size),
-		server_num_version(std::move(server_version)),
-		close_connection(false),
-		parsed(false),
-		env(std::move(env)),
-		total_bytes_read_count(0)
-	{
-	}
-
-	// Handle multiple requests if necessary.
-	virtual void handle(net::HandlerFunc func);
 };
 
 __SERVER_END__

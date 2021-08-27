@@ -18,11 +18,12 @@ __SERVER_PARSER_BEGIN__
 
 size_t parse_headers(std::map<std::string, std::string>& result, io::IReader* reader, size_t max_request_size)
 {
+	const short HEADER_KEY = 0, HEADER_VALUE = 1;
 	size_t total_bytes_read = 0;
-	std::string line;
-	while (reader->read_line(line))
+	std::string header_line;
+	while (reader->read_line(header_line))
 	{
-		total_bytes_read += line.size();
+		total_bytes_read += header_line.size();
 		if (total_bytes_read > max_request_size)
 		{
 			throw EntityTooLargeError(
@@ -30,7 +31,7 @@ size_t parse_headers(std::map<std::string, std::string>& result, io::IReader* re
 			);
 		}
 
-		if (line.size() > MAX_LINE_LENGTH)
+		if (header_line.size() > MAX_LINE_LENGTH)
 		{
 			throw LineTooLongError(
 				"The header contains a value that exceeds " + std::to_string(MAX_LINE_LENGTH) + " bytes",
@@ -38,8 +39,10 @@ size_t parse_headers(std::map<std::string, std::string>& result, io::IReader* re
 			);
 		}
 
-		line = str::rtrim(line, "\r\n");
-		auto pair = str::split(encoding::encode_iso_8859_1(line, encoding::Mode::Strict), ':', 1);
+		header_line = str::rtrim(header_line, "\r\n");
+		auto full_header = str::split(
+			encoding::encode_iso_8859_1(header_line, encoding::Mode::Strict), ':', 1
+		);
 		if (result.size() > MAX_HEADERS_NUMBER)
 		{
 			throw TooMuchHeadersError(
@@ -47,18 +50,18 @@ size_t parse_headers(std::map<std::string, std::string>& result, io::IReader* re
 			);
 		}
 
-		if (line.empty() || line == "\r\n" || line == "\n")
+		if (header_line.empty() || header_line == "\r\n" || header_line == "\n")
 		{
 			break;
 		}
 
-		if (pair.size() == 1)
+		if (full_header.size() == 1)
 		{
-			pair.emplace_back("");
+			full_header.emplace_back("");
 		}
 
-		pair[1] = str::ltrim(pair[1]);
-		result.insert(std::make_pair(pair[0], pair[1]));
+		full_header[HEADER_VALUE] = str::ltrim(full_header[HEADER_VALUE]);
+		result.insert(std::make_pair(full_header[HEADER_KEY], full_header[HEADER_VALUE]));
 	}
 
 	return total_bytes_read;

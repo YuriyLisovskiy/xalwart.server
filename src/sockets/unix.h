@@ -25,15 +25,15 @@ __SERVER_BEGIN__
 // TODO: docs for 'UnixSocket'
 class UnixSocket : public BaseSocket
 {
-protected:
-	void bind() override;
-
 public:
 	inline explicit UnixSocket(const char* path) : BaseSocket(path, 0, AF_UNIX)
 	{
 	}
 
 	void close() override;
+
+protected:
+	void bind() override;
 };
 
 __SERVER_END__

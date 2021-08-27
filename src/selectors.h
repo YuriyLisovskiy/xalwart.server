@@ -8,14 +8,6 @@
 
 #pragma once
 
-// C++ libraries.
-#if defined(__linux__) || defined(__APPLE__)
-#include <sys/socket.h>
-#include <sys/select.h>
-#elif _WIN32
-#include <winsock32.h>
-#endif
-
 // Base libraries.
 #include <xalwart.base/logger.h>
 
@@ -28,29 +20,23 @@
 
 __SERVER_BEGIN__
 
-inline const int EVENT_READ = (1 << 0);
-inline const int EVENT_WRITE = (1 << 1);
-
 // TODO: docs for 'Selector'
 class Selector : public abc::ISelector
 {
+public:
+	explicit Selector(Socket socket, log::ILogger* logger);
+
+	void register_read_event() override;
+
+	void register_write_event() override;
+
+	bool select(uint timeout_seconds, uint timeout_microseconds) override;
+
 protected:
 	log::ILogger* logger;
 	fd_set readers{};
 	fd_set writers{};
-	int fd;
-	int events;
-
-public:
-	inline explicit Selector(log::ILogger* logger) : logger(logger)
-	{
-		this->fd = -1;
-		this->events = -1;
-	}
-
-	void register_(uint fd, int events) override;
-
-	bool select(uint timeout_sec, uint timeout_usec) override;
+	Socket socket;
 };
 
 __SERVER_END__

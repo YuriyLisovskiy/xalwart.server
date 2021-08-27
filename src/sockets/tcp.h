@@ -27,15 +27,15 @@ __SERVER_BEGIN__
 // TODO: docs for 'TCPSocket'
 class TCPSocket : public BaseSocket
 {
-protected:
-	void bind() override;
-
 public:
 	inline explicit TCPSocket(const char* address, uint16_t port) : BaseSocket(address, port, AF_INET)
 	{
 	}
 
 	void set_options() override;
+
+protected:
+	void bind() override;
 };
 
 __SERVER_END__

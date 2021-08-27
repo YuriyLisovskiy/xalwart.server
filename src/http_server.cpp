@@ -10,9 +10,7 @@
 #include <xalwart.base/net/meta.h>
 
 // Server libraries.
-#include "./util.h"
-#include "./selectors.h"
-#include "./sockets/io.h"
+#include "./utility.h"
 #include "./exceptions.h"
 
 
@@ -23,18 +21,19 @@ void HTTPServer::handle_event(EventLoop& loop, RequestEvent& event)
 	Measure measure;
 	measure.start();
 
-	timeval timeout{this->ctx.timeout_seconds, this->ctx.timeout_microseconds};
-	auto socket_io = std::make_unique<SocketIO>(
-		event.fd, timeout, std::make_unique<Selector>(this->ctx.logger)
+	auto socket_stream = this->context.create_stream(this->context, event.client.socket());
+	auto request_handler = this->context.create_request_handler(
+		this->context, std::move(socket_stream), this->environment
 	);
-	HTTPRequestHandler handler(
-		socket_io.get(), socket_io.get(), v::version.to_string(),
-		this->ctx.max_request_size, this->ctx.logger, this->base_environ
-	);
-	handler.handle(this->_handler);
+	if (!request_handler)
+	{
+		throw NullPointerException("'request_handler' is nullptr", _ERROR_DETAILS_);
+	}
+
+	request_handler->handle();
 
 	measure.end();
-	this->ctx.logger->debug("Time elapsed: " + std::to_string(measure.elapsed()) + " milliseconds");
+	this->context.logger->debug("Time elapsed: " + std::to_string(measure.elapsed()) + " milliseconds");
 }
 
 void HTTPServer::event_function(EventLoop& loop, RequestEvent& event)
@@ -45,20 +44,23 @@ void HTTPServer::event_function(EventLoop& loop, RequestEvent& event)
 	}
 	catch (const ServerError& exc)
 	{
-		this->_shutdown_request(event.fd);
-		this->ctx.logger->error(exc);
+		this->_shutdown_client(event.client);
+		this->context.logger->error(exc);
 	}
 	catch (const std::exception& exc)
 	{
-		this->_shutdown_request(event.fd);
-		this->ctx.logger->fatal(exc.what(), _ERROR_DETAILS_);
+		this->_shutdown_client(event.client);
+		this->context.logger->error(exc.what(), _ERROR_DETAILS_);
 	}
 }
 
-HTTPServer::HTTPServer(Context ctx, const std::shared_ptr<dt::Timezone>& /* timezone */) : ctx(ctx)
+HTTPServer::HTTPServer(Context context) : context(std::move(context))
 {
-	this->_event_loop = std::make_unique<EventLoop>(this->ctx.workers_count);
-	this->_event_loop->add_event_listener<RequestEvent>(
+	this->context.set_defaults();
+	this->context.validate();
+
+	this->_loop = std::make_unique<EventLoop>(this->context.workers_count);
+	this->_loop->add_event_listener<RequestEvent>(
 		[this](auto&& loop, auto&& event) {
 			this->event_function(std::forward<decltype(loop)>(loop), std::forward<decltype(event)>(event));
 		}
@@ -67,39 +69,34 @@ HTTPServer::HTTPServer(Context ctx, const std::shared_ptr<dt::Timezone>& /* time
 
 void HTTPServer::bind(const std::string& address, uint16_t port)
 {
-	if (!this->_handler)
-	{
-		throw NullPointerException("xw::server::HTTPServer: request handler is nullptr", _ERROR_DETAILS_);
-	}
-
-	this->_socket = util::create_socket(
-		address, port, this->ctx.socket_creation_retries_count, this->ctx.logger
+	this->_socket = util::create_server_socket(
+		address, port, this->context.socket_creation_retries_count, this->context.logger
 	);
 	this->_socket->set_options();
 	this->host = address;
 	this->server_port = port;
-	this->server_name = util::fqdn(this->host);
-	this->init_environ();
+	this->server_name = util::get_fully_qualified_domain_name(this->host);
+	this->initialize_environment();
 }
 
 void HTTPServer::listen(const std::string& message)
 {
 	this->_socket->listen();
+	auto selector = this->context.create_selector(this->context, this->_socket->raw_socket());
+	selector->register_read_event();
 	if (!message.empty())
 	{
-		this->ctx.logger->print(message);
+		this->context.logger->print(message);
 	}
 
-	Selector selector(this->ctx.logger);
-	selector.register_(this->_socket->fd(), EVENT_READ);
-	while (!this->_socket->is_closed())
+	while (this->_socket->is_open())
 	{
-		if (selector.select(this->ctx.timeout_seconds, this->ctx.timeout_microseconds))
+		if (selector->select(this->context.timeout_seconds, this->context.timeout_microseconds))
 		{
-			auto conn = this->_get_request();
-			if (conn >= 0)
+			auto client = this->_accept_client();
+			if (this->_socket->is_open() && client.is_valid())
 			{
-				this->_handle(conn);
+				this->_loop->inject_event<RequestEvent>(client);
 			}
 		}
 	}
@@ -107,55 +104,52 @@ void HTTPServer::listen(const std::string& message)
 
 void HTTPServer::close()
 {
-	this->_event_loop->wait_for_threads();
-	util::close_socket(this->_socket.get(), this->ctx.logger);
+	this->_loop->wait_for_threads();
+	util::close_socket(this->_socket.get(), this->context.logger);
 }
 
-void HTTPServer::init_environ()
+void HTTPServer::initialize_environment()
 {
-	this->base_environ.insert(std::make_pair(net::meta::SERVER_NAME, this->server_name));
-	this->base_environ.insert(std::make_pair(net::meta::SERVER_PORT, std::to_string(this->server_port)));
+	this->environment.insert(std::make_pair(net::meta::SERVER_NAME, this->server_name));
+	this->environment.insert(std::make_pair(net::meta::SERVER_PORT, std::to_string(this->server_port)));
 }
 
-int HTTPServer::_get_request()
+Client HTTPServer::_accept_client() const
 {
-	int new_sock;
-	if ((new_sock = ::accept(this->_socket->fd(), nullptr, nullptr)) < 0)
+	auto client = Client{::accept(this->_socket->raw_socket(), nullptr, nullptr)};
+	if (!client.is_valid())
 	{
-		auto err_code = errno;
-		if (err_code == EBADF || err_code == EINVAL)
+		auto error_code = errno;
+		if (error_code == EBADF || error_code == EINVAL)
 		{
-			throw SocketError(err_code, "'accept' call failed: " + std::to_string(err_code), _ERROR_DETAILS_);
+			throw SocketError(
+				error_code, "'accept' call failed: " + std::to_string(error_code), _ERROR_DETAILS_
+			);
 		}
 
-		if (err_code == EMFILE)
+		if (error_code == EMFILE)
 		{
 			std::this_thread::sleep_for(std::chrono::milliseconds(300));
-			return -1;
+			return client;
 		}
 
 		throw SocketError(
-			err_code, "'accept' call failed while accepting a new connection: " + std::to_string(err_code),
+			error_code, "'accept' call failed while accepting a new connection: " + std::to_string(error_code),
 			_ERROR_DETAILS_
 		);
 	}
 
-	if (!this->_socket->is_closed() && new_sock >= 0)
-	{
-		return new_sock;
-	}
-
-	return -1;
+	return client;
 }
 
-void HTTPServer::_shutdown_request(int fd) const
+void HTTPServer::_shutdown_client(Client client) const
 {
-	if (shutdown(fd, SHUT_RDWR))
+	if (shutdown(client.socket(), SHUT_RDWR))
 	{
-		this->ctx.logger->error("'shutdown' call failed: " + std::to_string(errno), _ERROR_DETAILS_);
+		this->context.logger->error("'shutdown' call failed: " + std::to_string(errno), _ERROR_DETAILS_);
 	}
 
-	::close(fd);
+	::close(client.socket());
 }
 
 __SERVER_END__

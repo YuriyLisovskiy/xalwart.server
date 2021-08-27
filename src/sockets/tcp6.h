@@ -27,15 +27,15 @@ __SERVER_BEGIN__
 // TODO: docs for 'TCP6Socket'
 class TCP6Socket : public BaseSocket
 {
-protected:
-	void bind() override;
-
 public:
 	inline explicit TCP6Socket(const char* address, uint16_t port) : BaseSocket(address, port, AF_INET6)
 	{
 	}
 
 	void set_options() override;
+
+protected:
+	void bind() override;
 };
 
 __SERVER_END__

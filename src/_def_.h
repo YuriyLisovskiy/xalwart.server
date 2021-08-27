@@ -14,6 +14,7 @@
 // Module definitions.
 #include <xalwart.base/_def_.h>
 
+
 // xw::server
 #define __SERVER_BEGIN__ __MAIN_NAMESPACE_BEGIN__ namespace server {
 #define __SERVER_END__ } __MAIN_NAMESPACE_END__
@@ -36,6 +37,11 @@ namespace v
 {
 const inline auto version = Version("0.0.0");
 };
+
+using Socket = int;
+
+inline const int MAX_LINE_LENGTH = 65536;
+inline const int MAX_HEADERS_NUMBER = 100;
 
 __SERVER_END__
 
@@ -75,7 +81,3 @@ public:
 		this->_end = {};
 	}
 };
-
-inline const int MAX_LINE_LENGTH = 65536;
-
-inline const int MAX_HEADERS_NUMBER = 100;

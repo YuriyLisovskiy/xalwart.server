@@ -25,41 +25,71 @@ inline const std::string CONTENT = "HTTP/1.1 200 OK\r\n"
 //inline const char* SERVER_ADDRESS = "/tmp/xw.sock";
 inline const char* SERVER_ADDRESS = "127.0.0.1:1708";
 
-int main()
+void run_server(xw::log::ILogger* logger)
 {
 	xw::InterruptException::initialize();
-	auto logCfg = xw::log::Config{};
-	logCfg.add_console_stream();
-	auto logger = xw::log::Logger(logCfg);
-	logger.use_colors(true);
-	auto server = xw::server::HTTPServer(xw::server::Context(
-		&logger, {{
-			{xw::server::p::WORKERS_COUNT, "1"},
-			{xw::server::p::MAX_REQUEST_SIZE, "1610611911"}, // 1.5 GB
-			{xw::server::p::TIMEOUT_SECONDS, "3"},
-			{xw::server::p::TIMEOUT_MICROSECONDS, "0"},
-		}}
-	), nullptr);
-	server.setup_handler([](
-		xw::net::RequestContext* ctx,
-		const xw::collections::Dictionary<std::string, std::string>& env
-	) -> uint
-	{
-		if (ctx->content_size > 0)
+	auto server = xw::server::HTTPServer({
+		.logger = logger,
+		.max_request_size = 1610611911,
+		.workers_count = 1,
+		.timeout_seconds = 3,
+		.timeout_microseconds = 0,
+		.socket_creation_retries_count = 5,
+		.handler = [](
+			xw::net::RequestContext* ctx, const std::map<std::string, std::string>& env
+		) -> xw::net::StatusCode
 		{
-			std::string buffer;
+			if (ctx->content_size > 0)
+			{
+				std::string buffer;
+				auto remaining_bytes = (long long int)ctx->content_size;
+				long long int result_bytes_count = 0;
+				long long int current_bytes_read = 0;
 
-			auto part_1 = ctx->content_size - 50;
-			ctx->body->read(buffer, part_1);
-			std::cerr << "BUFFER 1:\n" << buffer << '\n';
+				std::cerr << "CONTENT LENGTH: " << ctx->content_size;
 
-			auto part_2 = 50;
-			ctx->body->read(buffer, part_2);
-			std::cerr << "BUFFER 2:\n" << buffer << '\n';
+				for (size_t i = 0; remaining_bytes > 0; i++)
+				{
+//					std::cerr << "BUFFER " << i + 1 << ":\n" << buffer << '\n';
+
+//					auto read_size = std::min(content_size, chunk_length);
+//					if (read_size < chunk_length)
+//					{
+//						read_size = (long long int)ctx->content_size - result_bytes_count;
+//					}
+
+					current_bytes_read = ctx->body->read(buffer, remaining_bytes);
+					result_bytes_count += current_bytes_read;
+
+//					step = std::min((long long int)buffer.size(), step);
+
+//					std::cerr << "CONTENT LENGTH: " << ctx->content_size;
+//					std::cerr << ", CURRENT BYTES READ: ";
+//					std::cerr << current_bytes_read << ", TOTAL BYTES: " << result_bytes_count;
+//					std::cerr << ", NEXT READ TARGET: " << remaining_bytes - current_bytes_read;
+//					std::cerr << ", REMAINING BYTES: " << remaining_bytes << '\n';
+//					std::cerr << "CONTENT:\n===============================\n" << buffer;
+//					std::cerr << "\n===============================\n";
+//					if (content_size < chunk_length)
+//					{
+//						break;
+//					}
+
+					remaining_bytes -= current_bytes_read;
+				}
+
+//				auto part_1 = ctx->content_size - 50;
+//				ctx->body->read(buffer, part_1);
+//				std::cerr << "BUFFER 1:\n" << buffer << '\n';
+//
+//				auto part_2 = 50;
+//				ctx->body->read(buffer, part);
+//				std::cerr << "BUFFER 2:\n" << buffer << '\n';
+			}
+
+			ctx->write(CONTENT.c_str(), CONTENT.size());
+			return 200;
 		}
-
-		ctx->write(CONTENT.c_str(), CONTENT.size());
-		return 200;
 	});
 
 	auto pair = xw::str::split(SERVER_ADDRESS, ':', -1);
@@ -83,9 +113,32 @@ int main()
 	}
 	catch (const xw::InterruptException& exc)
 	{
-		logger.warning(exc);
+		logger->warning(exc);
+	}
+	catch (const xw::BaseException& exc)
+	{
+		logger->error(exc);
 	}
 
 	server.close();
+}
+
+int main()
+{
+	auto logCfg = xw::log::Config{};
+	logCfg.add_console_stream();
+	auto logger = xw::log::Logger(logCfg);
+	logger.use_colors(true);
+
+	try
+	{
+		run_server(&logger);
+	}
+	catch (const xw::BaseException& exc)
+	{
+		logger.error(exc);
+	}
+
+	std::this_thread::sleep_for(std::chrono::microseconds (1));
 	return 0;
 }

@@ -14,40 +14,40 @@ __SERVER_BEGIN__
 
 bool HTTPRequestHandler::parse_request()
 {
-	this->parsed = BaseHTTPRequestHandler::parse_request();
-	if (!this->parsed)
+	this->request_is_parsed = BaseHTTPRequestHandler::parse_request();
+	if (!this->request_is_parsed)
 	{
 		return false;
 	}
 
-	auto full_p = str::split(this->full_path, '?', 1);
-	this->request_ctx.path = full_p[0];
-	if (full_p.size() == 2)
+	auto full_path_parts = str::split(this->full_path, '?', 1);
+	this->request_context.path = full_path_parts[0];
+	if (full_path_parts.size() == 2)
 	{
-		this->request_ctx.query = full_p[1];
+		this->request_context.query = full_path_parts[1];
 	}
 
-	auto content_len = this->request_ctx.headers.contains("Content-Length") ?
-		this->request_ctx.headers.at("Content-Length") : "";
-	if (!content_len.empty())
+	auto content_length = this->request_context.headers.contains("Content-Length") ?
+		this->request_context.headers.at("Content-Length") : "";
+	if (!content_length.empty())
 	{
-		const char* s_content_len = content_len.c_str();
-		this->request_ctx.content_size = std::stoi(s_content_len, nullptr, 10);
-		if (!s_content_len)
+		const char* content_length_string = content_length.c_str();
+		this->request_context.content_size = std::stoi(content_length_string, nullptr, 10);
+		if (!content_length_string)
 		{
-			this->send_error(400, "Bad request Content-Length header value (" + content_len + ")");
+			this->send_error(400, "Bad request Content-Length header value (" + content_length + ")");
 			return false;
 		}
 
-		if (this->total_bytes_read_count + this->request_ctx.content_size > this->max_request_size)
+		if (this->total_bytes_read_count + this->request_context.content_size > this->max_request_size)
 		{
 			this->send_error(413);
 			return false;
 		}
 
-		auto transfer_enc = this->request_ctx.headers.contains("Transfer-Encoding") ?
-			this->request_ctx.headers.at("Transfer-Encoding") : "";
-		if (!transfer_enc.empty() && str::lower(transfer_enc).find("chunked") != std::string::npos)
+		auto transfer_encoding = this->request_context.headers.contains("Transfer-Encoding") ?
+			this->request_context.headers.at("Transfer-Encoding") : "";
+		if (!transfer_encoding.empty() && str::lower(transfer_encoding).find("chunked") != std::string::npos)
 		{
 			if (this->protocol_version < "HTTP/1.1")
 			{
@@ -65,7 +65,7 @@ bool HTTPRequestHandler::parse_request()
 			}
 			else
 			{
-				this->request_ctx.chunked = true;
+				this->request_context.chunked = true;
 
 				// TODO: read and parse chunked request.
 				this->send_error(400, "Chunked Transfer-Encoding is not supported by this server");
@@ -76,14 +76,6 @@ bool HTTPRequestHandler::parse_request()
 	}
 
 	return true;
-}
-
-void HTTPRequestHandler::handle(net::HandlerFunc func)
-{
-	this->handler_func = std::move(func);
-	this->close_connection = true;
-	this->handle_one_request();
-	this->close_io();
 }
 
 __SERVER_END__
