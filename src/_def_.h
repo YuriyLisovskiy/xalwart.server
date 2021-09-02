@@ -40,9 +40,6 @@ const inline auto version = Version("0.0.0");
 
 using Socket = int;
 
-inline const int MAX_LINE_LENGTH = 65536;
-inline const int MAX_HEADERS_NUMBER = 100;
-
 __SERVER_END__
 
 

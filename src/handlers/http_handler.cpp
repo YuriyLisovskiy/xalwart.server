@@ -47,7 +47,7 @@ bool HTTPRequestHandler::parse_request()
 
 		auto transfer_encoding = this->request_context.headers.contains("Transfer-Encoding") ?
 			this->request_context.headers.at("Transfer-Encoding") : "";
-		if (!transfer_encoding.empty() && str::lower(transfer_encoding).find("chunked") != std::string::npos)
+		if (!transfer_encoding.empty() && str::to_lower(transfer_encoding).find("chunked") != std::string::npos)
 		{
 			if (this->protocol_version < "HTTP/1.1")
 			{

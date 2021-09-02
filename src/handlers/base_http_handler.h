@@ -72,7 +72,7 @@ protected:
 
 	net::RequestContext request_context;
 
-	std::unique_ptr<io::IStream> socket_stream;
+	std::shared_ptr<io::IStream> socket_stream;
 
 	// The server software number version.
 	std::string server_version_number;

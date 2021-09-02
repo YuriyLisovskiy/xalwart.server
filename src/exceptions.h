@@ -62,42 +62,4 @@ public:
 	}
 };
 
-// TESTME: LineTooLongError
-// TODO: docs for 'LineTooLongError'
-class LineTooLongError : public ParseError
-{
-protected:
-	inline LineTooLongError(
-		const char* message, int line, const char* function, const char* file, const char* type
-	) : ParseError(message, line, function, file, type)
-	{
-	}
-
-public:
-	inline explicit LineTooLongError(
-		const std::string& message, int line=0, const char* function="", const char* file=""
-	) : LineTooLongError(message.c_str(), line, function, file, "xw::server::LineTooLongError")
-	{
-	}
-};
-
-// TESTME: TooMuchHeadersError
-// TODO: docs for 'TooMuchHeadersError'
-class TooMuchHeadersError : public ParseError
-{
-protected:
-	inline TooMuchHeadersError(
-		const char* message, int line, const char* function, const char* file, const char* type
-	) : ParseError(message, line, function, file, type)
-	{
-	}
-
-public:
-	inline explicit TooMuchHeadersError(
-		const std::string& message, int line=0, const char* function="", const char* file=""
-	) : TooMuchHeadersError(message.c_str(), line, function, file, "xw::server::TooMuchHeadersError")
-	{
-	}
-};
-
 __SERVER_END__

@@ -8,6 +8,7 @@
 
 // Base libraries.
 #include <xalwart.base/net/status.h>
+#include <xalwart.base/net/utility.h>
 #include <xalwart.base/encoding.h>
 #include <xalwart.base/string_utils.h>
 #include <xalwart.base/html.h>
@@ -15,7 +16,6 @@
 
 // Server libraries.
 #include "../exceptions.h"
-#include "../parsers.h"
 
 
 __SERVER_BEGIN__
@@ -94,7 +94,7 @@ void BaseHTTPRequestHandler::cleanup_headers()
 	// application sent the header.
 	if (
 		this->request_context.headers.contains("Connection") &&
-		str::lower(this->request_context.headers.at("Connection")) == "close"
+		str::to_lower(this->request_context.headers.at("Connection")) == "close"
 	)
 	{
 		this->close_connection = true;
@@ -198,7 +198,7 @@ bool BaseHTTPRequestHandler::parse_request()
 	}
 
 	auto connection_type = this->request_context.headers.contains("Connection") ?
-		str::lower(this->request_context.headers.at("Connection")) : "";
+		str::to_lower(this->request_context.headers.at("Connection")) : "";
 	if (connection_type == "close")
 	{
 		this->close_connection = true;
@@ -211,7 +211,7 @@ bool BaseHTTPRequestHandler::parse_request()
 
 	// Examine the headers and look for expect directive.
 	auto expect = this->request_context.headers.contains("Expect") ?
-		str::lower(this->request_context.headers.at("Expect")) : "";
+		str::to_lower(this->request_context.headers.at("Expect")) : "";
 	if (
 		expect == "100-continue" && this->protocol_version >= "HTTP/1.1" && this->request_version >= "HTTP/1.1"
 	)
@@ -267,7 +267,7 @@ void BaseHTTPRequestHandler::handle_one_request()
 	this->request_context.write = [this](const char* data, size_t n) -> bool {
 		return this->write(data, (ssize_t)n);
 	};
-	this->request_context.body = this->socket_stream.get();
+	this->request_context.body = this->socket_stream;
 	this->log_request(this->handler_function(&this->request_context, this->environment), "");
 }
 
@@ -305,7 +305,7 @@ bool BaseHTTPRequestHandler::parse_headers()
 {
 	try
 	{
-		this->total_bytes_read_count += parser::parse_headers(
+		this->total_bytes_read_count += net::parse_headers(
 			this->request_context.headers, this->socket_stream.get(), this->max_request_size
 		);
 		return true;
@@ -409,9 +409,9 @@ void BaseHTTPRequestHandler::send_header(const std::string& keyword, const std::
 		);
 	}
 
-	if (str::lower(keyword) == "connection")
+	if (str::to_lower(keyword) == "connection")
 	{
-		auto value_lower = str::lower(value);
+		auto value_lower = str::to_lower(value);
 		if (value_lower == "close")
 		{
 			this->close_connection = true;
