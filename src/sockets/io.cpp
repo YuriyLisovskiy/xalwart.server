@@ -20,10 +20,8 @@ __SERVER_BEGIN__
 SocketIO::SocketIO(Socket file_descriptor, timeval timeout, std::unique_ptr<abc::ISelector> selector) :
 	_file_descriptor(file_descriptor),
 	_timeout(timeout),
-	_selector(std::move(selector)),
-	_buffer_size(-1)
+	_selector(std::move(selector))
 {
-	this->_buffer[0] = '\0';
 	this->_selector->register_read_event();
 }
 
@@ -34,10 +32,9 @@ SocketIO& SocketIO::operator= (SocketIO&& other) noexcept
 	this->_selector = std::move(other._selector);
 	if (!this->buffer_is_empty())
 	{
-		strcpy(this->_buffer, other._buffer);
+		this->_buffer = other._buffer;
 	}
 
-	this->_buffer_size = other._buffer_size;
 	return *this;
 }
 
@@ -46,16 +43,27 @@ ssize_t SocketIO::read_line(std::string& line)
 	ssize_t total_bytes_read_count = 0;
 	line.clear();
 	bool new_line_reached = false;
-	while (!new_line_reached && this->read_bytes(MAX_BUFFER_SIZE))
+	while (!new_line_reached)
 	{
-		auto ptr = strstr(this->_buffer, "\r\n");
-		if (!ptr)
+		bool is_read = true;
+		if (this->read_allowed())
+		{
+			is_read = this->read_bytes(MAX_BUFFER_SIZE);
+		}
+
+		if (!is_read)
+		{
+			break;
+		}
+
+		auto pos = this->_buffer.find("\r\n");
+		if (pos == std::string::npos)
 		{
 			total_bytes_read_count += this->append_from_buffer_to(line);
 		}
 		else
 		{
-			ssize_t count = ptr - this->_buffer + 2; // 2 is the size of "\r\n" string
+			ssize_t count = (ssize_t)pos + 2;
 			total_bytes_read_count += this->append_from_buffer_to(line, count);
 			new_line_reached = true;
 		}
@@ -67,7 +75,13 @@ ssize_t SocketIO::read_line(std::string& line)
 ssize_t SocketIO::read(std::string& buffer, size_t max_count)
 {
 	buffer.clear();
-	if (this->read_bytes(max_count))
+	bool is_read = true;
+	if (this->read_allowed())
+	{
+		is_read = this->read_bytes(max_count);
+	}
+
+	if (is_read)
 	{
 		return this->append_from_buffer_to(buffer, (ssize_t)max_count);
 	}
@@ -78,7 +92,13 @@ ssize_t SocketIO::read(std::string& buffer, size_t max_count)
 ssize_t SocketIO::peek(std::string& buffer, ssize_t max_count)
 {
 	buffer.clear();
-	if (this->read_bytes(max_count))
+	bool is_read = true;
+	if (this->buffered() < max_count)
+	{
+		is_read = this->read_bytes(max_count);
+	}
+
+	if (is_read)
 	{
 		return this->append_from_buffer_to(buffer, (ssize_t)max_count, false);
 	}
@@ -133,15 +153,13 @@ int SocketIO::shutdown(int how) const
 
 ssize_t SocketIO::append_from_buffer_to(std::string& buffer, ssize_t max_count, bool erase)
 {
-	auto count = (max_count >= 0 && max_count < this->_buffer_size) ? max_count : this->_buffer_size;
-	buffer += std::string(this->_buffer, count);
+	auto count = (max_count >= 0 && max_count < this->buffered()) ? max_count : this->buffered();
+	buffer += this->_buffer.substr(0, count);
 	if (erase)
 	{
-		if (count < this->_buffer_size)
+		if (count < this->buffered())
 		{
-			this->_buffer_size -= count;
-			memmove(this->_buffer, &(this->_buffer[count]), this->_buffer_size);
-			this->_buffer[this->_buffer_size] = '\0';
+			this->_buffer = this->_buffer.substr(count);
 		}
 		else
 		{
@@ -154,11 +172,6 @@ ssize_t SocketIO::append_from_buffer_to(std::string& buffer, ssize_t max_count, 
 
 bool SocketIO::read_bytes(size_t max_count)
 {
-	if (!this->buffer_is_empty())
-	{
-		return true;
-	}
-
 	bool try_again;
 	do
 	{
@@ -168,12 +181,12 @@ bool SocketIO::read_bytes(size_t max_count)
 			throw SocketError(ETIMEDOUT, "Connection timed out", _ERROR_DETAILS_);
 		}
 
-		auto bytes_count = std::min(max_count, MAX_BUFFER_SIZE);
-		auto len = ::read(this->file_descriptor(), this->_buffer, bytes_count);
+		auto bytes_count = std::min(max_count - this->_buffer.size(), MAX_BUFFER_SIZE);
+		char buf[MAX_BUFFER_SIZE];
+		auto len = ::read(this->file_descriptor(), buf, bytes_count);
 		if (len > 0)
 		{
-			this->_buffer_size = len;
-			this->_buffer[len] = '\0';
+			this->_buffer += std::string(buf, len);
 			return true;
 		}
 		else if (len == 0)

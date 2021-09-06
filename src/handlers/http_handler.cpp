@@ -32,7 +32,7 @@ bool HTTPRequestHandler::parse_request()
 	if (!content_length.empty())
 	{
 		const char* content_length_string = content_length.c_str();
-		this->request_context.content_size = std::stoi(content_length_string, nullptr, 10);
+		this->request_context.content_size = std::stoull(content_length_string, nullptr, 10);
 		if (!content_length_string)
 		{
 			this->send_error(400, "Bad request Content-Length header value (" + content_length + ")");

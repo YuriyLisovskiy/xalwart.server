@@ -30,7 +30,7 @@ void run_server(xw::log::ILogger* logger)
 	xw::InterruptException::initialize();
 	auto server = xw::server::HTTPServer({
 		.logger = logger,
-		.max_request_size = 1610611911,
+//		.max_request_size = 1610611911,
 		.workers_count = 1,
 		.timeout_seconds = 3,
 		.timeout_microseconds = 0,

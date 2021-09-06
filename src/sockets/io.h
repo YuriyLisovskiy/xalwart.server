@@ -45,7 +45,7 @@ public:
 	[[nodiscard]]
 	inline ssize_t buffered() const override
 	{
-		return this->_buffer_size;
+		return (ssize_t)this->_buffer.size();
 	}
 
 	bool close_reader() override;
@@ -68,22 +68,26 @@ protected:
 
 	inline void clear_buffer()
 	{
-		this->_buffer[0] = '\0';
-		this->_buffer_size = 0;
+		this->_buffer.clear();
 	}
 
 	[[nodiscard]]
 	inline bool buffer_is_empty() const
 	{
-		return this->_buffer[0] == '\0';
+		return this->_buffer.empty();
+	}
+
+
+	[[nodiscard]] inline bool read_allowed() const
+	{
+		return this->buffer_is_empty();
 	}
 
 private:
 	Socket _file_descriptor;
 	timeval _timeout;
 	std::unique_ptr<abc::ISelector> _selector;
-	char _buffer[MAX_BUFFER_SIZE]{};
-	ssize_t _buffer_size;
+	std::string _buffer;
 };
 
 __SERVER_END__
