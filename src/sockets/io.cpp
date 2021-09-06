@@ -11,6 +11,9 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
+// TODO: remove!
+#include <iostream>
+
 // Server libraries.
 #include "../exceptions.h"
 
@@ -93,14 +96,14 @@ ssize_t SocketIO::peek(std::string& buffer, ssize_t max_count)
 {
 	buffer.clear();
 	bool is_read = true;
-	if (this->buffered() < max_count)
+	if (max_count - this->buffered() > 0)
 	{
 		is_read = this->read_bytes(max_count);
 	}
 
 	if (is_read)
 	{
-		return this->append_from_buffer_to(buffer, (ssize_t)max_count, false);
+		return this->append_from_buffer_to(buffer, max_count, false);
 	}
 
 	return 0;
@@ -181,9 +184,16 @@ bool SocketIO::read_bytes(size_t max_count)
 			throw SocketError(ETIMEDOUT, "Connection timed out", _ERROR_DETAILS_);
 		}
 
-		auto bytes_count = std::min(max_count - this->_buffer.size(), MAX_BUFFER_SIZE);
+		auto bytes_count = std::min(max_count - this->buffered(), MAX_BUFFER_SIZE);
+
+		std::cerr << "READING BYTES [before]: " << bytes_count << '\n';
+
 		char buf[MAX_BUFFER_SIZE];
 		auto len = ::read(this->file_descriptor(), buf, bytes_count);
+
+		std::cerr << "READING BYTES: " << bytes_count << "..., LEN: " << len <<
+			", BUF SIZE: " << this->_buffer.size() << "\n";
+
 		if (len > 0)
 		{
 			this->_buffer += std::string(buf, len);
