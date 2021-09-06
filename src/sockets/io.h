@@ -27,7 +27,7 @@ __SERVER_BEGIN__
 inline const size_t MAX_BUFFER_SIZE = 65535; // in bytes
 
 // TODO: docs for 'SocketIO'
-class SocketIO final : public io::IStream
+class SocketIO final : public io::IBufferedStream
 {
 public:
 	explicit SocketIO(int fd, timeval timeout, std::unique_ptr<abc::ISelector> selector);
@@ -38,7 +38,15 @@ public:
 
 	ssize_t read(std::string& buffer, size_t max_count) override;
 
+	ssize_t peek(std::string& buffer, ssize_t max_count) override;
+
 	ssize_t write(const char* data, ssize_t count) override;
+
+	[[nodiscard]]
+	inline ssize_t buffered() const override
+	{
+		return this->_buffer_size;
+	}
 
 	bool close_reader() override;
 
@@ -54,7 +62,7 @@ protected:
 		return this->_file_descriptor;
 	}
 
-	ssize_t append_from_buffer_to(std::string& buffer, ssize_t max_count=-1);
+	ssize_t append_from_buffer_to(std::string& buffer, ssize_t max_count=-1, bool erase=true);
 
 	bool read_bytes(size_t max_count);
 

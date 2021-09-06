@@ -306,7 +306,7 @@ bool BaseHTTPRequestHandler::parse_headers()
 	try
 	{
 		this->total_bytes_read_count += net::parse_headers(
-			this->request_context.headers, this->socket_stream.get(), this->max_request_size
+			this->request_context.headers, this->socket_stream.get(), this->max_header_length, this->max_headers_count
 		);
 		return true;
 	}

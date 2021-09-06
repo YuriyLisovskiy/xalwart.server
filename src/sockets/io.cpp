@@ -75,6 +75,17 @@ ssize_t SocketIO::read(std::string& buffer, size_t max_count)
 	return 0;
 }
 
+ssize_t SocketIO::peek(std::string& buffer, ssize_t max_count)
+{
+	buffer.clear();
+	if (this->read_bytes(max_count))
+	{
+		return this->append_from_buffer_to(buffer, (ssize_t)max_count, false);
+	}
+
+	return 0;
+}
+
 ssize_t SocketIO::write(const char* data, ssize_t count)
 {
 	ssize_t bytes_sent_count;
@@ -120,19 +131,22 @@ int SocketIO::shutdown(int how) const
 	return ::shutdown(this->file_descriptor(), how);
 }
 
-ssize_t SocketIO::append_from_buffer_to(std::string& buffer, ssize_t max_count)
+ssize_t SocketIO::append_from_buffer_to(std::string& buffer, ssize_t max_count, bool erase)
 {
 	auto count = (max_count >= 0 && max_count < this->_buffer_size) ? max_count : this->_buffer_size;
 	buffer += std::string(this->_buffer, count);
-	if (count < this->_buffer_size)
+	if (erase)
 	{
-		this->_buffer_size -= count;
-		memmove(this->_buffer, &(this->_buffer[count]), this->_buffer_size);
-		this->_buffer[this->_buffer_size] = '\0';
-	}
-	else
-	{
-		this->clear_buffer();
+		if (count < this->_buffer_size)
+		{
+			this->_buffer_size -= count;
+			memmove(this->_buffer, &(this->_buffer[count]), this->_buffer_size);
+			this->_buffer[this->_buffer_size] = '\0';
+		}
+		else
+		{
+			this->clear_buffer();
+		}
 	}
 
 	return count;

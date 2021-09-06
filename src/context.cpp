@@ -30,20 +30,21 @@ void Context::set_defaults()
 	{
 		this->create_request_handler = [](
 			const Context& context,
-			std::unique_ptr<io::IStream> stream,
+			std::unique_ptr<io::IBufferedStream> stream,
 			const std::map<std::string, std::string>& environment
 		) -> std::unique_ptr<abc::IRequestHandler> {
 			util::require_non_null(stream.get(), "'stream' is nullptr", _ERROR_DETAILS_);
 			return std::make_unique<HTTPRequestHandler>(
 				std::move(stream), v::version.to_string(),
-				context.max_request_size, context.logger, environment, context.handler
+				context.max_header_length, context.max_headers_count,
+				context.logger, environment, context.handler
 			);
 		};
 	}
 
 	if (!this->create_stream)
 	{
-		this->create_stream = [](const Context& context, Socket socket) -> std::unique_ptr<io::IStream> {
+		this->create_stream = [](const Context& context, Socket socket) -> std::unique_ptr<io::IBufferedStream> {
 			timeval timeout{
 				.tv_sec = context.timeout_seconds,
 				.tv_usec = context.timeout_microseconds

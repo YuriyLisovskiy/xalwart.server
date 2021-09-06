@@ -39,12 +39,6 @@ bool HTTPRequestHandler::parse_request()
 			return false;
 		}
 
-		if (this->total_bytes_read_count + this->request_context.content_size > this->max_request_size)
-		{
-			this->send_error(413);
-			return false;
-		}
-
 		auto transfer_encoding = this->request_context.headers.contains("Transfer-Encoding") ?
 			this->request_context.headers.at("Transfer-Encoding") : "";
 		if (!transfer_encoding.empty() && str::to_lower(transfer_encoding).find("chunked") != std::string::npos)

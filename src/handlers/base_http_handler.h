@@ -42,13 +42,15 @@ class BaseHTTPRequestHandler : public abc::IRequestHandler
 {
 public:
 	BaseHTTPRequestHandler(
-		std::unique_ptr<io::IStream> socket_stream,
-		size_t max_request_size, std::string server_version, log::ILogger* logger,
+		std::unique_ptr<io::IBufferedStream> socket_stream,
+		size_t max_header_length, size_t max_headers_count,
+		std::string server_version, log::ILogger* logger,
 		std::map<std::string, std::string> environment,
 		HandlerFunction handler_function
 	) : logger(logger),
 	    socket_stream(std::move(socket_stream)),
-	    max_request_size(max_request_size),
+	    max_header_length(max_header_length),
+	    max_headers_count(max_headers_count),
 	    server_version_number(std::move(server_version)),
 	    close_connection(false),
 	    request_is_parsed(false),
@@ -72,7 +74,7 @@ protected:
 
 	net::RequestContext request_context;
 
-	std::shared_ptr<io::IStream> socket_stream;
+	std::shared_ptr<io::IBufferedStream> socket_stream;
 
 	// The server software number version.
 	std::string server_version_number;
@@ -94,7 +96,9 @@ protected:
 	std::string command;
 	std::string full_path;
 
-	size_t max_request_size;
+	size_t max_header_length;
+	size_t max_headers_count;
+
 	size_t total_bytes_read_count;
 
 	std::string headers_buffer;

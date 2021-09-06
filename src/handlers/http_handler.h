@@ -31,13 +31,14 @@ class HTTPRequestHandler : public BaseHTTPRequestHandler
 {
 public:
 	inline explicit HTTPRequestHandler(
-		std::unique_ptr<io::IStream> stream,
+		std::unique_ptr<io::IBufferedStream> stream,
 		const std::string& server_version,
-		size_t max_request_size, log::ILogger* logger,
-		const std::map<std::string, std::string>& environment,
+		size_t max_header_length, size_t max_headers_count,
+		log::ILogger* logger, const std::map<std::string, std::string>& environment,
 		HandlerFunction handler_function
 	) : BaseHTTPRequestHandler(
-			std::move(stream), max_request_size, server_version, logger, environment, std::move(handler_function)
+			std::move(stream), max_header_length, max_headers_count, server_version,
+			logger, environment, std::move(handler_function)
 		)
 	{
 		util::require_non_null(this->socket_stream.get(), "'socket_stream' is nullptr", _ERROR_DETAILS_);
