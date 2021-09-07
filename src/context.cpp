@@ -6,6 +6,9 @@
 
 #include "./context.h"
 
+// C++ libraries.
+#include <ctime>
+
 // Base libraries.
 #include <xalwart.base/exceptions.h>
 
