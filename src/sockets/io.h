@@ -11,7 +11,7 @@
 // C++ libraries.
 #include <string>
 #include <memory>
-#include <ctime>
+#include <sys/select.h>
 
 // Base libraries.
 #include <xalwart.base/io.h>
