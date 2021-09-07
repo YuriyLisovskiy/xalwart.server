@@ -11,6 +11,7 @@
 // C++ libraries.
 #include <string>
 #include <memory>
+#include <ctime>
 
 // Base libraries.
 #include <xalwart.base/io.h>
@@ -28,7 +29,7 @@ __SERVER_BEGIN__
 class SocketIO final : public io::ILimitedBufferedStream
 {
 public:
-	explicit SocketIO(int fd, struct timeval timeout, std::unique_ptr<abc::ISelector> selector);
+	explicit SocketIO(int fd, timeval timeout, std::unique_ptr<abc::ISelector> selector);
 
 	SocketIO& operator= (SocketIO&& other) noexcept;
 
@@ -100,7 +101,7 @@ protected:
 
 private:
 	Socket _file_descriptor;
-	struct timeval _timeout;
+	timeval _timeout;
 	std::unique_ptr<abc::ISelector> _selector;
 	std::string _buffer;
 	ssize_t _limit;
