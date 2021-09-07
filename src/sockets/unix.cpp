@@ -12,21 +12,21 @@
 #include <sys/un.h>
 #include <cstring>
 
-// Base libraries.
-#include <xalwart.base/exceptions.h>
+// Server libraries.
+#include "../exceptions.h"
 
 
 __SERVER_BEGIN__
 
 void UnixSocket::bind()
 {
-	sockaddr_un addr{};
-	addr.sun_family = this->family;
-	strcpy(addr.sun_path, this->address.c_str());
-	if (::bind(this->sock, (const sockaddr *)&addr, sizeof(addr)))
+	sockaddr_un internet_socket_address{};
+	internet_socket_address.sun_family = this->family;
+	::strcpy(internet_socket_address.sun_path, this->address.c_str());
+	if (::bind(this->socket, (const sockaddr*)&internet_socket_address, sizeof(internet_socket_address)))
 	{
-		auto err = errno;
-		throw SocketError(err, "'bind' call failed: " + std::to_string(err), _ERROR_DETAILS_);
+		auto error_code = errno;
+		throw SocketError(error_code, "'bind' call failed: " + std::to_string(error_code), _ERROR_DETAILS_);
 	}
 }
 

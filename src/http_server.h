@@ -15,7 +15,6 @@
 #include <map>
 
 // Base libraries.
-#include <xalwart.base/kwargs.h>
 #include <xalwart.base/event_loop.h>
 #include <xalwart.base/net/abc.h>
 #include <xalwart.base/logger.h>
@@ -24,85 +23,47 @@
 #include "./_def_.h"
 
 // Server libraries.
-#include "./sockets/base.h"
-#include "./handlers/http_handler.h"
+#include "./abc.h"
+#include "./context.h"
 
 
 __SERVER_BEGIN__
 
-// TODO: docs for 'Context'
-class Context
+// TESTME: Client
+// TODO: docs for 'Client'
+class Client final
 {
 public:
-	log::ILogger* logger = nullptr;
-	size_t max_body_size = 0;
-	size_t workers = 0;
-	time_t timeout_sec = 0;
-	time_t timeout_usec = 0;
-	size_t retries_count = 0;
-
-	inline explicit Context(log::ILogger* logger) : logger(logger)
+	inline Client() : _socket(-1)
 	{
-		if (!this->logger)
-		{
-			throw NullPointerException("'logger' is nullptr", _ERROR_DETAILS_);
-		}
 	}
+
+	explicit inline Client(Socket socket) : _socket(socket)
+	{
+	}
+
+	[[nodiscard]]
+	inline bool is_valid() const
+	{
+		return this->_socket >= 0;
+	}
+
+	[[nodiscard]]
+	inline Socket socket() const
+	{
+		return this->_socket;
+	}
+
+private:
+	Socket _socket;
 };
 
+// TESTME: HTTPServer
 // TODO: docs for 'HTTPServer'
 class HTTPServer : public net::abc::IServer
 {
-private:
-	std::unique_ptr<EventLoop> _event_loop;
-	net::HandlerFunc _handler;
-	std::shared_ptr<BaseSocket> _socket;
-
-private:
-	explicit HTTPServer(Context ctx);
-
-	int _get_request();
-
-	inline void _handle(const int& fd)
-	{
-		this->_event_loop->inject_event<RequestEvent>(fd);
-	}
-
-	void _shutdown_request(int fd) const;
-
-protected:
-	void init_environ() override;
-
-protected:
-	std::string host;
-	std::string server_name;
-	uint16_t server_port = 0;
-	Context ctx;
-	std::map<std::string, std::string> base_environ;
-
-protected:
-	struct RequestEvent : public Event
-	{
-		int fd;
-		explicit RequestEvent(int fd) : fd(fd) {}
-	};
-
 public:
-
-	// Accepts parameters in kwargs:
-	//
-	// - workers: threads count;
-	// - max_body_size: maximum size of request body (in bytes);
-	// - timeout_sec: timeout seconds;
-	// - timeout_usec: timeout microseconds.
-	static std::unique_ptr<net::abc::IServer> initialize(
-		log::ILogger* logger, const Kwargs& kwargs, std::shared_ptr<dt::Timezone> tz
-	);
-
-	inline void setup_handler(net::HandlerFunc handler) override
-	{
-		this->_handler = std::move(handler);
-	}
+	explicit HTTPServer(Context context);
 
 	void bind(const std::string& address, uint16_t port) override;
 
@@ -111,10 +72,41 @@ public:
 	void close() override;
 
 	[[nodiscard]]
-	inline collections::Dictionary<std::string, std::string> environ() const override
+	inline std::map<std::string, std::string> get_environment() const override
 	{
-		return this->base_environ;
+		return this->environment;
 	}
+
+protected:
+	std::string host;
+	std::string server_name;
+	uint16_t server_port = 0;
+	std::map<std::string, std::string> environment;
+	Context context;
+
+	struct RequestEvent : public Event
+	{
+		Client client;
+
+		explicit inline RequestEvent(Client client) : client(client)
+		{
+		}
+	};
+
+	void handle_event(EventLoop& loop, RequestEvent& event);
+
+	void event_function(EventLoop& loop, RequestEvent& event);
+
+	void initialize_environment() override;
+
+private:
+	std::unique_ptr<EventLoop> _loop;
+	std::unique_ptr<abc::ISocket> _socket;
+
+	[[nodiscard]]
+	Client _accept_client() const;
+
+	void _shutdown_client(Client client) const;
 };
 
 __SERVER_END__

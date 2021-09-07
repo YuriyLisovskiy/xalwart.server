@@ -11,35 +11,35 @@
 #include <arpa/inet.h>
 #endif
 
-// Base libraries.
-#include <xalwart.base/exceptions.h>
+// Server libraries.
+#include "../exceptions.h"
 
 
 __SERVER_BEGIN__
 
-void TCPSocket::bind()
-{
-	sockaddr_in addr{};
-	if (inet_pton(this->family, this->address.c_str(), &addr.sin_addr) <= 0)
-	{
-		auto err = errno;
-		throw SocketError(err, "'inet_pton' call failed: " + std::to_string(err), _ERROR_DETAILS_);
-	}
-
-	addr.sin_family = this->family;
-	addr.sin_port = htons(this->port);
-	if (::bind(this->sock, (const sockaddr *)&addr, sizeof(addr)))
-	{
-		auto err = errno;
-		throw SocketError(err, "'bind' call failed: " + std::to_string(err), _ERROR_DETAILS_);
-	}
-}
-
 void TCPSocket::set_options()
 {
-	int opt = 1;
-//	setsockopt(this->sock, IPPROTO_TCP, TCP_NODELAY, &opt, sizeof(opt));
+//	int options = 1;
+//	setsockopt(this->socket, IPPROTO_TCP, TCP_NODELAY, &options, sizeof(options));
 	BaseSocket::set_options();
+}
+
+void TCPSocket::bind()
+{
+	sockaddr_in internet_socket_address{};
+	if (::inet_pton(this->family, this->address.c_str(), &internet_socket_address.sin_addr) <= 0)
+	{
+		auto error_code = errno;
+		throw SocketError(error_code, "'inet_pton' call failed: " + std::to_string(error_code), _ERROR_DETAILS_);
+	}
+
+	internet_socket_address.sin_family = this->family;
+	internet_socket_address.sin_port = htons(this->port);
+	if (::bind(this->socket, (const sockaddr*)&internet_socket_address, sizeof(internet_socket_address)))
+	{
+		auto error_code = errno;
+		throw SocketError(error_code, "'bind' call failed: " + std::to_string(error_code), _ERROR_DETAILS_);
+	}
 }
 
 __SERVER_END__

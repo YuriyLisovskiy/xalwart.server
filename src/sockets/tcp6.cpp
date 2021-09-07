@@ -12,36 +12,35 @@
 #include <arpa/inet.h>
 #endif
 
-// Base libraries.
-#include <xalwart.base/exceptions.h>
+// Server libraries.
+#include "../exceptions.h"
 
 
 __SERVER_BEGIN__
 
-void TCP6Socket::bind()
-{
-	sockaddr_in6 addr{};
-	if (inet_pton(this->family, this->address.c_str(), &addr.sin6_addr) <= 0)
-	{
-		auto err = errno;
-		throw SocketError(err, "'inet_pton' call failed: " + std::to_string(err), _ERROR_DETAILS_);
-	}
-
-	addr.sin6_family = this->family;
-	addr.sin6_port = htons(this->port);
-
-	if (::bind(this->sock, (const sockaddr *)&addr, sizeof(addr)))
-	{
-		auto err = errno;
-		throw SocketError(err, "'bind' call failed: " + std::to_string(err), _ERROR_DETAILS_);
-	}
-}
-
 void TCP6Socket::set_options()
 {
-	int opt = 1;
-	setsockopt(this->sock, IPPROTO_TCP, TCP_NODELAY, &opt, sizeof(opt));
+	int options = 1;
+	setsockopt(this->socket, IPPROTO_TCP, TCP_NODELAY, &options, sizeof(options));
 	BaseSocket::set_options();
+}
+
+void TCP6Socket::bind()
+{
+	sockaddr_in6 internet_socket_address{};
+	if (::inet_pton(this->family, this->address.c_str(), &internet_socket_address.sin6_addr) <= 0)
+	{
+		auto error_code = errno;
+		throw SocketError(error_code, "'inet_pton' call failed: " + std::to_string(error_code), _ERROR_DETAILS_);
+	}
+
+	internet_socket_address.sin6_family = this->family;
+	internet_socket_address.sin6_port = htons(this->port);
+	if (::bind(this->socket, (const sockaddr*)&internet_socket_address, sizeof(internet_socket_address)))
+	{
+		auto error_code = errno;
+		throw SocketError(error_code, "'bind' call failed: " + std::to_string(error_code), _ERROR_DETAILS_);
+	}
 }
 
 __SERVER_END__

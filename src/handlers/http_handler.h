@@ -9,6 +9,14 @@
 
 #pragma once
 
+// C++ libraries.
+#include <memory>
+#include <string>
+#include <map>
+
+// Base libraries.
+#include <xalwart.base/io.h>
+
 // Module definitions.
 #include "../_def_.h"
 
@@ -21,8 +29,27 @@ __SERVER_BEGIN__
 // TODO: docs for 'HTTPRequestHandler'
 class HTTPRequestHandler : public BaseHTTPRequestHandler
 {
-protected:
-	size_t max_body_size;
+public:
+	inline explicit HTTPRequestHandler(
+		std::unique_ptr<io::ILimitedBufferedStream> stream,
+		const std::string& server_version,
+		size_t max_header_length, size_t max_headers_count,
+		log::ILogger* logger, const std::map<std::string, std::string>& environment,
+		HandlerFunction handler_function
+	) : BaseHTTPRequestHandler(
+			std::move(stream), max_header_length, max_headers_count, server_version,
+			logger, environment, std::move(handler_function)
+		)
+	{
+		util::require_non_null(this->stream.get(), "'socket_stream' is nullptr", _ERROR_DETAILS_);
+	}
+
+	inline void handle() override
+	{
+		this->close_connection = true;
+		this->handle_one_request();
+		this->close_io();
+	}
 
 protected:
 	bool parse_request() override;
@@ -30,19 +57,8 @@ protected:
 	[[nodiscard]]
 	inline std::string server_version() const override
 	{
-		return "HTTPServer/" + this->server_num_version;
+		return "HTTPServer/" + this->server_version_number;
 	}
-
-public:
-	inline explicit HTTPRequestHandler(
-		int sock, const std::string& server_version,
-		timeval timeout, size_t max_body_size, log::ILogger* logger,
-		const std::map<std::string, std::string>& env
-	) : BaseHTTPRequestHandler(sock, server_version, timeout, logger, env), max_body_size(max_body_size)
-	{
-	}
-
-	void handle(net::HandlerFunc func) override;
 };
 
 __SERVER_END__

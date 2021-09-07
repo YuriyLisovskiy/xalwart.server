@@ -14,40 +14,70 @@
 
 // C++ libraries.
 #include <string>
+#include <map>
 #include <memory>
 
 // Base libraries.
 #include <xalwart.base/sys.h>
 #include <xalwart.base/net/request_context.h>
-#include <xalwart.base/datetime.h>
 #include <xalwart.base/utility.h>
+#include <xalwart.base/logger.h>
+#include <xalwart.base/io.h>
 
 // Module definitions.
 #include "../_def_.h"
 
 // Server libraries.
-#include "../sockets/io.h"
-#include "../parser.h"
+#include "../abc.h"
 
 
 __SERVER_BEGIN__
 
+using HandlerFunction = std::function<net::StatusCode(
+	net::RequestContext* /* context */, const std::map<std::string, std::string>& /* environment */
+)>;
+
 // TODO: docs for 'BaseHTTPRequestHandler'
-class BaseHTTPRequestHandler
+class BaseHTTPRequestHandler : public abc::IRequestHandler
 {
+public:
+	BaseHTTPRequestHandler(
+		std::unique_ptr<io::ILimitedBufferedStream> stream,
+		size_t max_header_length, size_t max_headers_count,
+		std::string server_version, log::ILogger* logger,
+		std::map<std::string, std::string> environment,
+		HandlerFunction handler_function
+	) : logger(logger),
+	    stream(std::move(stream)),
+	    max_header_length(max_header_length),
+	    max_headers_count(max_headers_count),
+	    server_version_number(std::move(server_version)),
+	    close_connection(false),
+	    request_is_parsed(false),
+	    environment(std::move(environment)),
+	    total_bytes_read_count(0),
+		handler_function(std::move(handler_function))
+	{
+		if (!this->handler_function)
+		{
+			throw NullPointerException("'handler_function' is nullptr", _ERROR_DETAILS_);
+		}
+	}
+
+	// Handle multiple requests if necessary.
+	void handle() override;
+
 protected:
-	std::shared_ptr<log::ILogger> logger;
+	log::ILogger* logger;
 
-	net::HandlerFunc handler_func;
+	HandlerFunction handler_function;
 
-	net::RequestContext request_ctx;
+	net::RequestContext request_context;
 
-	std::unique_ptr<SocketIO> socket_io;
-
-	std::string sys_version = sys::compiler + "/" + sys::compiler_version;
+	std::shared_ptr<io::ILimitedBufferedStream> stream;
 
 	// The server software number version.
-	std::string server_num_version;
+	std::string server_version_number;
 
 	// The default request version. This only affects responses up until
 	// the point where the request line is parsed, so it mainly decides what
@@ -62,24 +92,25 @@ protected:
 	bool close_connection;
 
 	std::string raw_request_line;
-	std::string request_line;
 	std::string request_version;
 	std::string command;
 	std::string full_path;
 
+	size_t max_header_length;
+	size_t max_headers_count;
+
+	size_t total_bytes_read_count;
+
 	std::string headers_buffer;
 
-	bool parsed;
+	bool request_is_parsed;
 
-	std::map<std::string, std::string> env;
+	std::map<std::string, std::string> environment;
 
-protected:
 	[[nodiscard]]
-	virtual std::string default_error_message(int code, const std::string& message, const std::string& explain) const;
-
-	void log_socket_error(SocketIO::State state) const;
-
-	void log_parse_headers_error(parser::ParseHeadersStatus status) const;
+	virtual std::string default_error_message(
+		unsigned int code, const std::string& phrase, const std::string& description
+	) const;
 
 	virtual void log_request(uint code, const std::string& info) const;
 
@@ -114,17 +145,17 @@ protected:
 	// This sends an error response (so it must be called before any
 	// output has been generated), logs the error, and finally sends
 	// a piece of HTML explaining the error to the user.
-	void send_error(int code, const std::string& message="", const std::string& explain="");
+	void send_error(unsigned int code, const std::string& message="", const std::string& explain="");
 
 	// Add the response header to the headers buffer and log the
 	// response code.
 	//
 	// Also send two standard headers with the server software
 	// version and the current date.
-	void send_response(int code, const std::string& message="");
+	void send_response(unsigned int code, const std::string& message="");
 
 	// Send the response header only.
-	void send_response_only(int code, const std::string& message="");
+	void send_response_only(unsigned int code, std::string message="");
 
 	// Send a MIME header to the headers buffer.
 	void send_header(const std::string& keyword, const std::string& value);
@@ -134,7 +165,7 @@ protected:
 
 	inline void flush_headers()
 	{
-		this->socket_io->write(this->headers_buffer.c_str(), this->headers_buffer.size());
+		this->stream->write(this->headers_buffer.c_str(), (ssize_t)this->headers_buffer.size());
 		this->headers_buffer = "";
 	}
 
@@ -142,7 +173,7 @@ protected:
 	[[nodiscard]]
 	inline std::string version_string() const
 	{
-		return this->server_version() + " " + this->sys_version;
+		return this->server_version() + " " + sys::compiler + "/" + sys::compiler_version;
 	}
 
 	// Return the current date and time formatted for a message header.
@@ -156,26 +187,27 @@ protected:
 	[[nodiscard]]
 	inline virtual std::string server_version() const
 	{
-		return "BaseHTTP/" + this->server_num_version;
+		return "BaseHTTPServer/" + this->server_version_number;
 	}
 
-public:
-	BaseHTTPRequestHandler(
-		int sock, std::string server_version, timeval timeout,
-		log::ILogger* logger, std::map<std::string, std::string> env
-	) : logger(std::move(logger)),
-		server_num_version(std::move(server_version)), close_connection(false), parsed(false), env(std::move(env))
+	virtual bool read_line(std::string& destination);
+
+	virtual bool write(const char* content, ssize_t count);
+
+	virtual bool parse_headers();
+
+	virtual inline void close_io() const
 	{
-		if (!this->logger)
+		if (!this->stream->close_reader())
 		{
-			throw NullPointerException("'logger' is nullptr", _ERROR_DETAILS_);
+			this->logger->error("failed to close socket reader: " + std::to_string(errno), _ERROR_DETAILS_);
 		}
 
-		this->socket_io = std::make_unique<SocketIO>(sock, timeout, std::make_unique<SelectSelector>(logger));
+		if (!this->stream->close_writer())
+		{
+			this->logger->error("failed to close socket writer: " + std::to_string(errno), _ERROR_DETAILS_);
+		}
 	}
-
-	// Handle multiple requests if necessary.
-	virtual void handle(net::HandlerFunc func);
 };
 
 __SERVER_END__

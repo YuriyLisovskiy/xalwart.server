@@ -14,48 +14,49 @@
 // Module definitions.
 #include "../_def_.h"
 
+// Server libraries.
+#include "../abc.h"
+
 
 __SERVER_BEGIN__
 
 // TODO: docs for 'BaseSocket'
-class BaseSocket
+class BaseSocket : public abc::ISocket
 {
-private:
-	bool _closed;
+public:
+	// Overridden method must call `BaseSocket::set_options()`
+	void set_options() override;
 
-private:
-	bool _set_blocking(bool blocking) const;
+	void listen() const override;
+
+	// Overridden method must call `BaseSocket::close()`
+	void close() override;
+
+	[[nodiscard]]
+	inline bool is_open() const override
+	{
+		return !this->_closed;
+	}
+
+	[[nodiscard]]
+	inline Socket raw_socket() const override
+	{
+		return this->socket;
+	}
 
 protected:
-	int sock;
+	Socket socket;
 	int family;
 	std::string address;
 	uint16_t port;
 
-protected:
 	explicit BaseSocket(const char* address, uint16_t port, int family);
-	virtual void bind() = 0;
 
-public:
-	// Overridden method must call `BaseSocket::set_options()`
-	virtual void set_options();
-
-	virtual void listen() const;
-
-	// Overridden method must call `BaseSocket::close()`
-	virtual void close();
+private:
+	bool _closed;
 
 	[[nodiscard]]
-	inline virtual bool is_closed() const
-	{
-		return this->_closed;
-	}
-
-	[[nodiscard]]
-	inline virtual int fd() const
-	{
-		return this->sock;
-	}
+	bool _set_blocking(bool blocking) const;
 };
 
 __SERVER_END__
