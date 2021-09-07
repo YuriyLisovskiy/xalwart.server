@@ -11,8 +11,8 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-// TODO: remove!
-#include <iostream>
+// Base libraries.
+#include <xalwart.base/net/_def_.h>
 
 // Server libraries.
 #include "../exceptions.h"
@@ -23,7 +23,8 @@ __SERVER_BEGIN__
 SocketIO::SocketIO(Socket file_descriptor, timeval timeout, std::unique_ptr<abc::ISelector> selector) :
 	_file_descriptor(file_descriptor),
 	_timeout(timeout),
-	_selector(std::move(selector))
+	_selector(std::move(selector)),
+	_limit(-1)
 {
 	this->_selector->register_read_event();
 }
@@ -38,6 +39,7 @@ SocketIO& SocketIO::operator= (SocketIO&& other) noexcept
 		this->_buffer = other._buffer;
 	}
 
+	this->_limit = other._limit;
 	return *this;
 }
 
@@ -51,7 +53,7 @@ ssize_t SocketIO::read_line(std::string& line)
 		bool is_read = true;
 		if (this->read_allowed())
 		{
-			is_read = this->read_bytes(MAX_BUFFER_SIZE);
+			is_read = this->read_bytes(net::DEFAULT_BUFFER_SIZE);
 		}
 
 		if (!is_read)
@@ -62,7 +64,7 @@ ssize_t SocketIO::read_line(std::string& line)
 		auto pos = this->_buffer.find("\r\n");
 		if (pos == std::string::npos)
 		{
-			total_bytes_read_count += this->append_from_buffer_to(line);
+			total_bytes_read_count += this->append_from_buffer_to(line, -1);
 		}
 		else
 		{
@@ -92,7 +94,7 @@ ssize_t SocketIO::read(std::string& buffer, size_t max_count)
 	return 0;
 }
 
-ssize_t SocketIO::peek(std::string& buffer, ssize_t max_count)
+ssize_t SocketIO::peek(std::string& buffer, size_t max_count)
 {
 	buffer.clear();
 	bool is_read = true;
@@ -109,7 +111,7 @@ ssize_t SocketIO::peek(std::string& buffer, ssize_t max_count)
 	return 0;
 }
 
-ssize_t SocketIO::write(const char* data, ssize_t count)
+ssize_t SocketIO::write(const char* data, size_t count)
 {
 	ssize_t bytes_sent_count;
 	bool try_again;
@@ -154,9 +156,9 @@ int SocketIO::shutdown(int how) const
 	return ::shutdown(this->file_descriptor(), how);
 }
 
-ssize_t SocketIO::append_from_buffer_to(std::string& buffer, ssize_t max_count, bool erase)
+ssize_t SocketIO::append_from_buffer_to(std::string& buffer, size_t max_count, bool erase)
 {
-	auto count = (max_count >= 0 && max_count < this->buffered()) ? max_count : this->buffered();
+	auto count = (max_count < this->buffered()) ? max_count : this->buffered();
 	buffer += this->_buffer.substr(0, count);
 	if (erase)
 	{
@@ -170,7 +172,7 @@ ssize_t SocketIO::append_from_buffer_to(std::string& buffer, ssize_t max_count, 
 		}
 	}
 
-	return count;
+	return (ssize_t)count;
 }
 
 bool SocketIO::read_bytes(size_t max_count)
@@ -178,24 +180,33 @@ bool SocketIO::read_bytes(size_t max_count)
 	bool try_again;
 	do
 	{
+		auto bytes_count = max_count;
+		if (this->has_limit())
+		{
+			bytes_count = std::min((size_t)this->limit(), bytes_count);
+		}
+
+		bytes_count = std::min(net::DEFAULT_BUFFER_SIZE, bytes_count);
+		if (bytes_count == 0)
+		{
+			throw EoF("end of socket stream", _ERROR_DETAILS_);
+		}
+
 		try_again = false;
 		if (!this->_selector->select(this->_timeout.tv_sec, this->_timeout.tv_usec))
 		{
 			throw SocketError(ETIMEDOUT, "Connection timed out", _ERROR_DETAILS_);
 		}
 
-		auto bytes_count = std::min(max_count - this->buffered(), MAX_BUFFER_SIZE);
-
-		std::cerr << "READING BYTES [before]: " << bytes_count << '\n';
-
-		char buf[MAX_BUFFER_SIZE];
+		char buf[net::DEFAULT_BUFFER_SIZE];
 		auto len = ::read(this->file_descriptor(), buf, bytes_count);
-
-		std::cerr << "READING BYTES: " << bytes_count << "..., LEN: " << len <<
-			", BUF SIZE: " << this->_buffer.size() << "\n";
-
 		if (len > 0)
 		{
+			if (this->has_limit())
+			{
+				this->_limit -= len;
+			}
+
 			this->_buffer += std::string(buf, len);
 			return true;
 		}

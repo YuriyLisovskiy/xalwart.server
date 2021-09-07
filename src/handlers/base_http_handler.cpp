@@ -267,7 +267,7 @@ void BaseHTTPRequestHandler::handle_one_request()
 	this->request_context.write = [this](const char* data, size_t n) -> bool {
 		return this->write(data, (ssize_t)n);
 	};
-	this->request_context.body = this->socket_stream;
+	this->request_context.body = this->stream;
 	this->log_request(this->handler_function(&this->request_context, this->environment), "");
 }
 
@@ -275,22 +275,26 @@ bool BaseHTTPRequestHandler::read_line(std::string& destination)
 {
 	try
 	{
-		this->socket_stream->read_line(destination);
+		this->stream->read_line(destination);
+		return true;
 	}
 	catch (const IOError& exc)
 	{
 		this->logger->error(exc);
-		return false;
+	}
+	catch (const EoF& exc)
+	{
+		this->logger->error(exc);
 	}
 
-	return true;
+	return false;
 }
 
 bool BaseHTTPRequestHandler::write(const char* content, ssize_t count)
 {
 	try
 	{
-		this->socket_stream->write(content, count);
+		this->stream->write(content, count);
 	}
 	catch (const IOError& exc)
 	{
@@ -306,7 +310,7 @@ bool BaseHTTPRequestHandler::parse_headers()
 	try
 	{
 		this->total_bytes_read_count += net::parse_headers(
-			this->request_context.headers, this->socket_stream.get(), this->max_header_length, this->max_headers_count
+			this->request_context.headers, this->stream.get(), this->max_header_length, this->max_headers_count
 		);
 		return true;
 	}
@@ -330,6 +334,11 @@ bool BaseHTTPRequestHandler::parse_headers()
 		this->close_connection = true;
 	}
 	catch (const ParseError& exc)
+	{
+		this->logger->error(exc);
+		this->close_connection = true;
+	}
+	catch (const EoF& exc)
 	{
 		this->logger->error(exc);
 		this->close_connection = true;

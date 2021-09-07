@@ -51,11 +51,11 @@ struct Context final
 
 	std::function<std::unique_ptr<abc::IRequestHandler>(
 		const Context&,
-		std::unique_ptr<io::IBufferedStream>,
+		std::unique_ptr<io::ILimitedBufferedStream>,
 		const std::map<std::string, std::string>& /* environment */
 	)> create_request_handler;
 
-	std::function<std::unique_ptr<io::IBufferedStream>(const Context& context, Socket)> create_stream = nullptr;
+	std::function<std::unique_ptr<io::ILimitedBufferedStream>(const Context& context, Socket)> create_stream = nullptr;
 
 	void set_defaults();
 

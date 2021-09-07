@@ -30,7 +30,7 @@ void Context::set_defaults()
 	{
 		this->create_request_handler = [](
 			const Context& context,
-			std::unique_ptr<io::IBufferedStream> stream,
+			std::unique_ptr<io::ILimitedBufferedStream> stream,
 			const std::map<std::string, std::string>& environment
 		) -> std::unique_ptr<abc::IRequestHandler> {
 			util::require_non_null(stream.get(), "'stream' is nullptr", _ERROR_DETAILS_);
@@ -44,7 +44,7 @@ void Context::set_defaults()
 
 	if (!this->create_stream)
 	{
-		this->create_stream = [](const Context& context, Socket socket) -> std::unique_ptr<io::IBufferedStream> {
+		this->create_stream = [](const Context& context, Socket socket) -> std::unique_ptr<io::ILimitedBufferedStream> {
 			timeval timeout{
 				.tv_sec = context.timeout_seconds,
 				.tv_usec = context.timeout_microseconds

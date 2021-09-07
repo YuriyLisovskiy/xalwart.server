@@ -42,13 +42,13 @@ class BaseHTTPRequestHandler : public abc::IRequestHandler
 {
 public:
 	BaseHTTPRequestHandler(
-		std::unique_ptr<io::IBufferedStream> socket_stream,
+		std::unique_ptr<io::ILimitedBufferedStream> stream,
 		size_t max_header_length, size_t max_headers_count,
 		std::string server_version, log::ILogger* logger,
 		std::map<std::string, std::string> environment,
 		HandlerFunction handler_function
 	) : logger(logger),
-	    socket_stream(std::move(socket_stream)),
+	    stream(std::move(stream)),
 	    max_header_length(max_header_length),
 	    max_headers_count(max_headers_count),
 	    server_version_number(std::move(server_version)),
@@ -74,7 +74,7 @@ protected:
 
 	net::RequestContext request_context;
 
-	std::shared_ptr<io::IBufferedStream> socket_stream;
+	std::shared_ptr<io::ILimitedBufferedStream> stream;
 
 	// The server software number version.
 	std::string server_version_number;
@@ -165,7 +165,7 @@ protected:
 
 	inline void flush_headers()
 	{
-		this->socket_stream->write(this->headers_buffer.c_str(), (ssize_t)this->headers_buffer.size());
+		this->stream->write(this->headers_buffer.c_str(), (ssize_t)this->headers_buffer.size());
 		this->headers_buffer = "";
 	}
 
@@ -198,12 +198,12 @@ protected:
 
 	virtual inline void close_io() const
 	{
-		if (!this->socket_stream->close_reader())
+		if (!this->stream->close_reader())
 		{
 			this->logger->error("failed to close socket reader: " + std::to_string(errno), _ERROR_DETAILS_);
 		}
 
-		if (!this->socket_stream->close_writer())
+		if (!this->stream->close_writer())
 		{
 			this->logger->error("failed to close socket writer: " + std::to_string(errno), _ERROR_DETAILS_);
 		}
