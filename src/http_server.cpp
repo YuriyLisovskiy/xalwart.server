@@ -58,7 +58,6 @@ HTTPServer::HTTPServer(Context context) : context(std::move(context))
 {
 	this->context.set_defaults();
 	this->context.validate();
-
 	this->_loop = std::make_unique<EventLoop>(this->context.workers_count);
 	this->_loop->add_event_listener<RequestEvent>(
 		[this](auto&& loop, auto&& event) {

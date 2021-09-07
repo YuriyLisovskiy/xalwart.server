@@ -75,8 +75,7 @@ void BaseHTTPRequestHandler::log_request(uint code, const std::string& info) con
 	}
 
 	this->logger->print(
-		"[" + dt::Datetime::now().strftime("%d/%b/%Y %T") + "] \"" + message + "\" " + std::to_string(code),
-		text_color
+		"[" + dt::Datetime::now().strftime("%d/%b/%Y %T") + "] \"" + message + "\" " + std::to_string(code), text_color
 	);
 }
 
