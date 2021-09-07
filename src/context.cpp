@@ -6,9 +6,6 @@
 
 #include "./context.h"
 
-// C++ libraries.
-#include <ctime>
-
 // Base libraries.
 #include <xalwart.base/exceptions.h>
 
@@ -48,7 +45,7 @@ void Context::set_defaults()
 	if (!this->create_stream)
 	{
 		this->create_stream = [](const Context& context, Socket socket) -> std::unique_ptr<io::ILimitedBufferedStream> {
-			timeval timeout{
+			struct timeval timeout{
 				.tv_sec = context.timeout_seconds,
 				.tv_usec = context.timeout_microseconds
 			};

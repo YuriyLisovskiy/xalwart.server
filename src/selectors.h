@@ -8,6 +8,11 @@
 
 #pragma once
 
+// C++ libraries.
+#if defined(__linux__) || defined(__APPLE__)
+#include <sys/select.h>
+#endif
+
 // Base libraries.
 #include <xalwart.base/logger.h>
 
