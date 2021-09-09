@@ -112,7 +112,7 @@ protected:
 		unsigned int code, const std::string& phrase, const std::string& description
 	) const;
 
-	virtual void log_request(uint code, const std::string& info) const;
+	virtual void log_request(net::StatusCode code, const std::string& info) const;
 
 	virtual void cleanup_headers();
 

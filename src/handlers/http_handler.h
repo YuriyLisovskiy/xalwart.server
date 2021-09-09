@@ -41,7 +41,7 @@ public:
 			logger, environment, std::move(handler_function)
 		)
 	{
-		util::require_non_null(this->stream.get(), "'socket_stream' is nullptr", _ERROR_DETAILS_);
+		require_non_null(this->stream.get(), "'socket_stream' is nullptr", _ERROR_DETAILS_);
 	}
 
 	inline void handle() override

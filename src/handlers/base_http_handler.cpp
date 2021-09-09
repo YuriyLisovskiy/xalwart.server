@@ -52,7 +52,7 @@ std::string BaseHTTPRequestHandler::default_error_message(
 		"</html>";
 }
 
-void BaseHTTPRequestHandler::log_request(uint code, const std::string& info) const
+void BaseHTTPRequestHandler::log_request(net::StatusCode code, const std::string& info) const
 {
 	log::Logger::Color text_color = log::Logger::Color::Green;
 	if (code >= 400)
@@ -267,7 +267,8 @@ void BaseHTTPRequestHandler::handle_one_request()
 		return this->write(data, (ssize_t)n);
 	};
 	this->request_context.body = this->stream;
-	this->log_request(this->handler_function(&this->request_context, this->environment), "");
+	auto status_code = this->handler_function(&this->request_context, this->environment);
+	this->log_request(status_code, "");
 }
 
 bool BaseHTTPRequestHandler::read_line(std::string& destination)

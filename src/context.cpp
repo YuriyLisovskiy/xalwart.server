@@ -33,7 +33,7 @@ void Context::set_defaults()
 			std::unique_ptr<io::ILimitedBufferedStream> stream,
 			const std::map<std::string, std::string>& environment
 		) -> std::unique_ptr<abc::IRequestHandler> {
-			util::require_non_null(stream.get(), "'stream' is nullptr", _ERROR_DETAILS_);
+			require_non_null(stream.get(), "'stream' is nullptr", _ERROR_DETAILS_);
 			return std::make_unique<HTTPRequestHandler>(
 				std::move(stream), v::version.to_string(),
 				context.max_header_length, context.max_headers_count,
@@ -56,8 +56,8 @@ void Context::set_defaults()
 
 void Context::validate() const
 {
-	util::require_non_null(this->logger, "'logger' is nullptr", _ERROR_DETAILS_);
-	util::require_non_null(this->timezone.get(), "'timezone' is nullptr", _ERROR_DETAILS_);
+	require_non_null(this->logger, "'logger' is nullptr", _ERROR_DETAILS_);
+	require_non_null(this->timezone.get(), "'timezone' is nullptr", _ERROR_DETAILS_);
 	if (!this->handler)
 	{
 		throw NullPointerException("'handler' function is nullptr", _ERROR_DETAILS_);
