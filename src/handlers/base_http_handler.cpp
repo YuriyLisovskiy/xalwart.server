@@ -263,9 +263,7 @@ void BaseHTTPRequestHandler::handle_one_request()
 	}
 
 	this->cleanup_headers();
-	this->request_context.write = [this](const char* data, size_t n) -> bool {
-		return this->write(data, (ssize_t)n);
-	};
+	this->request_context.response_writer = this->stream;
 	this->request_context.body = this->stream;
 	auto status_code = this->handler_function(&this->request_context, this->environment);
 	this->log_request(status_code, "");
