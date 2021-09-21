@@ -142,8 +142,8 @@ bool BaseHTTPRequestHandler::parse_request()
 		const char* minor_version_string = version_number[1].c_str();
 
 		this->request_context.protocol_version = {
-			.major = std::stoul(major_version_string, nullptr, 10),
-			.minor = std::stoul(minor_version_string, nullptr, 10)
+			.major = (unsigned short)std::stoul(major_version_string, nullptr, 10),
+			.minor = (unsigned short)std::stoul(minor_version_string, nullptr, 10)
 		};
 		if (!major_version_string || !minor_version_string)
 		{
