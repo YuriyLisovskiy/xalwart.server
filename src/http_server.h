@@ -15,7 +15,7 @@
 #include <map>
 
 // Base libraries.
-#include <xalwart.base/event_loop.h>
+#include <xalwart.base/workers/abstract_worker.h>
 #include <xalwart.base/net/abc.h>
 #include <xalwart.base/logger.h>
 
@@ -90,23 +90,23 @@ protected:
 	std::map<std::string, std::string> environment;
 	Context context;
 
-	struct RequestEvent : public Event
+struct RequestTask : public AbstractWorker::Task
 	{
 		Client client;
 
-		explicit inline RequestEvent(Client client) : client(client)
+		explicit inline RequestTask(Client client) : client(client)
 		{
 		}
 	};
 
-	void handle_event(EventLoop& loop, RequestEvent& event);
+	void handle_event(AbstractWorker* worker, RequestTask& task);
 
-	void event_function(EventLoop& loop, RequestEvent& event);
+	void event_function(AbstractWorker* worker, RequestTask& task);
 
 	void initialize_environment() override;
 
 private:
-	std::unique_ptr<EventLoop> _loop;
+	std::unique_ptr<AbstractWorker> _worker;
 	std::unique_ptr<abc::ISocket> _socket;
 
 	[[nodiscard]]

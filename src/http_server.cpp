@@ -8,6 +8,7 @@
 
 // Base libraries.
 #include <xalwart.base/net/meta.h>
+#include <xalwart.base/workers/threaded_worker.h>
 
 // Server libraries.
 #include "./utility.h"
@@ -16,12 +17,12 @@
 
 __SERVER_BEGIN__
 
-void HTTPServer::handle_event(EventLoop& loop, RequestEvent& event)
+void HTTPServer::handle_event(AbstractWorker*, RequestTask& task)
 {
 	Measure measure;
 	measure.start();
 
-	auto socket_stream = this->context.create_stream(this->context, event.client.socket());
+	auto socket_stream = this->context.create_stream(this->context, task.client.socket());
 	auto request_handler = this->context.create_request_handler(
 		this->context, std::move(socket_stream), this->environment
 	);
@@ -36,20 +37,20 @@ void HTTPServer::handle_event(EventLoop& loop, RequestEvent& event)
 	this->context.logger->debug("Time elapsed: " + std::to_string(measure.elapsed()) + " milliseconds");
 }
 
-void HTTPServer::event_function(EventLoop& loop, RequestEvent& event)
+void HTTPServer::event_function(AbstractWorker* worker, RequestTask& task)
 {
 	try
 	{
-		this->handle_event(loop, event);
+		this->handle_event(worker, task);
 	}
 	catch (const ServerError& exc)
 	{
-		this->_shutdown_client(event.client);
+		this->_shutdown_client(task.client);
 		this->context.logger->error(exc);
 	}
 	catch (const std::exception& exc)
 	{
-		this->_shutdown_client(event.client);
+		this->_shutdown_client(task.client);
 		this->context.logger->error(exc.what(), _ERROR_DETAILS_);
 	}
 }
@@ -58,10 +59,10 @@ HTTPServer::HTTPServer(Context context) : context(std::move(context))
 {
 	this->context.set_defaults();
 	this->context.validate();
-	this->_loop = std::make_unique<EventLoop>(this->context.workers_count);
-	this->_loop->add_event_listener<RequestEvent>(
-		[this](auto&& loop, auto&& event) {
-			this->event_function(std::forward<decltype(loop)>(loop), std::forward<decltype(event)>(event));
+	this->_worker = std::make_unique<ThreadedWorker>(this->context.workers_count);
+	this->_worker->add_task_listener<RequestTask>(
+		[this](auto&& worker, auto&& task) {
+			this->event_function(std::forward<decltype(worker)>(worker), std::forward<decltype(task)>(task));
 		}
 	);
 }
@@ -95,7 +96,7 @@ void HTTPServer::listen(const std::string& message)
 			auto client = this->_accept_client();
 			if (this->_socket->is_open() && client.is_valid())
 			{
-				this->_loop->inject_event<RequestEvent>(client);
+				this->_worker->inject_task<RequestTask>(client);
 			}
 		}
 	}
@@ -103,7 +104,7 @@ void HTTPServer::listen(const std::string& message)
 
 void HTTPServer::close()
 {
-	this->_loop->wait_for_threads();
+	this->_worker->stop();
 	util::close_socket(this->_socket.get(), this->context.logger);
 }
 
