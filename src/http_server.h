@@ -60,7 +60,7 @@ private:
 
 // TESTME: HTTPServer
 // TODO: docs for 'HTTPServer'
-class HTTPServer : public net::abc::IServer
+class HTTPServer : public net::abc::Server
 {
 public:
 	explicit HTTPServer(Context context);
@@ -75,6 +75,12 @@ public:
 	inline std::map<std::string, std::string> get_environment() const override
 	{
 		return this->environment;
+	}
+
+	[[nodiscard]]
+	inline bool is_development() const override
+	{
+		return true;
 	}
 
 protected:
