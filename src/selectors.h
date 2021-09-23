@@ -14,7 +14,7 @@
 #endif
 
 // Base libraries.
-#include <xalwart.base/logger.h>
+#include <xalwart.base/abc/base.h>
 
 // Module definitions.
 #include "./_def_.h"
@@ -29,7 +29,7 @@ __SERVER_BEGIN__
 class Selector : public abc::ISelector
 {
 public:
-	explicit Selector(Socket socket, log::ILogger* logger);
+	explicit Selector(Socket socket, xw::abc::Logger* logger);
 
 	void register_read_event() override;
 
@@ -38,7 +38,7 @@ public:
 	bool select(uint timeout_seconds, uint timeout_microseconds) override;
 
 protected:
-	log::ILogger* logger;
+	xw::abc::Logger* logger;
 	fd_set readers{};
 	fd_set writers{};
 	Socket socket;

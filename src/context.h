@@ -16,7 +16,7 @@
 
 // Base libraries.
 #include <xalwart.base/exceptions.h>
-#include <xalwart.base/logger.h>
+#include <xalwart.base/abc/base.h>
 #include <xalwart.base/datetime.h>
 #include <xalwart.base/utility.h>
 #include <xalwart.base/net/request_context.h>
@@ -34,7 +34,7 @@ __SERVER_BEGIN__
 // TODO: docs for 'Context'
 struct Context final
 {
-	log::ILogger* logger = nullptr;
+	xw::abc::Logger* logger = nullptr;
 	std::shared_ptr<dt::Timezone> timezone = std::make_shared<dt::Timezone>(dt::Timezone::UTC);
 	size_t max_headers_count = 100;
 	size_t max_header_length = 65535;

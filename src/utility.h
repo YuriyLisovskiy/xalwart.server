@@ -20,7 +20,7 @@
 #endif
 
 // Base libraries.
-#include <xalwart.base/logger.h>
+#include <xalwart.base/abc/base.h>
 
 // Module definitions.
 #include "./_def_.h"
@@ -44,15 +44,17 @@ inline bool is_ipv6(const std::string& addr)
 extern std::unique_ptr<abc::ISocket> create_server_socket(const std::string& address, uint16_t port);
 
 // TODO: docs for 'create_socket'
-extern std::unique_ptr<abc::ISocket> create_server_socket(const std::string& address, uint16_t port, log::ILogger* logger);
+extern std::unique_ptr<abc::ISocket> create_server_socket(
+	const std::string& address, uint16_t port, xw::abc::Logger* logger
+);
 
 // TODO: docs for 'create_socket'
 extern std::unique_ptr<abc::ISocket> create_server_socket(
-	const std::string& address, uint16_t port, size_t retries_count, log::ILogger* logger
+	const std::string& address, uint16_t port, size_t retries_count, xw::abc::Logger* logger
 );
 
 // TODO: docs for 'close_socket'
-extern void close_socket(abc::ISocket* socket, log::ILogger* logger);
+extern void close_socket(abc::ISocket* socket, xw::abc::Logger* logger);
 
 // Wrapper for standard gethostname(char *__name, size_t __len) function.
 extern std::string get_host_name();

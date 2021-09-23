@@ -8,10 +8,11 @@
 
 // C++ libraries.
 #include <chrono>
+#include <thread>
+#include <unistd.h>
 
 // Base libraries.
 #include <xalwart.base/string_utils.h>
-#include <xalwart.base/utility.h>
 
 // Server libraries.
 #include "./sockets/tcp.h"
@@ -47,7 +48,7 @@ std::unique_ptr<abc::ISocket> create_server_socket(const std::string& address, u
 	return std::make_unique<UnixSocket>(address.c_str());
 }
 
-std::unique_ptr<abc::ISocket> create_server_socket(const std::string& address, uint16_t port, log::ILogger* logger)
+std::unique_ptr<abc::ISocket> create_server_socket(const std::string& address, uint16_t port, xw::abc::Logger* logger)
 {
 	require_non_null(logger, "'logger' is nullptr", _ERROR_DETAILS_);
 	try
@@ -71,7 +72,7 @@ std::unique_ptr<abc::ISocket> create_server_socket(const std::string& address, u
 }
 
 std::unique_ptr<abc::ISocket> create_server_socket(
-	const std::string& address, uint16_t port, size_t retries_count, log::ILogger* logger
+	const std::string& address, uint16_t port, size_t retries_count, xw::abc::Logger* logger
 )
 {
 	require_non_null(logger, "'logger' is nullptr", _ERROR_DETAILS_);
@@ -95,7 +96,7 @@ std::unique_ptr<abc::ISocket> create_server_socket(
 	return server_socket;
 }
 
-void close_socket(abc::ISocket* socket, log::ILogger* logger)
+void close_socket(abc::ISocket* socket, xw::abc::Logger* logger)
 {
 	try
 	{

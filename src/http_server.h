@@ -58,12 +58,12 @@ private:
 	Socket _socket;
 };
 
-// TESTME: HTTPServer
-// TODO: docs for 'HTTPServer'
-class HTTPServer : public net::abc::Server
+// TESTME: DevelopmentHTTPServer
+// TODO: docs for 'DevelopmentHTTPServer'
+class DevelopmentHTTPServer : public net::abc::Server
 {
 public:
-	explicit HTTPServer(Context context);
+	explicit DevelopmentHTTPServer(Context context);
 
 	void bind(const std::string& address, uint16_t port) override;
 

@@ -17,7 +17,7 @@
 
 __SERVER_BEGIN__
 
-void HTTPServer::handle_event(AbstractWorker*, RequestTask& task)
+void DevelopmentHTTPServer::handle_event(AbstractWorker*, RequestTask& task)
 {
 	Measure measure;
 	measure.start();
@@ -37,7 +37,7 @@ void HTTPServer::handle_event(AbstractWorker*, RequestTask& task)
 	this->context.logger->debug("Time elapsed: " + std::to_string(measure.elapsed()) + " milliseconds");
 }
 
-void HTTPServer::event_function(AbstractWorker* worker, RequestTask& task)
+void DevelopmentHTTPServer::event_function(AbstractWorker* worker, RequestTask& task)
 {
 	try
 	{
@@ -55,7 +55,7 @@ void HTTPServer::event_function(AbstractWorker* worker, RequestTask& task)
 	}
 }
 
-HTTPServer::HTTPServer(Context context) : context(std::move(context))
+DevelopmentHTTPServer::DevelopmentHTTPServer(Context context) : context(std::move(context))
 {
 	this->context.set_defaults();
 	this->context.validate();
@@ -67,7 +67,7 @@ HTTPServer::HTTPServer(Context context) : context(std::move(context))
 	);
 }
 
-void HTTPServer::bind(const std::string& address, uint16_t port)
+void DevelopmentHTTPServer::bind(const std::string& address, uint16_t port)
 {
 	this->_socket = util::create_server_socket(
 		address, port, this->context.socket_creation_retries_count, this->context.logger
@@ -79,7 +79,7 @@ void HTTPServer::bind(const std::string& address, uint16_t port)
 	this->initialize_environment();
 }
 
-void HTTPServer::listen(const std::string& message)
+void DevelopmentHTTPServer::listen(const std::string& message)
 {
 	this->_socket->listen();
 	auto selector = this->context.create_selector(this->context, this->_socket->raw_socket());
@@ -102,19 +102,19 @@ void HTTPServer::listen(const std::string& message)
 	}
 }
 
-void HTTPServer::close()
+void DevelopmentHTTPServer::close()
 {
 	this->_worker->stop();
 	util::close_socket(this->_socket.get(), this->context.logger);
 }
 
-void HTTPServer::initialize_environment()
+void DevelopmentHTTPServer::initialize_environment()
 {
 	this->environment.insert(std::make_pair(net::meta::SERVER_NAME, this->server_name));
 	this->environment.insert(std::make_pair(net::meta::SERVER_PORT, std::to_string(this->server_port)));
 }
 
-Client HTTPServer::_accept_client() const
+Client DevelopmentHTTPServer::_accept_client() const
 {
 	auto client = Client{::accept(this->_socket->raw_socket(), nullptr, nullptr)};
 	if (!client.is_valid())
@@ -142,7 +142,7 @@ Client HTTPServer::_accept_client() const
 	return client;
 }
 
-void HTTPServer::_shutdown_client(Client client) const
+void DevelopmentHTTPServer::_shutdown_client(Client client) const
 {
 	if (shutdown(client.socket(), SHUT_RDWR))
 	{

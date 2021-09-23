@@ -21,7 +21,7 @@
 #include <xalwart.base/sys.h>
 #include <xalwart.base/net/request_context.h>
 #include <xalwart.base/utility.h>
-#include <xalwart.base/logger.h>
+#include <xalwart.base/abc/base.h>
 #include <xalwart.base/io.h>
 
 // Module definitions.
@@ -44,7 +44,7 @@ public:
 	BaseHTTPRequestHandler(
 		std::unique_ptr<io::ILimitedBufferedStream> stream,
 		size_t max_header_length, size_t max_headers_count,
-		std::string server_version, log::ILogger* logger,
+		std::string server_version, xw::abc::Logger* logger,
 		std::map<std::string, std::string> environment,
 		HandlerFunction handler_function
 	) : logger(logger),
@@ -68,7 +68,7 @@ public:
 	void handle() override;
 
 protected:
-	log::ILogger* logger;
+	xw::abc::Logger* logger;
 
 	HandlerFunction handler_function;
 

@@ -54,14 +54,14 @@ std::string BaseHTTPRequestHandler::default_error_message(
 
 void BaseHTTPRequestHandler::log_request(net::StatusCode code, const std::string& info) const
 {
-	log::Logger::Color text_color = log::Logger::Color::Green;
+	xw::abc::Logger::Color text_color = xw::abc::Logger::Color::Green;
 	if (code >= 400)
 	{
-		text_color = log::Logger::Color::Yellow;
+		text_color = xw::abc::Logger::Color::Yellow;
 	}
 	else if (code >= 500)
 	{
-		text_color = log::Logger::Color::Red;
+		text_color = xw::abc::Logger::Color::Red;
 	}
 
 	std::string message;

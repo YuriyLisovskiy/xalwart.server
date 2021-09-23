@@ -34,7 +34,7 @@ public:
 		std::unique_ptr<io::ILimitedBufferedStream> stream,
 		const std::string& server_version,
 		size_t max_header_length, size_t max_headers_count,
-		log::ILogger* logger, const std::map<std::string, std::string>& environment,
+		xw::abc::Logger* logger, const std::map<std::string, std::string>& environment,
 		HandlerFunction handler_function
 	) : BaseHTTPRequestHandler(
 			std::move(stream), max_header_length, max_headers_count, server_version,
