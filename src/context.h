@@ -20,6 +20,7 @@
 #include <xalwart.base/datetime.h>
 #include <xalwart.base/utility.h>
 #include <xalwart.base/net/request_context.h>
+#include <xalwart.base/workers/abstract_worker.h>
 
 // Module definitions.
 #include "./_def_.h"
@@ -38,10 +39,10 @@ struct Context final
 	std::shared_ptr<dt::Timezone> timezone = std::make_shared<dt::Timezone>(dt::Timezone::UTC);
 	size_t max_headers_count = 100;
 	size_t max_header_length = 65535;
-	size_t workers_count = 3;
 	time_t timeout_seconds = 5;
 	time_t timeout_microseconds = 0;
 	size_t socket_creation_retries_count = 5;
+	std::unique_ptr<AbstractWorker> worker = nullptr;
 
 	std::function<net::StatusCode(
 		net::RequestContext* /* context */, const std::map<std::string, std::string>& /* environment */

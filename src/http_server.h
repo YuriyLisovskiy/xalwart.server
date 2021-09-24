@@ -15,7 +15,6 @@
 #include <map>
 
 // Base libraries.
-#include <xalwart.base/workers/abstract_worker.h>
 #include <xalwart.base/net/abc.h>
 #include <xalwart.base/logger.h>
 
@@ -106,7 +105,6 @@ struct RequestTask : public AbstractWorker::Task
 	void initialize_environment() override;
 
 private:
-	std::unique_ptr<AbstractWorker> _worker;
 	std::unique_ptr<abc::ISocket> _socket;
 
 	[[nodiscard]]

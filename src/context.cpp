@@ -58,6 +58,7 @@ void Context::validate() const
 {
 	require_non_null(this->logger, "'logger' is nullptr", _ERROR_DETAILS_);
 	require_non_null(this->timezone.get(), "'timezone' is nullptr", _ERROR_DETAILS_);
+	require_non_null(this->worker.get(), "'worker' is nullptr", _ERROR_DETAILS_);
 	if (!this->handler)
 	{
 		throw NullPointerException("'handler' function is nullptr", _ERROR_DETAILS_);

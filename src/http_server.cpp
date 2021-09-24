@@ -8,7 +8,6 @@
 
 // Base libraries.
 #include <xalwart.base/net/meta.h>
-#include <xalwart.base/workers/threaded_worker.h>
 
 // Server libraries.
 #include "./utility.h"
@@ -59,8 +58,7 @@ DevelopmentHTTPServer::DevelopmentHTTPServer(Context context) : context(std::mov
 {
 	this->context.set_defaults();
 	this->context.validate();
-	this->_worker = std::make_unique<ThreadedWorker>(this->context.workers_count);
-	this->_worker->add_task_listener<RequestTask>(
+	this->context.worker->add_task_listener<RequestTask>(
 		[this](auto&& worker, auto&& task) {
 			this->event_function(std::forward<decltype(worker)>(worker), std::forward<decltype(task)>(task));
 		}
@@ -96,7 +94,7 @@ void DevelopmentHTTPServer::listen(const std::string& message)
 			auto client = this->_accept_client();
 			if (this->_socket->is_open() && client.is_valid())
 			{
-				this->_worker->inject_task<RequestTask>(client);
+				this->context.worker->inject_task<RequestTask>(client);
 			}
 		}
 	}
@@ -104,7 +102,7 @@ void DevelopmentHTTPServer::listen(const std::string& message)
 
 void DevelopmentHTTPServer::close()
 {
-	this->_worker->stop();
+	this->context.worker->stop();
 	util::close_socket(this->_socket.get(), this->context.logger);
 }
 
