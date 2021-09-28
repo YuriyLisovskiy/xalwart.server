@@ -29,7 +29,7 @@ __SERVER_BEGIN__
 class Selector : public abc::ISelector
 {
 public:
-	explicit Selector(Socket socket, xw::abc::Logger* logger);
+	explicit Selector(Socket socket, xw::abc::ILogger* logger);
 
 	void register_read_event() override;
 
@@ -38,7 +38,7 @@ public:
 	bool select(uint timeout_seconds, uint timeout_microseconds) override;
 
 protected:
-	xw::abc::Logger* logger;
+	xw::abc::ILogger* logger;
 	fd_set readers{};
 	fd_set writers{};
 	Socket socket;

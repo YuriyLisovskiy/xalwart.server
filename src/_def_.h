@@ -12,24 +12,17 @@
 #include <chrono>
 
 // Module definitions.
-#include <xalwart.base/_def_.h>
+#include <xalwart.base/abc/_def_.h>
 
 
 // xw::server
 #define __SERVER_BEGIN__ __MAIN_NAMESPACE_BEGIN__ namespace server {
 #define __SERVER_END__ } __MAIN_NAMESPACE_END__
 
-// xw::server::abc
-#define __SERVER_ABC_BEGIN__ __SERVER_BEGIN__ namespace abc {
-#define __SERVER_ABC_END__ } __SERVER_END__
-
 // xw::server::util
 #define __SERVER_UTIL_BEGIN__ __SERVER_BEGIN__ namespace util {
 #define __SERVER_UTIL_END__ } __SERVER_END__
 
-// xw::server::parser
-#define __SERVER_PARSER_BEGIN__ __SERVER_BEGIN__ namespace parser {
-#define __SERVER_PARSER_END__ } __SERVER_END__
 
 __SERVER_BEGIN__
 

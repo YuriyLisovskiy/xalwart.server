@@ -35,7 +35,7 @@ __SERVER_BEGIN__
 // TODO: docs for 'Context'
 struct Context final
 {
-	xw::abc::Logger* logger = nullptr;
+	xw::abc::ILogger* logger = nullptr;
 	std::shared_ptr<dt::Timezone> timezone = std::make_shared<dt::Timezone>(dt::Timezone::UTC);
 	size_t max_headers_count = 100;
 	size_t max_header_length = 65535;

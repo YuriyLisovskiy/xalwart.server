@@ -17,7 +17,7 @@
 
 __SERVER_BEGIN__
 
-Selector::Selector(Socket socket, xw::abc::Logger* logger) : logger(logger), socket(socket)
+Selector::Selector(Socket socket, xw::abc::ILogger* logger) : logger(logger), socket(socket)
 {
 	if (!this->logger)
 	{

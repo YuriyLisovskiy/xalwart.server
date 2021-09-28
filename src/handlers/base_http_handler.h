@@ -44,7 +44,7 @@ public:
 	BaseHTTPRequestHandler(
 		std::unique_ptr<io::ILimitedBufferedStream> stream,
 		size_t max_header_length, size_t max_headers_count,
-		std::string server_version, xw::abc::Logger* logger,
+		std::string server_version, xw::abc::ILogger* logger,
 		std::map<std::string, std::string> environment,
 		HandlerFunction handler_function
 	) : logger(logger),
@@ -68,7 +68,7 @@ public:
 	void handle() override;
 
 protected:
-	xw::abc::Logger* logger;
+	xw::abc::ILogger* logger;
 
 	HandlerFunction handler_function;
 

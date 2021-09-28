@@ -15,7 +15,7 @@
 #include <map>
 
 // Base libraries.
-#include <xalwart.base/net/abc.h>
+#include <xalwart.base/abc/server.h>
 #include <xalwart.base/logger.h>
 
 // Module definitions.
@@ -59,7 +59,7 @@ private:
 
 // TESTME: DevelopmentHTTPServer
 // TODO: docs for 'DevelopmentHTTPServer'
-class DevelopmentHTTPServer : public net::abc::Server
+class DevelopmentHTTPServer : public abc::IServer
 {
 public:
 	explicit DevelopmentHTTPServer(Context context);

@@ -45,16 +45,16 @@ extern std::unique_ptr<abc::ISocket> create_server_socket(const std::string& add
 
 // TODO: docs for 'create_socket'
 extern std::unique_ptr<abc::ISocket> create_server_socket(
-	const std::string& address, uint16_t port, xw::abc::Logger* logger
+	const std::string& address, uint16_t port, xw::abc::ILogger* logger
 );
 
 // TODO: docs for 'create_socket'
 extern std::unique_ptr<abc::ISocket> create_server_socket(
-	const std::string& address, uint16_t port, size_t retries_count, xw::abc::Logger* logger
+	const std::string& address, uint16_t port, size_t retries_count, xw::abc::ILogger* logger
 );
 
 // TODO: docs for 'close_socket'
-extern void close_socket(abc::ISocket* socket, xw::abc::Logger* logger);
+extern void close_socket(abc::ISocket* socket, xw::abc::ILogger* logger);
 
 // Wrapper for standard gethostname(char *__name, size_t __len) function.
 extern std::string get_host_name();
