@@ -47,7 +47,7 @@ void Context::set_defaults()
 		this->create_stream = [](const Context& context, Socket socket) -> std::unique_ptr<io::ILimitedBufferedStream> {
 			struct timeval timeout{
 				.tv_sec = context.timeout_seconds,
-				.tv_usec = context.timeout_microseconds
+				.tv_usec = (int)context.timeout_microseconds
 			};
 			return std::make_unique<SocketIO>(socket, timeout, context.create_selector(context, socket));
 		};

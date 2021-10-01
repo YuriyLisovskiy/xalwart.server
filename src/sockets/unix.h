@@ -8,9 +8,11 @@
 
 #pragma once
 
-#ifdef __unix__
+#include <xalwart.base/sys.h>
 
-// C++ libraries.
+#if defined(__unix__) || defined(__mac__)
+
+// STL libraries.
 #include <sys/socket.h>
 
 // Module definitions.
