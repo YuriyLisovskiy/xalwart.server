@@ -8,8 +8,11 @@
 
 #pragma once
 
+// Base library.
+#include <xalwart.base/sys.h>
+
 // C++ libraries.
-#if defined(__linux__) || defined(__APPLE__)
+#if defined(__linux__) || defined(__mac__)
 #include <sys/socket.h>
 #elif _WIN32
 #include <winsock32.h>

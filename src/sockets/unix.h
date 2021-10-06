@@ -10,7 +10,7 @@
 
 #include <xalwart.base/sys.h>
 
-#if defined(__unix__) || defined(__mac__)
+#if defined(__linux__) || defined(__mac__)
 
 // STL libraries.
 #include <sys/socket.h>
@@ -40,4 +40,4 @@ protected:
 
 __SERVER_END__
 
-#endif // __unix__
+#endif // __linux__ || __mac__
