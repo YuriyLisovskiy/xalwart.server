@@ -7,8 +7,8 @@ on:
       - dev
       - release
 jobs:
-  compile-lib:
-    name: Build the library and upload it to artifacts
+  linux-build:
+    name: [Linux] Build the library
     runs-on: ubuntu-18.04
     strategy:
       fail-fast: false
@@ -43,3 +43,38 @@ jobs:
           name: xalwart.server-${{ matrix.os.name }}-${{ matrix.compiler }}-${{ matrix.compiler_version }}
           path: xalwart.server-${{ matrix.os.name }}-${{ matrix.compiler }}-${{ matrix.compiler_version }}
           retention-days: 90
+  macos-build:
+    name: [macOS] Build the library
+    runs-on: ${{ matrix.os_name }}-${{ matrix.os_version }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os_name: [ macos ]
+        os_version: [ 11 ]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Download Base Library
+        uses: dawidd6/action-download-artifact@v2
+        with:
+          github_token: ${{ secrets.GH_ACCESS_TOKEN }}
+          workflow: ci.yml
+          branch: dev
+          name: xalwart.base-${{ matrix.os_name }}-${{ matrix.os_version }}
+          path: /usr/local
+          repo: YuriyLisovskiy/xalwart.base
+      - name: Build the Library
+        run: |
+          mkdir build && cd build
+          cmake -D CMAKE_BUILD_TYPE=Release ..
+          sudo mkdir -p /usr/local/include && sudo mkdir -p /usr/local/lib
+          make xalwart.server && sudo make install
+          cd && mkdir ~/target-build && cd ~/target-build
+          mkdir -p include && mkdir -p lib && cd
+          sudo cp -r /usr/local/include/xalwart.server ~/target-build/include
+          sudo cp -r /usr/local/lib/libxalwart.server* ~/target-build/lib
+      - name: Upload the Artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: xalwart.server-${{ matrix.os_name }}-${{ matrix.os_version }}
+          path: ~/target-build
+          retention-days: 60

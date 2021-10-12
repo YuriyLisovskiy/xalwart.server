@@ -4,7 +4,7 @@ set(CMAKE_CXX_STANDARD 20)
 
 set(FRAMEWORK_NAME "xalwart")
 set(LIBRARY_NAME "${FRAMEWORK_NAME}.server")
-set(LIBRARY_VERSION "0.1.0")
+set(LIBRARY_VERSION "0.0.0")
 
 project(${LIBRARY_NAME})
 
@@ -35,15 +35,7 @@ if(NOT ${SOURCES_COUNT})
 endif()
 
 # Build shared library.
-if (NOT LIB_SHARED)
-    set(LIB_SHARED no)
-endif()
-
-if (${LIB_SHARED})
-    add_library(${LIBRARY_NAME} SHARED ${SOURCES})
-else()
-    add_library(${LIBRARY_NAME} STATIC ${SOURCES})
-endif()
+add_library(${LIBRARY_NAME} ${SOURCES})
 
 target_link_libraries(${LIBRARY_NAME} PUBLIC ${FRAMEWORK_NAME}.base)
 

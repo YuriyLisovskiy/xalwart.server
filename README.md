@@ -11,10 +11,14 @@
 | Master branch: | [![Build](https://github.com/YuriyLisovskiy/xalwart.server/actions/workflows/build.yml/badge.svg?branch=master)](https://github.com/YuriyLisovskiy/xalwart.server/actions/workflows/build.yml?query=branch%3Amaster) |
 
 ## Requirements
-The following compilers are tested with the CI system, and are known to work
-on Alpine Linux and Ubuntu.
+The following compilers are tested with the CI system, and are known to work on:
+
+Alpine Linux and Ubuntu:
 * g++ 10 or later
 * clang++ 10 or later
+
+macOS:
+* clang++ 12 or later
 
 To build the library from source CMake 3.12 or later is required.
 
@@ -27,13 +31,9 @@ The following library is required:
 ```bash
 git clone https://github.com/YuriyLisovskiy/xalwart.server.git
 cd xalwart.server
-mkdir build
-cd build
+mkdir build && cd build
 cmake -D CMAKE_BUILD_TYPE=Release ..
-make
-
-# for linux:
-make install
+make xalwart.server && make install
 ```
 
 ## Example
