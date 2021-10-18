@@ -8,7 +8,7 @@ on:
       - release
 jobs:
   linux-build:
-    name: [Linux] Build the library
+    name: '[Linux] Build the library'
     runs-on: ubuntu-18.04
     strategy:
       fail-fast: false
@@ -44,7 +44,7 @@ jobs:
           path: xalwart.server-${{ matrix.os.name }}-${{ matrix.compiler }}-${{ matrix.compiler_version }}
           retention-days: 90
   macos-build:
-    name: [macOS] Build the library
+    name: '[macOS] Build the library'
     runs-on: ${{ matrix.os_name }}-${{ matrix.os_version }}
     strategy:
       fail-fast: false
