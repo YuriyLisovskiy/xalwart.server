@@ -8,10 +8,29 @@ set(LIBRARY_VERSION "0.0.0")
 
 project(${LIBRARY_NAME})
 
-set(GNU_INCLUDE_DIR /usr/local/include)
-set(GNU_LIB_DIR /usr/local/lib)
+set(
+    DEFAULT_INCLUDE_PATHS
+        "/usr/local"
+        "/usr"
+)
 
-# Search for sources.
+foreach(ENTRY ${DEFAULT_INCLUDE_PATHS})
+    include_directories(${ENTRY}/include)
+    link_directories(${ENTRY}/lib)
+endforeach()
+
+# Search for xalwart.base
+find_library(
+    XALWART_BASE xalwart.base REQUIRED
+    PATHS ${DEFAULT_INCLUDE_PATHS}
+)
+
+function(print SRC_LIST)
+    foreach(entry ${SRC_LIST})
+        message(${entry})
+    endforeach(entry)
+endfunction(print)
+
 set(LIB_SRC_DIR ${PROJECT_SOURCE_DIR}/src)
 file(GLOB_RECURSE SOURCES LIST_DIRECTORIES true ${LIB_SRC_DIR}/*.h ${LIB_SRC_DIR}/*.cpp)
 foreach(entry ${SOURCES})
@@ -21,24 +40,28 @@ foreach(entry ${SOURCES})
 endforeach()
 list(LENGTH SOURCES SOURCES_COUNT)
 message(STATUS "[INFO] Sources found: ${SOURCES_COUNT}")
+if(NOT ${SOURCES_COUNT})
+    return()
+endif()
 
-option(BUILD_SHARED_LIBS "Build shared libraries (DLLs)." ON)
-
-# Add the library.
+# Build shared library.
 add_library(${LIBRARY_NAME} ${SOURCES})
 
-# Link dependencies.
-target_link_libraries(${LIBRARY_NAME} PUBLIC ${FRAMEWORK_NAME}.base)
+target_link_libraries(${LIBRARY_NAME} PUBLIC ${XALWART_BASE})
+
+set(LIBRARY_ROOT /usr/local CACHE STRING "Installation root directory.")
+set(LIBRARY_INCLUDE_DIR ${LIBRARY_ROOT}/include CACHE STRING "Include installation directory.")
+set(LIBRARY_LINK_DIR ${LIBRARY_ROOT}/lib CACHE STRING "Library installation directory.")
 
 # Install the library.
 install(
     TARGETS ${LIBRARY_NAME}
-    ARCHIVE DESTINATION ${GNU_LIB_DIR}
-    LIBRARY DESTINATION ${GNU_LIB_DIR}
+    ARCHIVE DESTINATION ${LIBRARY_LINK_DIR}
+    LIBRARY DESTINATION ${LIBRARY_LINK_DIR}
 )
 install(
     DIRECTORY "${LIB_SRC_DIR}/"
-    DESTINATION ${GNU_INCLUDE_DIR}/${LIBRARY_NAME}
+    DESTINATION ${LIBRARY_INCLUDE_DIR}/${LIBRARY_NAME}
     FILES_MATCHING
     PATTERN "*.h"
 )

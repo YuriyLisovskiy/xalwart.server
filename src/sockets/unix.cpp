@@ -6,7 +6,7 @@
 
 #include "./unix.h"
 
-#ifdef __unix__
+#if defined(__linux__) || defined(__mac__)
 
 // C++ libraries.
 #include <sys/un.h>
@@ -41,4 +41,4 @@ void UnixSocket::close()
 
 __SERVER_END__
 
-#endif // __unix__
+#endif // __linux__ || __mac__

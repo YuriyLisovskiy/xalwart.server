@@ -49,7 +49,7 @@ bool Selector::select(uint timeout_seconds, uint timeout_microseconds)
 	auto fd_readers = this->readers;
 	timeval t_val{
 		.tv_sec = timeout_seconds,
-		.tv_usec = timeout_microseconds
+		.tv_usec = (int)timeout_microseconds
 	};
 	int select_status = ::select(this->socket + 1, &fd_readers, &fd_writers, nullptr, &t_val);
 	if (select_status == STATUS_INVALID)
