@@ -25,8 +25,6 @@ find_library(
     PATHS ${DEFAULT_INCLUDE_PATHS}
 )
 
-message(${XALWART_BASE})
-
 function(print SRC_LIST)
     foreach(entry ${SRC_LIST})
         message(${entry})
