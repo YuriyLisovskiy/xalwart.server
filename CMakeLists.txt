@@ -8,12 +8,24 @@ set(LIBRARY_VERSION "0.0.0")
 
 project(${LIBRARY_NAME})
 
-set(ROOT_DIR /usr/local)
-set(INCLUDE_DIR ${ROOT_DIR}/include)
-set(LIB_DIR ${ROOT_DIR}/lib)
+set(
+    DEFAULT_INCLUDE_PATHS
+        "/usr/local"
+        "/usr"
+)
 
-include_directories(${INCLUDE_DIR})
-link_directories(${LIB_DIR})
+foreach(ENTRY ${DEFAULT_INCLUDE_PATHS})
+    include_directories(${ENTRY}/include)
+    link_directories(${ENTRY}/lib)
+endforeach()
+
+# Search for xalwart.base
+find_library(
+    XALWART_BASE xalwart.base REQUIRED
+    PATHS ${DEFAULT_INCLUDE_PATHS}
+)
+
+message(${XALWART_BASE})
 
 function(print SRC_LIST)
     foreach(entry ${SRC_LIST})
@@ -37,18 +49,21 @@ endif()
 # Build shared library.
 add_library(${LIBRARY_NAME} ${SOURCES})
 
-target_link_libraries(${LIBRARY_NAME} PUBLIC ${FRAMEWORK_NAME}.base)
+target_link_libraries(${LIBRARY_NAME} PUBLIC ${XALWART_BASE})
 
-# Install library.
+set(LIBRARY_ROOT /usr/local CACHE STRING "Installation root directory.")
+set(LIBRARY_INCLUDE_DIR ${LIBRARY_ROOT}/include CACHE STRING "Include installation directory.")
+set(LIBRARY_LINK_DIR ${LIBRARY_ROOT}/lib CACHE STRING "Library installation directory.")
+
+# Install the library.
 install(
     TARGETS ${LIBRARY_NAME}
-    ARCHIVE DESTINATION ${LIB_DIR}
-    LIBRARY DESTINATION ${LIB_DIR}
+    ARCHIVE DESTINATION ${LIBRARY_LINK_DIR}
+    LIBRARY DESTINATION ${LIBRARY_LINK_DIR}
 )
-
 install(
     DIRECTORY "${LIB_SRC_DIR}/"
-    DESTINATION ${INCLUDE_DIR}/${LIBRARY_NAME}
+    DESTINATION ${LIBRARY_INCLUDE_DIR}/${LIBRARY_NAME}
     FILES_MATCHING
     PATTERN "*.h"
 )
