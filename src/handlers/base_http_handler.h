@@ -21,14 +21,14 @@
 #include <xalwart.base/sys.h>
 #include <xalwart.base/net/request_context.h>
 #include <xalwart.base/utility.h>
-#include <xalwart.base/abc/base.h>
+#include <xalwart.base/interfaces/base.h>
 #include <xalwart.base/io.h>
 
 // Module definitions.
 #include "../_def_.h"
 
 // Server libraries.
-#include "../abc.h"
+#include "../interfaces.h"
 
 
 __SERVER_BEGIN__
@@ -38,13 +38,13 @@ using HandlerFunction = std::function<net::StatusCode(
 )>;
 
 // TODO: docs for 'BaseHTTPRequestHandler'
-class BaseHTTPRequestHandler : public abc::IRequestHandler
+class BaseHTTPRequestHandler : public IRequestHandler
 {
 public:
 	BaseHTTPRequestHandler(
 		std::unique_ptr<io::ILimitedBufferedStream> stream,
 		size_t max_header_length, size_t max_headers_count,
-		std::string server_version, xw::abc::ILogger* logger,
+		std::string server_version, xw::ILogger* logger,
 		std::map<std::string, std::string> environment,
 		HandlerFunction handler_function
 	) : logger(logger),
@@ -68,7 +68,7 @@ public:
 	void handle() override;
 
 protected:
-	xw::abc::ILogger* logger;
+	xw::ILogger* logger;
 
 	HandlerFunction handler_function;
 

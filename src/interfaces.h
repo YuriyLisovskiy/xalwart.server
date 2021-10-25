@@ -1,9 +1,9 @@
 /**
- * abc.h
+ * interfaces.h
  *
  * Copyright (c) 2021 Yuriy Lisovskiy
  *
- * Abstract base classes for server library.
+ * Interfaces for server library.
  */
 
 #pragma once
@@ -12,7 +12,7 @@
 #include "./_def_.h"
 
 
-__SERVER_ABC_BEGIN__
+__SERVER_BEGIN__
 
 class ISocket
 {
@@ -55,4 +55,4 @@ public:
 	virtual void handle() = 0;
 };
 
-__SERVER_ABC_END__
+__SERVER_END__

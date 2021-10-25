@@ -15,14 +15,14 @@
 #include <map>
 
 // Base libraries.
-#include <xalwart.base/abc/server.h>
+#include <xalwart.base/interfaces/server.h>
 #include <xalwart.base/logger.h>
 
 // Module definitions.
 #include "./_def_.h"
 
 // Server libraries.
-#include "./abc.h"
+#include "./interfaces.h"
 #include "./context.h"
 
 
@@ -59,7 +59,7 @@ private:
 
 // TESTME: DevelopmentHTTPServer
 // TODO: docs for 'DevelopmentHTTPServer'
-class DevelopmentHTTPServer : public abc::IServer
+class DevelopmentHTTPServer : public IServer
 {
 public:
 	explicit DevelopmentHTTPServer(Context context);
@@ -105,7 +105,7 @@ struct RequestTask : public AbstractWorker::Task
 	void initialize_environment() override;
 
 private:
-	std::unique_ptr<abc::ISocket> _socket;
+	std::unique_ptr<ISocket> _socket;
 
 	[[nodiscard]]
 	Client _accept_client() const;

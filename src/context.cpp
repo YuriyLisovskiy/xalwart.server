@@ -21,7 +21,7 @@ void Context::set_defaults()
 {
 	if (!this->create_selector)
 	{
-		this->create_selector = [](const Context& context, Socket socket) -> std::unique_ptr<abc::ISelector> {
+		this->create_selector = [](const Context& context, Socket socket) -> std::unique_ptr<ISelector> {
 			return std::make_unique<Selector>(socket, context.logger);
 		};
 	}
@@ -32,7 +32,7 @@ void Context::set_defaults()
 			const Context& context,
 			std::unique_ptr<io::ILimitedBufferedStream> stream,
 			const std::map<std::string, std::string>& environment
-		) -> std::unique_ptr<abc::IRequestHandler> {
+		) -> std::unique_ptr<IRequestHandler> {
 			require_non_null(stream.get(), "'stream' is nullptr", _ERROR_DETAILS_);
 			return std::make_unique<HTTPRequestHandler>(
 				std::move(stream), v::version.to_string(),

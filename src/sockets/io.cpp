@@ -20,7 +20,7 @@
 
 __SERVER_BEGIN__
 
-SocketIO::SocketIO(Socket file_descriptor, timeval timeout, std::unique_ptr<abc::ISelector> selector) :
+SocketIO::SocketIO(Socket file_descriptor, timeval timeout, std::unique_ptr<ISelector> selector) :
 	_file_descriptor(file_descriptor),
 	_timeout(timeout),
 	_selector(std::move(selector)),

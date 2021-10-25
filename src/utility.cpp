@@ -33,7 +33,7 @@ std::string join_address(const std::string& address, uint16_t port)
 	return address;
 }
 
-std::unique_ptr<abc::ISocket> create_server_socket(const std::string& address, uint16_t port)
+std::unique_ptr<ISocket> create_server_socket(const std::string& address, uint16_t port)
 {
 	if (port != 0)
 	{
@@ -48,7 +48,7 @@ std::unique_ptr<abc::ISocket> create_server_socket(const std::string& address, u
 	return std::make_unique<UnixSocket>(address.c_str());
 }
 
-std::unique_ptr<abc::ISocket> create_server_socket(const std::string& address, uint16_t port, xw::abc::ILogger* logger)
+std::unique_ptr<ISocket> create_server_socket(const std::string& address, uint16_t port, xw::ILogger* logger)
 {
 	require_non_null(logger, "'logger' is nullptr", _ERROR_DETAILS_);
 	try
@@ -71,12 +71,12 @@ std::unique_ptr<abc::ISocket> create_server_socket(const std::string& address, u
 	return nullptr;
 }
 
-std::unique_ptr<abc::ISocket> create_server_socket(
-	const std::string& address, uint16_t port, size_t retries_count, xw::abc::ILogger* logger
+std::unique_ptr<ISocket> create_server_socket(
+	const std::string& address, uint16_t port, size_t retries_count, xw::ILogger* logger
 )
 {
 	require_non_null(logger, "'logger' is nullptr", _ERROR_DETAILS_);
-	std::unique_ptr<abc::ISocket> server_socket = nullptr;
+	std::unique_ptr<ISocket> server_socket = nullptr;
 	for (size_t i = 0; i < retries_count; i++)
 	{
 		server_socket = create_server_socket(address, port, logger);
@@ -96,7 +96,7 @@ std::unique_ptr<abc::ISocket> create_server_socket(
 	return server_socket;
 }
 
-void close_socket(abc::ISocket* socket, xw::abc::ILogger* logger)
+void close_socket(ISocket* socket, xw::ILogger* logger)
 {
 	try
 	{

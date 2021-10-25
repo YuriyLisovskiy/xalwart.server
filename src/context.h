@@ -16,7 +16,7 @@
 
 // Base libraries.
 #include <xalwart.base/exceptions.h>
-#include <xalwart.base/abc/base.h>
+#include <xalwart.base/interfaces/base.h>
 #include <xalwart.base/datetime.h>
 #include <xalwart.base/utility.h>
 #include <xalwart.base/net/request_context.h>
@@ -26,7 +26,7 @@
 #include "./_def_.h"
 
 // Server libraries.
-#include "./abc.h"
+#include "./interfaces.h"
 
 
 __SERVER_BEGIN__
@@ -35,7 +35,7 @@ __SERVER_BEGIN__
 // TODO: docs for 'Context'
 struct Context final
 {
-	xw::abc::ILogger* logger = nullptr;
+	xw::ILogger* logger = nullptr;
 	std::shared_ptr<dt::Timezone> timezone = std::make_shared<dt::Timezone>(dt::Timezone::UTC);
 	size_t max_headers_count = 100;
 	size_t max_header_length = 65535;
@@ -48,9 +48,9 @@ struct Context final
 		net::RequestContext* /* context */, const std::map<std::string, std::string>& /* environment */
 	)> handler = nullptr;
 
-	std::function<std::unique_ptr<abc::ISelector>(const Context& context, Socket)> create_selector = nullptr;
+	std::function<std::unique_ptr<ISelector>(const Context& context, Socket)> create_selector = nullptr;
 
-	std::function<std::unique_ptr<abc::IRequestHandler>(
+	std::function<std::unique_ptr<IRequestHandler>(
 		const Context&,
 		std::unique_ptr<io::ILimitedBufferedStream>,
 		const std::map<std::string, std::string>& /* environment */

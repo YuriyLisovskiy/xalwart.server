@@ -15,13 +15,13 @@
 #include "../_def_.h"
 
 // Server libraries.
-#include "../abc.h"
+#include "../interfaces.h"
 
 
 __SERVER_BEGIN__
 
 // TODO: docs for 'BaseSocket'
-class BaseSocket : public abc::ISocket
+class BaseSocket : public ISocket
 {
 public:
 	// Overridden method must call `BaseSocket::set_options()`
