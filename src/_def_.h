@@ -3,37 +3,30 @@
  *
  * Copyright (c) 2020-2021 Yuriy Lisovskiy
  *
- * Purpose: main module's definitions.
+ * Definitions of main module.
  */
 
 #pragma once
 
+// C++ libraries.
 #include <chrono>
 
+// Module definitions.
 #include <xalwart.base/_def_.h>
-
-// xw::server
-#define __SERVER_BEGIN__ __MAIN_NAMESPACE_BEGIN__ namespace server {
-#define __SERVER_END__ } __MAIN_NAMESPACE_END__
 
 // xw::server::util
 #define __SERVER_UTIL_BEGIN__ __SERVER_BEGIN__ namespace util {
 #define __SERVER_UTIL_END__ } __SERVER_END__
 
-// xw::server::parser
-#define __SERVER_PARSER_BEGIN__ __SERVER_BEGIN__ namespace parser {
-#define __SERVER_PARSER_END__ } __SERVER_END__
 
 __SERVER_BEGIN__
 
 namespace v
 {
-const uint major = 0;
-const uint minor = 1;
-const uint patch = 0;
-
-const std::string version = std::to_string(major) + "." + std::to_string(minor) + "." + std::to_string(patch);
+const inline auto version = Version("0.0.0");
 };
+
+using Socket = int;
 
 __SERVER_END__
 

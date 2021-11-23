@@ -4,12 +4,26 @@ set(CMAKE_CXX_STANDARD 20)
 
 set(FRAMEWORK_NAME "xalwart")
 set(LIBRARY_NAME "${FRAMEWORK_NAME}.server")
-set(LIBRARY_VERSION "0.1.0")
+set(LIBRARY_VERSION "0.0.0")
 
 project(${LIBRARY_NAME})
 
-set(GNU_INCLUDE_DIR /usr/local/include)
-set(GNU_LIB_DIR /usr/local/lib)
+set(
+    DEFAULT_INCLUDE_PATHS
+        "/usr/local"
+        "/usr"
+)
+
+foreach(ENTRY ${DEFAULT_INCLUDE_PATHS})
+    include_directories(${ENTRY}/include)
+    link_directories(${ENTRY}/lib)
+endforeach()
+
+# Search for xalwart.base
+find_library(
+    XALWART_BASE xalwart.base REQUIRED
+    PATHS ${DEFAULT_INCLUDE_PATHS}
+)
 
 function(print SRC_LIST)
     foreach(entry ${SRC_LIST})
@@ -31,28 +45,23 @@ if(NOT ${SOURCES_COUNT})
 endif()
 
 # Build shared library.
-if (NOT LIB_SHARED)
-    set(LIB_SHARED no)
-endif()
+add_library(${LIBRARY_NAME} ${SOURCES})
 
-if (${LIB_SHARED})
-    add_library(${LIBRARY_NAME} SHARED ${SOURCES})
-else()
-    add_library(${LIBRARY_NAME} STATIC ${SOURCES})
-endif()
+target_link_libraries(${LIBRARY_NAME} PUBLIC ${XALWART_BASE})
 
-target_link_libraries(${LIBRARY_NAME} PUBLIC ${FRAMEWORK_NAME}.base)
+set(LIBRARY_ROOT /usr/local CACHE STRING "Installation root directory.")
+set(LIBRARY_INCLUDE_DIR ${LIBRARY_ROOT}/include CACHE STRING "Include installation directory.")
+set(LIBRARY_LINK_DIR ${LIBRARY_ROOT}/lib CACHE STRING "Library installation directory.")
 
-# Install library.
+# Install the library.
 install(
     TARGETS ${LIBRARY_NAME}
-    ARCHIVE DESTINATION ${GNU_LIB_DIR}
-    LIBRARY DESTINATION ${GNU_LIB_DIR}
+    ARCHIVE DESTINATION ${LIBRARY_LINK_DIR}
+    LIBRARY DESTINATION ${LIBRARY_LINK_DIR}
 )
-
 install(
     DIRECTORY "${LIB_SRC_DIR}/"
-    DESTINATION ${GNU_INCLUDE_DIR}/${LIBRARY_NAME}
+    DESTINATION ${LIBRARY_INCLUDE_DIR}/${LIBRARY_NAME}
     FILES_MATCHING
     PATTERN "*.h"
 )

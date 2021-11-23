@@ -10,185 +10,144 @@
 #include <xalwart.base/net/meta.h>
 
 // Server libraries.
-#include "./util.h"
+#include "./utility.h"
+#include "./exceptions.h"
 
 
 __SERVER_BEGIN__
 
-std::shared_ptr<net::abc::IServer> HTTPServer::initialize(
-	log::ILogger* logger,
-	const collections::Dict<std::string, std::string>& kwargs
-)
+void DevelopmentHTTPServer::handle_event(AbstractWorker*, RequestTask& task)
 {
-	Context ctx{};
-	ctx.logger = logger;
-	char* end_ptr = nullptr;
-	auto workers = kwargs.get("workers", "3");
-	ctx.workers = strtol(workers.c_str(), &end_ptr, 10);
-	if (workers.c_str() == end_ptr)
+	Measure measure;
+	measure.start();
+
+	auto socket_stream = this->context.create_stream(this->context, task.client.socket());
+	auto request_handler = this->context.create_request_handler(
+		this->context, std::move(socket_stream), this->environment
+	);
+	if (!request_handler)
 	{
-		throw ArgumentError("unable to read 'workers' parameter: " + workers, _ERROR_DETAILS_);
+		throw NullPointerException("'request_handler' is nullptr", _ERROR_DETAILS_);
 	}
 
-	end_ptr = nullptr;
-	auto max_body_size = kwargs.get("max_body_size", "2621440");
-	ctx.max_body_size = strtol(max_body_size.c_str(), &end_ptr, 10);
-	if (max_body_size.c_str() == end_ptr)
-	{
-		throw ArgumentError("unable to read 'max_body_size' parameter: " + max_body_size, _ERROR_DETAILS_);
-	}
+	request_handler->handle();
 
-	end_ptr = nullptr;
-	auto timeout_sec = kwargs.get("timeout_sec", "5");
-	ctx.timeout_sec = strtol(timeout_sec.c_str(), &end_ptr, 10);
-	if (timeout_sec.c_str() == end_ptr)
-	{
-		throw ArgumentError("unable to read 'timeout_sec' parameter: " + timeout_sec, _ERROR_DETAILS_);
-	}
-
-	end_ptr = nullptr;
-	auto timeout_usec = kwargs.get("timeout_usec", "0");
-	ctx.timeout_usec = strtol(timeout_usec.c_str(), &end_ptr, 10);
-	if (timeout_usec.c_str() == end_ptr)
-	{
-		throw ArgumentError("unable to read 'timeout_usec' parameter: " + timeout_usec, _ERROR_DETAILS_);
-	}
-
-	return std::shared_ptr<net::abc::IServer>(new HTTPServer(ctx));
+	measure.end();
+	this->context.logger->debug("Time elapsed: " + std::to_string(measure.elapsed()) + " milliseconds");
 }
 
-void HTTPServer::bind(const std::string& address, uint16_t port)
+void DevelopmentHTTPServer::event_function(AbstractWorker* worker, RequestTask& task)
 {
-	if (!this->_handler)
+	try
 	{
-		throw NullPointerException(
-			"request handler is not specified", _ERROR_DETAILS_
-		);
+		this->handle_event(worker, task);
 	}
+	catch (const ServerError& exc)
+	{
+		this->_shutdown_client(task.client);
+		this->context.logger->error(exc);
+	}
+	catch (const std::exception& exc)
+	{
+		this->_shutdown_client(task.client);
+		this->context.logger->error(exc.what(), _ERROR_DETAILS_);
+	}
+}
 
-	this->_socket = util::create_socket(address, port, 5, this->ctx.logger);
+DevelopmentHTTPServer::DevelopmentHTTPServer(Context context) : context(std::move(context))
+{
+	this->context.set_defaults();
+	this->context.validate();
+	this->context.worker->add_task_listener<RequestTask>(
+		[this](auto&& worker, auto&& task) {
+			this->event_function(std::forward<decltype(worker)>(worker), std::forward<decltype(task)>(task));
+		}
+	);
+}
+
+void DevelopmentHTTPServer::bind(const std::string& address, uint16_t port)
+{
+	this->_socket = util::create_server_socket(
+		address, port, this->context.socket_creation_retries_count, this->context.logger
+	);
 	this->_socket->set_options();
 	this->host = address;
 	this->server_port = port;
-	this->server_name = util::fqdn(this->host);
-	this->init_environ();
+	this->server_name = util::get_fully_qualified_domain_name(this->host);
+	this->initialize_environment();
 }
 
-void HTTPServer::listen(const std::string& message)
+void DevelopmentHTTPServer::listen(const std::string& message)
 {
 	this->_socket->listen();
+	auto selector = this->context.create_selector(this->context, this->_socket->raw_socket());
+	selector->register_read_event();
 	if (!message.empty())
 	{
-		this->ctx.logger->print(message);
+		this->context.logger->print(message);
 	}
 
-	SelectSelector selector(this->ctx.logger);
-	selector.register_(this->_socket->fd(), EVENT_READ);
-	while (!this->_socket->is_closed())
+	while (this->_socket->is_open())
 	{
-		auto ready = selector.select(this->ctx.timeout_sec, this->ctx.timeout_usec);
-		if (ready)
+		if (selector->select(this->context.timeout_seconds, this->context.timeout_microseconds))
 		{
-			auto conn = this->_get_request();
-			if (conn >= 0)
+			auto client = this->_accept_client();
+			if (this->_socket->is_open() && client.is_valid())
 			{
-				this->_handle(conn);
+				this->context.worker->inject_task<RequestTask>(client);
 			}
 		}
 	}
 }
 
-void HTTPServer::close()
+void DevelopmentHTTPServer::close()
 {
-	this->_event_loop->wait_for_threads();
-	util::close_socket(this->_socket, this->ctx.logger);
+	this->context.worker->stop();
+	util::close_socket(this->_socket.get(), this->context.logger);
 }
 
-void HTTPServer::init_environ()
+void DevelopmentHTTPServer::initialize_environment()
 {
-	this->base_environ[net::meta::SERVER_NAME] = this->server_name;
-	this->base_environ[net::meta::SERVER_PORT] = std::to_string(this->server_port);
+	this->environment.insert(std::make_pair(net::meta::SERVER_NAME, this->server_name));
+	this->environment.insert(std::make_pair(net::meta::SERVER_PORT, std::to_string(this->server_port)));
 }
 
-HTTPServer::HTTPServer(Context ctx) : ctx(ctx)
+Client DevelopmentHTTPServer::_accept_client() const
 {
-	this->ctx.normalize();
-	this->_event_loop = std::make_shared<EventLoop>(this->ctx.workers);
-	this->_event_loop->add_event_listener<RequestEvent>([this](auto&, auto& event) {
-		try
-		{
-			Measure measure;
-			measure.start();
-
-			timeval timeout{
-				this->ctx.timeout_sec,
-				this->ctx.timeout_usec
-			};
-			HTTPRequestHandler(
-				event.fd, v::version, timeout, this->ctx.max_body_size, this->ctx.logger, this->base_environ
-			).handle(this->_handler);
-
-			measure.end();
-			this->ctx.logger->debug(
-				"Time elapsed: " + std::to_string(measure.elapsed()) + " milliseconds"
-			);
-		}
-		catch (const ParseError& exc)
-		{
-			this->_shutdown_request(event.fd);
-			this->ctx.logger->error(exc);
-		}
-		catch (const std::exception& exc)
-		{
-			this->_shutdown_request(event.fd);
-			this->ctx.logger->fatal(exc.what(), _ERROR_DETAILS_);
-		}
-	});
-}
-
-int HTTPServer::_get_request()
-{
-	int new_sock;
-	if ((new_sock = ::accept(this->_socket->fd(), nullptr, nullptr)) < 0)
+	auto client = Client{::accept(this->_socket->raw_socket(), nullptr, nullptr)};
+	if (!client.is_valid())
 	{
-		if (errno == EBADF || errno == EINVAL)
+		auto error_code = errno;
+		if (error_code == EBADF || error_code == EINVAL)
 		{
 			throw SocketError(
-				errno, "'accept' call failed: " + std::to_string(errno), _ERROR_DETAILS_
+				error_code, "'accept' call failed: " + std::to_string(error_code), _ERROR_DETAILS_
 			);
 		}
 
-		if (errno == EMFILE)
+		if (error_code == EMFILE)
 		{
 			std::this_thread::sleep_for(std::chrono::milliseconds(300));
-			return -1;
+			return client;
 		}
 
 		throw SocketError(
-			errno,
-			"'accept' call failed while accepting a new connection: " + std::to_string(errno),
+			error_code, "'accept' call failed while accepting a new connection: " + std::to_string(error_code),
 			_ERROR_DETAILS_
 		);
 	}
 
-	if (!this->_socket->is_closed() && new_sock >= 0)
-	{
-		return new_sock;
-	}
-
-	return -1;
+	return client;
 }
 
-void HTTPServer::_shutdown_request(int sock) const
+void DevelopmentHTTPServer::_shutdown_client(Client client) const
 {
-	if (shutdown(sock, SHUT_RDWR))
+	if (shutdown(client.socket(), SHUT_RDWR))
 	{
-		this->ctx.logger->error(
-			"'shutdown' call failed: " + std::to_string(errno), _ERROR_DETAILS_
-		);
+		this->context.logger->error("'shutdown' call failed: " + std::to_string(errno), _ERROR_DETAILS_);
 	}
 
-	::close(sock);
+	::close(client.socket());
 }
 
 __SERVER_END__

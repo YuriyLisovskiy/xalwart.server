@@ -10,7 +10,10 @@
 
 #include <xalwart.base/sys.h>
 
-#ifdef __unix__
+#if defined(__linux__) || defined(__mac__)
+
+// STL libraries.
+#include <sys/socket.h>
 
 // Module definitions.
 #include "../_def_.h"
@@ -21,19 +24,20 @@
 
 __SERVER_BEGIN__
 
+// TODO: docs for 'UnixSocket'
 class UnixSocket : public BaseSocket
 {
-protected:
-	void bind() override;
-
 public:
-	explicit inline UnixSocket(const char* path) : BaseSocket(path, 0, AF_UNIX)
+	inline explicit UnixSocket(const char* path) : BaseSocket(path, 0, AF_UNIX)
 	{
 	}
 
 	void close() override;
+
+protected:
+	void bind() override;
 };
 
 __SERVER_END__
 
-#endif // __unix__
+#endif // __linux__ || __mac__

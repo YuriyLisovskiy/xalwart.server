@@ -8,6 +8,13 @@
 
 #pragma once
 
+// C++ libraries.
+#if defined(__linux__) || defined(__APPLE__)
+#include <sys/socket.h>
+#elif _WIN32
+#include <winsock32.h>
+#endif
+
 // Module definitions.
 #include "../_def_.h"
 
@@ -17,17 +24,18 @@
 
 __SERVER_BEGIN__
 
+// TODO: docs for 'TCP6Socket'
 class TCP6Socket : public BaseSocket
 {
-protected:
-	void bind() override;
-
 public:
-	explicit inline TCP6Socket(const char* address, uint16_t port) : BaseSocket(address, port, AF_INET6)
+	inline explicit TCP6Socket(const char* address, uint16_t port) : BaseSocket(address, port, AF_INET6)
 	{
 	}
 
 	void set_options() override;
+
+protected:
+	void bind() override;
 };
 
 __SERVER_END__

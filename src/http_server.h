@@ -12,49 +12,57 @@
 #include <string>
 #include <functional>
 #include <memory>
+#include <map>
 
 // Base libraries.
-#include <xalwart.base/event_loop.h>
-#include <xalwart.base/result.h>
-#include <xalwart.base/net/abc.h>
+#include <xalwart.base/interfaces/server.h>
+#include <xalwart.base/logger.h>
 
 // Module definitions.
 #include "./_def_.h"
 
 // Server libraries.
+#include "./interfaces.h"
 #include "./context.h"
-#include "./socket/base.h"
-#include "./handlers/http_handler.h"
 
 
 __SERVER_BEGIN__
 
-class HTTPServer : public net::abc::IServer
+// TESTME: Client
+// TODO: docs for 'Client'
+class Client final
 {
-protected:
-	struct RequestEvent : public Event
-	{
-		int fd;
-		explicit RequestEvent(int fd) : fd(fd) {}
-	};
-
 public:
-
-	// Accepts parameters in kwargs:
-	//
-	// - workers: threads count;
-	// - max_body_size: maximum size of request body (in bytes);
-	// - timeout_sec: timeout seconds;
-	// - timeout_usec: timeout microseconds.
-	static std::shared_ptr<net::abc::IServer> initialize(
-		log::ILogger* logger,
-		const collections::Dict<std::string, std::string>& kwargs
-	);
-
-	inline void setup_handler(net::HandlerFunc handler) override
+	inline Client() : _socket(-1)
 	{
-		this->_handler = std::move(handler);
 	}
+
+	explicit inline Client(Socket socket) : _socket(socket)
+	{
+	}
+
+	[[nodiscard]]
+	inline bool is_valid() const
+	{
+		return this->_socket >= 0;
+	}
+
+	[[nodiscard]]
+	inline Socket socket() const
+	{
+		return this->_socket;
+	}
+
+private:
+	Socket _socket;
+};
+
+// TESTME: DevelopmentHTTPServer
+// TODO: docs for 'DevelopmentHTTPServer'
+class DevelopmentHTTPServer : public IServer
+{
+public:
+	explicit DevelopmentHTTPServer(Context context);
 
 	void bind(const std::string& address, uint16_t port) override;
 
@@ -63,37 +71,46 @@ public:
 	void close() override;
 
 	[[nodiscard]]
-	inline collections::Dict<std::string, std::string> environ() const override
+	inline std::map<std::string, std::string> get_environment() const override
 	{
-		return this->base_environ;
+		return this->environment;
 	}
 
-protected:
-	void init_environ() override;
+	[[nodiscard]]
+	inline bool is_development() const override
+	{
+		return true;
+	}
 
 protected:
 	std::string host;
 	std::string server_name;
 	uint16_t server_port = 0;
-	Context ctx;
-	collections::Dict<std::string, std::string> base_environ;
+	std::map<std::string, std::string> environment;
+	Context context;
 
-private:
-	std::shared_ptr<EventLoop> _event_loop;
-	net::HandlerFunc _handler;
-	std::shared_ptr<BaseSocket> _socket;
-
-private:
-	explicit HTTPServer(Context ctx);
-
-	int _get_request();
-
-	inline void _handle(const int& sock)
+struct RequestTask : public AbstractWorker::Task
 	{
-		this->_event_loop->inject_event<RequestEvent>(sock);
-	}
+		Client client;
 
-	void _shutdown_request(int sock) const;
+		explicit inline RequestTask(Client client) : client(client)
+		{
+		}
+	};
+
+	void handle_event(AbstractWorker* worker, RequestTask& task);
+
+	void event_function(AbstractWorker* worker, RequestTask& task);
+
+	void initialize_environment() override;
+
+private:
+	std::unique_ptr<ISocket> _socket;
+
+	[[nodiscard]]
+	Client _accept_client() const;
+
+	void _shutdown_client(Client client) const;
 };
 
 __SERVER_END__

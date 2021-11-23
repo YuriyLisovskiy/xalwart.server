@@ -1,137 +1,79 @@
-name: "ci"
+name: Test
 on:
   pull_request:
   push:
     branches:
-      - master
       - dev
+      - master
 jobs:
-  alpine-clang:
-    name: "alpine-${{ matrix.alpine_version }} [clang-10]"
+  linux-build:
+    name: '[Linux] Build the library'
     runs-on: ubuntu-18.04
     strategy:
       fail-fast: false
       matrix:
-        alpine_version: [3.13]
+        os:
+          - name: alpine
+            version: 3.13
+          - name: ubuntu
+            version: 18.04
+        compiler: [ gcc, clang ]
+        compiler_version: [ 10 ]
     steps:
       - uses: actions/checkout@v2
-      - name: Build the Container
+      - name: Download Base library
+        uses: dawidd6/action-download-artifact@v2
+        with:
+          github_token: ${{ secrets.GH_ACCESS_TOKEN }}
+          workflow: test.yml
+          branch: dev
+          name: xalwart.base-${{ matrix.os.name }}-${{ matrix.compiler }}-${{ matrix.compiler_version }}
+          path: xalwart.base-${{ matrix.os.name }}-${{ matrix.compiler }}-${{ matrix.compiler_version }}
+          repo: YuriyLisovskiy/xalwart.base
+      - name: Build Server library
         run: |
-          sudo docker build . \
-                            --build-arg alpine_version=${{ matrix.alpine_version }} \
-                            --build-arg GH_ACCESS_TOKEN=${{ secrets.GH_ACCESS_TOKEN }} \
-                            -f docker/alpine/clang.Dockerfile \
-                            --tag=test-alpine:clang
-      - name: Run Library Build
-        run: |
-          sudo docker run test-alpine:clang
-  alpine-gcc:
-    name: "alpine-${{ matrix.alpine_version }} [gcc-10]"
-    runs-on: ubuntu-18.04
+          sudo docker run -i \
+                          -v ${{ github.workspace }}:/app \
+                          xalwart/${{ matrix.compiler }}:${{ matrix.compiler_version }}-${{ matrix.os.name }}-${{ matrix.os.version }} \
+                          bash /app/scripts/linux/build.sh ${{ matrix.os.name }} ${{ matrix.compiler }} ${{ matrix.compiler_version }}
+      - name: Upload the artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: xalwart.server-${{ matrix.os.name }}-${{ matrix.compiler }}-${{ matrix.compiler_version }}
+          path: xalwart.server-${{ matrix.os.name }}-${{ matrix.compiler }}-${{ matrix.compiler_version }}
+          retention-days: 90
+  macos-build:
+    name: '[macOS] Build the library'
+    runs-on: ${{ matrix.os_name }}-${{ matrix.os_version }}
     strategy:
       fail-fast: false
       matrix:
-        alpine_version: [3.13]
+        os_name: [ macos ]
+        os_version: [ 11 ]
     steps:
       - uses: actions/checkout@v2
-      - name: Build the Container
+      - name: Download Base library
+        uses: dawidd6/action-download-artifact@v2
+        with:
+          github_token: ${{ secrets.GH_ACCESS_TOKEN }}
+          workflow: test.yml
+          branch: dev
+          name: xalwart.base-${{ matrix.os_name }}-${{ matrix.os_version }}
+          path: /usr/local
+          repo: YuriyLisovskiy/xalwart.base
+      - name: Build Server library
         run: |
-          sudo docker build . \
-                            --build-arg alpine_version=${{ matrix.alpine_version }} \
-                            --build-arg GH_ACCESS_TOKEN=${{ secrets.GH_ACCESS_TOKEN }} \
-                            -f docker/alpine/gcc.Dockerfile \
-                            --tag=test-alpine:gcc
-      - name: Run Library Build
-        run: |
-          sudo docker run test-alpine:gcc
-  ubuntu-clang:
-    name: ${{ matrix.os }} [clang-${{ matrix.compiler_version }}]
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        name: [Ubuntu]
-        os: [ubuntu-18.04]
-        compiler_version: [10]
-    steps:
-      - uses: actions/checkout@v2
-      - name: Install Compiler and Check Version
-        run: |
-          sudo apt update -y && \
-          sudo pip install --upgrade cmake && \
-          sudo apt install -y clang-${{ matrix.compiler_version }} valgrind
-      - name: Install Base Library
-        run: |
-          cd /tmp && \
-          git clone https://${{secrets.GH_ACCESS_TOKEN}}@github.com/YuriyLisovskiy/xalwart.base.git && \
-          cd xalwart.base && \
-          sudo mkdir build && \
-          cd build && \
-          sudo cmake -DCMAKE_BUILD_TYPE=Release \
-                     -DCMAKE_CXX_COMPILER=clang++-${{ matrix.compiler_version }} \
-                     -DCMAKE_C_COMPILER=clang-${{ matrix.compiler_version }} \
-                     .. && \
-          sudo make && \
-          sudo make install
-      - name: Update Links and Cache of Linker
-        run: |
-          sudo ldconfig
-      - name: Build
-        run: |
-          sudo mkdir build && \
-          cd build/ && \
-          sudo cmake -DCMAKE_CXX_COMPILER=clang++-${{ matrix.compiler_version }} \
-                     -DCMAKE_C_COMPILER=clang-${{ matrix.compiler_version }} \
-                     -DCMAKE_BUILD_TYPE=Debug \
-                     .. && \
-          sudo make
-  ubuntu-gcc:
-    name: ${{ matrix.os }} [gcc-${{ matrix.compiler_version }}]
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        name: [Ubuntu]
-        os: [ubuntu-18.04]
-        compiler_version: [10]
-    steps:
-      - uses: actions/checkout@v2
-      - name: Install Compiler and Check Version
-        run: |
-          sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test && \
-          sudo apt update -y && \
-          sudo pip install --upgrade cmake && \
-          sudo apt install -y gcc-${{ matrix.compiler_version }} g++-${{ matrix.compiler_version }} valgrind && \
-          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-${{ matrix.compiler_version }} 10 && \
-          sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-${{ matrix.compiler_version }} 10 && \
-          sudo update-alternatives --install /usr/bin/cc cc /usr/bin/gcc 30 && \
-          sudo update-alternatives --set cc /usr/bin/gcc && \
-          sudo update-alternatives --install /usr/bin/c++ c++ /usr/bin/g++ 30 && \
-          sudo update-alternatives --set c++ /usr/bin/g++ && \
-          gcc --version && \
-          g++ --version
-      - name: Install Base Library
-        run: |
-          cd /tmp && \
-          git clone https://${{secrets.GH_ACCESS_TOKEN}}@github.com/YuriyLisovskiy/xalwart.base.git && \
-          cd xalwart.base && \
-          sudo mkdir build && \
-          cd build && \
-          sudo cmake -DCMAKE_BUILD_TYPE=Release \
-                     -DCMAKE_CXX_COMPILER=g++-${{ matrix.compiler_version }} \
-                     -DCMAKE_C_COMPILER=gcc-${{ matrix.compiler_version }} \
-                     .. && \
-          sudo make && \
-          sudo make install
-      - name: Update Links and Cache of Linker
-        run: |
-          sudo ldconfig
-      - name: Build
-        run: |
-          sudo mkdir build && \
-          cd build/ && \
-          sudo cmake -DCMAKE_CXX_COMPILER=g++-${{ matrix.compiler_version }} \
-                     -DCMAKE_C_COMPILER=gcc-${{ matrix.compiler_version }} \
-                     -DCMAKE_BUILD_TYPE=Debug \
-                     .. && \
-          sudo make
+          mkdir build && cd build
+          cmake -D CMAKE_BUILD_TYPE=Release ..
+          sudo mkdir -p /usr/local/include && sudo mkdir -p /usr/local/lib
+          make xalwart.server && sudo make install
+          cd && mkdir ~/target-build && cd ~/target-build
+          mkdir -p include && mkdir -p lib && cd
+          sudo cp -r /usr/local/include/xalwart.server ~/target-build/include
+          sudo cp -r /usr/local/lib/libxalwart.server* ~/target-build/lib
+      - name: Upload the artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: xalwart.server-${{ matrix.os_name }}-${{ matrix.os_version }}
+          path: ~/target-build
+          retention-days: 60

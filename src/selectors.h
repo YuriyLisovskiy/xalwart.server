@@ -10,44 +10,38 @@
 
 // C++ libraries.
 #if defined(__linux__) || defined(__APPLE__)
-#include <sys/socket.h>
 #include <sys/select.h>
-#elif _WIN32
-#include <winsock32.h>
 #endif
 
 // Base libraries.
-#include <xalwart.base/logger.h>
+#include <xalwart.base/interfaces/base.h>
 
 // Module definitions.
 #include "./_def_.h"
 
+// Server errors.
+#include "./interfaces.h"
+
 
 __SERVER_BEGIN__
 
-const int EVENT_READ = (1 << 0);
-const int EVENT_WRITE = (1 << 1);
-
-class ISelector
+// TODO: docs for 'Selector'
+class Selector : public ISelector
 {
 public:
-	virtual void register_(uint file_descriptor, int events) = 0;
-	virtual bool select(uint timeout_sec, uint timeout_usec) = 0;
-};
+	explicit Selector(Socket socket, xw::ILogger* logger);
 
-class SelectSelector : public ISelector
-{
+	void register_read_event() override;
+
+	void register_write_event() override;
+
+	bool select(uint timeout_seconds, uint timeout_microseconds) override;
+
 protected:
-	log::ILogger* logger;
+	xw::ILogger* logger;
 	fd_set readers{};
 	fd_set writers{};
-	int fd;
-	int events;
-
-public:
-	explicit SelectSelector(log::ILogger* logger);
-	void register_(uint fd, int events) override;
-	bool select(uint timeout_sec, uint timeout_usec) override;
+	Socket socket;
 };
 
 __SERVER_END__

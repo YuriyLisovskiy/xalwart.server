@@ -10,49 +10,54 @@
 #include <cerrno>
 #include <cstring>
 
+// Server libraries.
+#include "./utility.h"
+#include "./exceptions.h"
+
 
 __SERVER_BEGIN__
 
-SelectSelector::SelectSelector(log::ILogger* logger) : logger(logger)
+Selector::Selector(Socket socket, xw::ILogger* logger) : logger(logger), socket(socket)
 {
-	this->fd = -1;
-	this->events = -1;
-}
-
-void SelectSelector::register_(uint file_descriptor, int events_)
-{
-	this->fd = (int)file_descriptor;
-	this->events = events_;
-	if (this->events & EVENT_READ)
+	if (!this->logger)
 	{
-		FD_ZERO(&this->readers);
-		FD_SET(this->fd, &this->readers);
+		throw NullPointerException("'logger' is nullptr", _ERROR_DETAILS_);
 	}
 
-	if (this->events & EVENT_WRITE)
+	if (!util::socket_is_valid(this->socket))
 	{
-		FD_ZERO(&this->writers);
-		FD_SET(this->fd, &this->writers);
+		throw ArgumentError("socket is invalid", _ERROR_DETAILS_);
 	}
 }
 
-bool SelectSelector::select(uint timeout_sec, uint timeout_usec)
+void Selector::register_read_event()
 {
+	FD_ZERO(&this->readers);
+	FD_SET(this->socket, &this->readers);
+}
+
+void Selector::register_write_event()
+{
+	FD_ZERO(&this->writers);
+	FD_SET(this->socket, &this->writers);
+}
+
+bool Selector::select(uint timeout_seconds, uint timeout_microseconds)
+{
+	const int STATUS_TIMEOUT = 0, STATUS_INVALID = -1;
 	auto fd_writers = this->writers;
 	auto fd_readers = this->readers;
-	struct timeval t_val{};
-	t_val.tv_sec = timeout_sec;
-	t_val.tv_usec = timeout_usec;
-	int ret = ::select(this->fd + 1, &fd_readers, &fd_writers, nullptr, &t_val);
-	if (ret == -1)
+	timeval t_val{
+		.tv_sec = timeout_seconds,
+		.tv_usec = (int)timeout_microseconds
+	};
+	int select_status = ::select(this->socket + 1, &fd_readers, &fd_writers, nullptr, &t_val);
+	if (select_status == STATUS_INVALID)
 	{
-		this->logger->error(
-			"'select' call failed: " + std::string(strerror(errno)), _ERROR_DETAILS_
-		);
+		this->logger->error("'select' call failed: " + std::string(strerror(errno)), _ERROR_DETAILS_);
 	}
-	else if (ret == 0)
+	else if (select_status == STATUS_TIMEOUT)
 	{
-		// timeout, just skip
 	}
 	else
 	{
