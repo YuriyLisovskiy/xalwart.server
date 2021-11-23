@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - dev
+      - master
 jobs:
   linux-build:
     name: '[Linux] Build the library'
