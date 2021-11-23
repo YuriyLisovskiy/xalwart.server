@@ -12,7 +12,7 @@
 #include <chrono>
 
 // Module definitions.
-#include <xalwart.base/interfaces/_def_.h>
+#include <xalwart.base/_def_.h>
 
 // xw::server::util
 #define __SERVER_UTIL_BEGIN__ __SERVER_BEGIN__ namespace util {
