@@ -27,6 +27,11 @@ To build the library from source CMake 3.12 or later is required.
 The following library is required:
 - [xalwart.base](https://github.com/YuriyLisovskiy/xalwart.base) 0.0.0 or later
 
+## Download
+Development build of the library can be downloaded from the latest
+[asset](https://github.com/YuriyLisovskiy/xalwart.server/actions?query=branch%3Amaster)
+of action results.
+
 ## Build and Install
 * `BUILD_SHARED_LIBS` means to build a shared or static library (`ON` by default).
 * `LIBRARY_ROOT`: installation directory root (`/usr/local` by default).
