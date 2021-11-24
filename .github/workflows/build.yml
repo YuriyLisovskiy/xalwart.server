@@ -1,13 +1,13 @@
-name: Test
+name: Build
 on:
   pull_request:
   push:
     branches:
-      - dev
       - master
+      - dev
 jobs:
   linux-build:
-    name: '[Linux] Build the library'
+    name: '[linux build]'
     runs-on: ubuntu-18.04
     strategy:
       fail-fast: false
@@ -17,16 +17,23 @@ jobs:
             version: 3.13
           - name: ubuntu
             version: 18.04
-        compiler: [ gcc, clang ]
-        compiler_version: [ 10 ]
+        compiler:
+          - gcc
+          - clang
+        compiler_version:
+          - 10
     steps:
       - uses: actions/checkout@v2
+      - name: Extract branch name
+        shell: bash
+        run: echo "::set-output name=branch::$(bash ${GITHUB_WORKSPACE}/scripts/get_branch.sh ${GITHUB_REF##*/})"
+        id: extract_branch
       - name: Download Base library
         uses: dawidd6/action-download-artifact@v2
         with:
           github_token: ${{ secrets.GH_ACCESS_TOKEN }}
-          workflow: test.yml
-          branch: dev
+          workflow: build_and_test.yml
+          branch: ${{ steps.extract_branch.outputs.branch }}
           name: xalwart.base-${{ matrix.os.name }}-${{ matrix.compiler }}-${{ matrix.compiler_version }}
           path: xalwart.base-${{ matrix.os.name }}-${{ matrix.compiler }}-${{ matrix.compiler_version }}
           repo: YuriyLisovskiy/xalwart.base
@@ -43,21 +50,27 @@ jobs:
           path: xalwart.server-${{ matrix.os.name }}-${{ matrix.compiler }}-${{ matrix.compiler_version }}
           retention-days: 90
   macos-build:
-    name: '[macOS] Build the library'
+    name: '[macOS build]'
     runs-on: ${{ matrix.os_name }}-${{ matrix.os_version }}
     strategy:
       fail-fast: false
       matrix:
-        os_name: [ macos ]
-        os_version: [ 11 ]
+        os_name:
+          - macos
+        os_version:
+          - 11
     steps:
       - uses: actions/checkout@v2
+      - name: Extract branch name
+        shell: bash
+        run: echo "::set-output name=branch::$(bash ${GITHUB_WORKSPACE}/scripts/get_branch.sh ${GITHUB_REF##*/})"
+        id: extract_branch
       - name: Download Base library
         uses: dawidd6/action-download-artifact@v2
         with:
           github_token: ${{ secrets.GH_ACCESS_TOKEN }}
-          workflow: test.yml
-          branch: dev
+          workflow: build_and_test.yml
+          branch: ${{ steps.extract_branch.outputs.branch }}
           name: xalwart.base-${{ matrix.os_name }}-${{ matrix.os_version }}
           path: /usr/local
           repo: YuriyLisovskiy/xalwart.base
